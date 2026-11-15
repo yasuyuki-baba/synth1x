@@ -62,8 +62,15 @@ void Synth2::refreshBrowser()
             c->SetDirty(false);
         }
     };
-    setText(bankTag, std::string(libraryFilter.registeredOnly ? "Registered / " : "") +
-                         std::to_string(catalog.patches().size()) + " sounds in library");
+    const auto status=synth2::editor::editorLibraryStatus({libraryJob.valid(),catalogLoaded,
+        libraryFilter.registeredOnly,libraryOperation,catalog.patches().size(),matches.size(),visibleRows,resultOffset});
+    setText(bankTag,status.summary);
+    if(auto* control=graphics->GetControlWithTag(libraryActivityTag)) {
+        if(libraryJob.valid() && !control->GetAnimationFunction())control->SetAnimation(DefaultAnimationFunc,1100);
+        else if(!libraryJob.valid() && control->GetAnimationFunction()) {
+            control->SetAnimation(nullptr);control->SetDirty(false);
+        }
+    }
     const auto selected = std::find_if(catalog.patches().begin(), catalog.patches().end(),
                                        [&](const auto &p) { return p.id == selectedPatchId; });
     const bool canEdit = selected != catalog.patches().end();
@@ -127,9 +134,11 @@ void Synth2::refreshBrowser()
     if(auto* control=graphics->GetControlWithTag(libraryFiltersTag))
         control->As<LibraryFiltersControl>()->setFilters(std::move(activeFilters));
     if(auto* control=graphics->GetControlWithTag(libraryMatchesTag))
-        control->SetTooltip("Matching sounds. Ctrl/Cmd+F: Search. Up/Down: Browse. Enter: Load. Click a filter to remove only that condition.");
-    if (auto *c = graphics->GetControlWithTag(libraryListTag))
+        control->SetTooltip(libraryJob.valid() ? status.emptyDetail.c_str() : "Matching sounds. Ctrl/Cmd+F: Search. Up/Down: Browse. Enter: Load. Click a filter to remove only that condition.");
+    if (auto *c = graphics->GetControlWithTag(libraryListTag)) {
+        c->As<CatalogListControl>()->setEmptyMessage(status.emptyTitle,status.emptyDetail);
         c->As<CatalogListControl>()->setResults(matches, resultOffset);
+    }
     setText(selectedNameTag,"Manual tags");
     setText(tagsEditTag, canEdit ? synth2::host::PatchCatalog::tagText(selected->tags) : "");
     const auto tagHelp=canEdit
@@ -140,10 +149,7 @@ void Synth2::refreshBrowser()
     if (auto *c = graphics->GetControlWithTag(tagsEditTag))c->SetDisabled(!canEdit);
     if(auto* control=graphics->GetControlWithTag(4016))
         control->SetTooltip("Hide or restore automatic tags for the selected sound.");
-    const auto first = matches.empty() ? 0 : static_cast<std::size_t>(resultOffset) + 1;
-    setText(libraryMatchesTag, std::to_string(first) + " - " +
-                            std::to_string(std::min(static_cast<std::size_t>(std::ceil(resultOffset + visibleRows)), matches.size())) + " of " +
-                            std::to_string(matches.size()) + " sounds");
+    setText(libraryMatchesTag,status.matches);
 }
 
 bool Synth2::handleLibraryKey(const IKeyPress& key,bool up)
@@ -399,6 +405,7 @@ void Synth2::reloadCatalog(bool queueIfBusy)
                                 job.catalog.reload(job.error);
                                 return job;
                             });
+    libraryOperation=synth2::editor::LibraryOperation::scan;
     browserStatus = "Scanning library...";
     refreshBrowser();
 }
@@ -439,6 +446,7 @@ void Synth2::importBank(const std::string &path)
                 job.imported);
             return job;
         });
+    libraryOperation=synth2::editor::LibraryOperation::addSounds;
     browserStatus = "Registering sounds...";
     showPage(synth2::editor::editorLibraryView);
     refreshBrowser();
@@ -623,6 +631,7 @@ void Synth2::writePreset(const std::filesystem::path &destination, bool confirm,
                                         job.catalog.saveFile(relative, text, true, job.savedId, job.error);
                                         return job;
                                     });
+            libraryOperation=synth2::editor::LibraryOperation::saveSound;
             browserStatus = "Saving preset...";
             refreshBrowser();
         }

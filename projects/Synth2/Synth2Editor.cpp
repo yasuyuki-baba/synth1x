@@ -251,6 +251,16 @@ void Synth2::layoutEditor(IGraphics* graphics)
             showFilterMenu(caller,filters,bounds);
         }),libraryFiltersTag);
     graphics->AttachControl(new ITextControl(IRECT(20,180,226,200),"",text.WithSize(Typography::auxiliary).WithFGColor(muted).WithAlign(EAlign::Near)),libraryMatchesTag);
+    // The SDK owns the animation loop; the future owns whether work is active.
+    graphics->AttachControl(new ILambdaControl(IRECT(20,200,226,202),[this](IControl* control,IGraphics& g,IRECT& bounds) {
+        g.FillRect(background,bounds);
+        if(!libraryJob.valid())return;
+        g.FillRect(color(appearance.border),bounds);
+        const auto progress=std::clamp(control->GetAnimationProgress(),0.,1.);
+        const auto phase=progress<.5 ? progress*2 : 2.-progress*2;
+        const auto left=bounds.L+static_cast<float>(phase)*(bounds.W()-44.f);
+        g.FillRect(accent,IRECT(left,bounds.T,left+44.f,bounds.B));
+    },1100,true,false,kNoParameter,true),libraryActivityTag);
     using Columns=synth2::editor::EditorLibraryColumns;
     graphics->AttachControl(new ITextControl(IRECT(20+Columns::nameLeft,204,20+Columns::nameRight,226),"SOUND",text.WithSize(Typography::auxiliary).WithFGColor(muted).WithAlign(EAlign::Near)),4011);
     graphics->AttachControl(new ITextControl(IRECT(20+Columns::bankLeft,204,20+Columns::bankRight,226),"BANK",text.WithSize(Typography::auxiliary).WithFGColor(muted).WithAlign(EAlign::Near)),4012);

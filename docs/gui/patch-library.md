@@ -22,6 +22,20 @@ refresh, filtering and metadata edits preserve the sounding processor.
 The processor starts with Init and the library starts empty; no factory bank is
 bundled, privileged or automatically added.
 
+Library work has a visible activity label and an indeterminate animated bar next
+to the filters. The first scan shows Loading library and explains that files and
+automatic tags are being prepared, rather than reporting zero matching sounds.
+Refresh keeps the existing catalog visible and usable while showing Updating
+library; its known sound count remains in the header. Adding sounds and saving
+have their own activity labels. Activity follows the actual background job,
+independently of search/filter messages, and ends when that job is consumed.
+It does not claim a completion percentage or introduce a minimum wait.
+
+After a successful scan, an empty library offers Add, while an empty filtered
+result offers clearing a filter. A failed initial scan shows Library unavailable
+and points to Refresh and the status-line error. A failed refresh retains the
+previous catalog and reports the error in the status line.
+
 The persistent [A/B header](patch-comparison.md) retains both sounds. The selected
 side receives Library loads; switching sides preserves the current filters. The
 display shows only the selected sound's patch name and edited marker on the first

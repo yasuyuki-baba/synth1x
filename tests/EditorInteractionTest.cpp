@@ -4,6 +4,7 @@
 #include "editor/EditorLibraryNavigation.h"
 #include "editor/EditorLibraryInteraction.h"
 #include "editor/EditorLibraryFilters.h"
+#include "editor/EditorLibraryStatus.h"
 #include <gtest/gtest.h>
 #include "editor/EditorInteraction.h"
 #include "editor/EditorValueDisplay.h"
@@ -15,6 +16,55 @@
 #include <utility>
 
 using namespace synth2::editor;
+
+TEST(EditorLibraryStatus, FirstLoadDoesNotAppearEmptyAndFailureIsDistinctFromSuccess)
+{
+    EditorLibraryStatusInput input;input.busy=true;
+    const auto loading=editorLibraryStatus(input);
+    EXPECT_EQ(loading.summary,"Loading library...");
+    EXPECT_EQ(loading.emptyTitle,"Loading library...");
+    EXPECT_NE(loading.emptyDetail.find("automatic tags"),std::string::npos);
+    EXPECT_EQ(loading.matches,"Loading library...");
+    input.busy=false;
+    const auto failed=editorLibraryStatus(input);
+    EXPECT_EQ(failed.emptyTitle,"Library unavailable");
+    EXPECT_NE(failed.emptyDetail.find("Refresh"),std::string::npos);
+    input.ready=true;
+    const auto empty=editorLibraryStatus(input);
+    EXPECT_EQ(empty.summary,"0 sounds in library");
+    EXPECT_EQ(empty.emptyTitle,"Your library is empty.");
+    EXPECT_NE(empty.emptyDetail.find("Add..."),std::string::npos);
+}
+
+TEST(EditorLibraryStatus, RefreshRetainsKnownSizeAndReturnsToTheMatchingRange)
+{
+    EditorLibraryStatusInput input;
+    input.ready=true;input.sounds=200;input.matches=50;input.offset=12.5;
+    EXPECT_EQ(editorLibraryStatus(input).matches,"13 - 30 of 50 sounds");
+    input.busy=true;
+    const auto updating=editorLibraryStatus(input);
+    EXPECT_EQ(updating.summary,"200 sounds / Updating library...");
+    EXPECT_EQ(updating.matches,"Updating library...");
+    input.busy=false;
+    EXPECT_EQ(editorLibraryStatus(input).matches,"13 - 30 of 50 sounds");
+    input.matches=0;
+    const auto filtered=editorLibraryStatus(input);
+    EXPECT_EQ(filtered.emptyTitle,"No matching sounds.");
+    EXPECT_EQ(filtered.emptyDetail,"Clear a filter to see more sounds.");
+    EXPECT_EQ(filtered.summary,"200 sounds in library");
+}
+
+TEST(EditorLibraryStatus, ImportAndSaveActivityEndsWhenTheJobFinishes)
+{
+    EditorLibraryStatusInput input;input.ready=true;input.busy=true;input.sounds=8;input.matches=8;
+    input.operation=LibraryOperation::addSounds;
+    EXPECT_EQ(editorLibraryStatus(input).matches,"Adding sounds...");
+    input.operation=LibraryOperation::saveSound;
+    EXPECT_EQ(editorLibraryStatus(input).matches,"Saving sound...");
+    input.busy=false;input.registeredOnly=true;
+    EXPECT_EQ(editorLibraryStatus(input).matches,"1 - 8 of 8 sounds");
+    EXPECT_EQ(editorLibraryStatus(input).summary,"Registered / 8 sounds in library");
+}
 
 namespace
 {
