@@ -16,7 +16,7 @@ inline bool editorHasUnit(int parameter)
     switch(parameter)
     {
         case 2: case 3: case 72: case 15: case 16: case 18:
-        case 25: case 26: case 28: case 61: case 62: case 63: return true;
+        case 25: case 26: case 28: case 50: case 51: case 61: case 62: case 63: return true;
         default: return false;
     }
 }
@@ -42,6 +42,13 @@ inline std::string editorValueDisplay(int parameter,double source)
                 : 0.01f*std::pow(6000.0f,dial/127.0f);
             return seconds<1. ? editorDecimal(seconds*1000.,seconds<.01 ? 2 : 1," ms")
                               : editorDecimal(seconds,2," s");
+        }
+        case 50: case 51:
+        {
+            const double percent=(source<63 ? std::clamp(source,0.,127.)-63
+                : source>64 ? std::clamp(source,0.,127.)-64 : 0.)*100./63.;
+            const double rounded=std::round(percent);
+            return std::string(rounded>0 ? "+" : "")+editorDecimal(rounded==0 ? 0 : rounded,0,"%");
         }
         case 61:
         {

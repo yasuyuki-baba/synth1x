@@ -17,8 +17,11 @@ inline void initializeHostParameter(iplug::IParam& target,int index,const Parame
                        static_cast<int>(info.minimum),static_cast<int>(info.maximum));
     else
         target.InitDouble(label.c_str(),initial,info.minimum,info.maximum,0.001);
+    // MIDI and bend-range names are editor-only; retain numeric host metadata.
+    // Expanding packed sources to a consecutive host display table would
+    // allocate 65537 strings per source parameter.
     const auto choices=editor::editorChoices(index);
-    if (editor::editorToggle(index) || !choices.empty())
+    if (index!=40 && (index<86 || index>89) && (editor::editorToggle(index) || !choices.empty()))
     {
         // AUv2 reads display strings by consecutive source value. A sparse
         // display table (e.g. chorus 1/2/4) would mislabel or omit those values.

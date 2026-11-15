@@ -8,6 +8,7 @@ inline constexpr int displayScaleTag=1014;
 inline constexpr int delayTimingTag=1030;
 inline constexpr int bankTag = 1000, presetTag = 1001, statusTag = 1002, parameterTag = 2000;
 inline constexpr int panelTag = 3000;
+inline constexpr int midiPanelTag=3020;
 inline constexpr int keyboardTag=1010, keyboardToggleTag=1011;
 inline constexpr int libraryListTag=4000, librarySearchTag=4001, bankFilterTag=4002, tagFilterTag=4003;
 inline constexpr int libraryMatchesTag=4017, previousBankTag=4018, nextBankTag=4019;

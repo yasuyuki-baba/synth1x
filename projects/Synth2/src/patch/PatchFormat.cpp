@@ -41,6 +41,7 @@ template<> float number<float>(std::string_view text)
 }
 void validate(int index,float value)
 {
+    if(isDisabledMidiDestination(index,value))return;
     if(index<0 || index>=129 || index==126 || !std::isfinite(value)
         || value<(index==128 ? 0 : sourceMinimum(index))
         || value>(index==128 ? 1 : sourceMaximum(index)))

@@ -101,14 +101,14 @@ namespace synth2
         source.entries.clear();
         for (int i = 0; i < 126; ++i)
             if(directControls || !native || (nativeSourcePresence[i/64] & (uint64_t{1}<<(i%64)))!=0)
-                source.entries.push_back ({i, std::clamp (static_cast<int> (std::lround (raw[i] * 127.0f)), sourceMinimum(i), sourceMaximum(i))});
+                source.entries.push_back ({i, isDisabledMidiDestination(i,raw[i]*127.0f) ? -1 : std::clamp (static_cast<int> (std::lround (raw[i] * 127.0f)), sourceMinimum(i), sourceMaximum(i))});
         synth1::patch::NativePatchControls resolved;
         if(native)
         {
             resolved.sourceVersion=directControls ? 113 : sourceVersion;resolved.values=nativeInitialControls;
             for(int i=0;i<99;++i)
                 if(directControls || (nativeRuntimeEdits[i/64]&(uint64_t{1}<<(i%64)))!=0)
-                    resolved.values[i]=std::clamp(static_cast<int>(std::lround(raw[i]*127.0f)),sourceMinimum(i),sourceMaximum(i));
+                    resolved.values[i]=isDisabledMidiDestination(i,raw[i]*127.0f) ? -1 : std::clamp(static_cast<int>(std::lround(raw[i]*127.0f)),sourceMinimum(i),sourceMaximum(i));
         }
         auto patch=native ? decodeNativePatchControls(resolved,source,importWorkspace) : importSynth1Patch(source,importWorkspace);
         source.entries.swap(mappingEntries);

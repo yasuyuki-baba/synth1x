@@ -158,19 +158,31 @@ void Synth2::layoutEditor(IGraphics* graphics)
         graphics->AttachControl(timing,delayTimingTag+line);
     }
     refreshDelayTiming();
-    // Controller assignments remain available without
-    // displacing the ordinary sound-design controls from the main surface.
-    for (std::size_t group=5;group<synth2::editor::editorPages().size();++group)
+    for(std::size_t panelIndex=0;panelIndex<synth2::editor::editorMidiPanels().size();++panelIndex)
     {
-        const auto& supplement=synth2::editor::editorPages()[group];
-        for (std::size_t cell=0; cell<supplement.parameters.size(); ++cell)
+        const auto& section=synth2::editor::editorMidiPanels()[panelIndex];
+        graphics->AttachControl(new SectionControl(section),midiPanelTag+static_cast<int>(panelIndex));
+        for(std::size_t cell=0;cell<section.controls.size();++cell)
         {
-            const int index=supplement.parameters[cell];
-            const float x=24.f+static_cast<float>(cell%6)*205.f;
-            const float y=148.f+static_cast<float>(cell/6)*120.f;
-            auto* knob=new IVKnobControl(IRECT(x,y,x+194,y+112),index,processor.parameter(index).name.c_str(),style,true);
-            knob->SetTooltip(processor.parameter(index).id.c_str());
-            graphics->AttachControl(knob,parameterTag+index);
+            const auto& item=section.controls[cell];
+            const auto bounds=rect(synth2::editor::editorMidiControlBounds(section,cell));
+            IControl* control=nullptr;
+            if(synth2::editor::editorChoices(item.parameter).empty())
+                control=new PanelKnobControl(bounds,item.parameter,item.label,style);
+            else if(item.parameter!=87 && item.parameter!=89)
+                control=new SourceChoiceControl(bounds,item.parameter,item.label,[this,index=item.parameter] {
+                    const auto& range=processor.parameter(index);
+                    return range.minimum+processor.normalizedValue(index)*(range.maximum-range.minimum);
+                });
+            else
+                control=new SourceChoiceControl(bounds,item.parameter,item.label,[this,route=(item.parameter-87)/2] {
+                    return processor.midiDestination(route);
+                },[this,route=(item.parameter-87)/2](int destination) {
+                    if(processor.setMidiDestination(route,destination))notifyHostOfPatch();
+                });
+            if(item.parameter==40)
+                control->SetTooltip("Choose the ordinary pitch-bend range in semitones (0 to 24), independent of routing Pitch Bend to a destination.");
+            graphics->AttachControl(control,parameterTag+item.parameter);
         }
     }
     graphics->AttachControl(new ITextControl(IRECT(20,802,530,826),"",text.WithFGColor(muted).WithSize(Typography::auxiliary).WithAlign(EAlign::Near)),statusTag);
@@ -263,6 +275,8 @@ void Synth2::showPage(int next)
             for (const auto& item:synth2::editor::editorPanels()[i].controls)
                 if (auto* control=graphics->GetControlWithTag(parameterTag+item.parameter)) control->Hide(page!=0);
         }
+        for(std::size_t panelIndex=0;panelIndex<synth2::editor::editorMidiPanels().size();++panelIndex)
+            if(auto* control=graphics->GetControlWithTag(midiPanelTag+static_cast<int>(panelIndex)))control->Hide(page!=1);
         for (std::size_t group=5;group<pages.size();++group)
             for (int index:pages[group].parameters)
                 if (auto* control=graphics->GetControlWithTag(parameterTag+index)) control->Hide(page!=static_cast<int>(group)-4);

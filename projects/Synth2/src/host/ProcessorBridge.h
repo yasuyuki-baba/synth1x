@@ -33,6 +33,10 @@ public:
     const ParameterInfo& parameter(int index) const;
     double normalizedValue(int index) const;
     void setNormalizedValue(int index, double value);
+    // Named MIDI destination editing preserves the disabled -1 patch value
+    // without changing the historical 0..127 host parameter range.
+    double midiDestination(int route) const;
+    bool setMidiDestination(int route,int destination);
     void prepare(double sampleRate, int maximumFrames);
     void release();
     // Global audio quality, independent of patch source values. Applied at callback boundaries.

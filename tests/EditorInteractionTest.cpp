@@ -6,6 +6,8 @@
 #include "editor/EditorInteraction.h"
 #include "editor/EditorValueDisplay.h"
 #include "host/ProcessorBridge.h"
+#include "SynthEngine.h"
+#include "patch/PatchFormat.h"
 #include "editor/ParameterPresentation.h"
 #include <array>
 #include <utility>
@@ -17,11 +19,15 @@ namespace
 using synth2::host::ProcessorBridge;
 void submitSource(ProcessorBridge& processor,int parameter,double source)
 {
+    if(parameter==87 || parameter==89) {
+        ASSERT_TRUE(processor.setMidiDestination((parameter-87)/2,static_cast<int>(source)));return;
+    }
     const auto& range=processor.parameter(parameter);
     processor.setNormalizedValue(parameter,(source-range.minimum)/(range.maximum-range.minimum));
 }
 double sourceValue(ProcessorBridge& processor,int parameter)
 {
+    if(parameter==87 || parameter==89)return processor.midiDestination((parameter-87)/2);
     const auto& range=processor.parameter(parameter);
     return range.minimum+processor.normalizedValue(parameter)*(range.maximum-range.minimum);
 }
@@ -285,4 +291,110 @@ TEST(EditorResize, DirectAuViewResizeDoesNotBounceBackToTheUnchangedContainer)
     EXPECT_FALSE(editorObservedResize({0,0},parent,hostView,parent));
     const auto constrained=editorObservedResize({1200,800},parent,{1600,1050},{1600,1050});
     ASSERT_TRUE(constrained);EXPECT_EQ(constrained->width,1200);
+}
+
+TEST(EditorInteraction, MidiAssignmentsReachRenderingAndSurvivePatchAndProjectRecall)
+{
+    for(const int version : {100,113,200})
+    {
+        SCOPED_TRACE(version);
+        ProcessorBridge processor;
+        std::string error;
+        if(version!=200)ASSERT_TRUE(processor.loadPatch("Routing\nver="+std::to_string(version)+"\n86,45057\n87,19\n88,53248\n89,44\n50,127\n51,20\n",error))<<error;
+        else {const auto patch=processor.savePatch();ASSERT_TRUE(processor.loadPatch(patch,error))<<error;}
+        submitSource(processor,86,45057);
+        submitSource(processor,88,53248);
+        submitSource(processor,50,96.25);
+        ASSERT_TRUE(processor.setMidiDestination(0,19));
+        ASSERT_TRUE(processor.setMidiDestination(1,44));
+        processor.prepare(48000,64);
+        std::array<float,64> left{},right{};
+        ASSERT_TRUE(processor.process(left.data(),right.data(),64,120));
+        EXPECT_EQ(processor.engineForInspection().getRenderHistory().controllerRoutes[0].destination,19);
+        ASSERT_TRUE(processor.setMidiDestination(0,-1));
+        ASSERT_TRUE(processor.process(left.data(),right.data(),64,120));
+        const auto& routes=processor.engineForInspection().getRenderHistory().controllerRoutes;
+        EXPECT_EQ(routes[0].destination,-1);
+        EXPECT_EQ(routes[0].source,45057);
+        EXPECT_EQ(routes[1].destination,44);
+        EXPECT_EQ(routes[1].source,53248);
+        EXPECT_NEAR(sourceValue(processor,50),96.25,1e-4);
+        // Host automation keeps its historical range; None is preserved in sound state.
+        EXPECT_EQ(processor.parameter(87).minimum,0);
+        EXPECT_EQ(processor.parameter(87).maximum,127);
+        const auto state=processor.saveState();
+        ProcessorBridge project;
+        ASSERT_TRUE(project.tryRestoreState(state.data(),static_cast<int>(state.size())));
+        EXPECT_EQ(project.midiDestination(0),-1);
+        EXPECT_EQ(project.midiDestination(1),44);
+        const auto patch=processor.savePatch();
+        EXPECT_EQ(synth2::parseContinuousPatch(patch).values[87],-1);
+        ProcessorBridge file;
+        ASSERT_TRUE(file.loadPatch(patch,error))<<error;
+        EXPECT_EQ(file.midiDestination(0),-1);
+        EXPECT_EQ(file.midiDestination(1),44);
+        file.prepare(48000,64);
+        ASSERT_TRUE(file.process(left.data(),right.data(),64,120));
+        EXPECT_EQ(file.engineForInspection().getRenderHistory().controllerRoutes[0].destination,-1);
+        ASSERT_TRUE(file.setMidiDestination(0,19));
+        ASSERT_TRUE(file.process(left.data(),right.data(),64,120));
+        EXPECT_EQ(file.engineForInspection().getRenderHistory().controllerRoutes[0].destination,19);
+        const auto before=file.saveState();
+        EXPECT_FALSE(file.setMidiDestination(0,0));
+        EXPECT_FALSE(file.setMidiDestination(0,-2));
+        EXPECT_FALSE(file.setMidiDestination(2,19));
+        EXPECT_EQ(file.saveState(),before);
+    }
+}
+
+TEST(EditorInteraction, ImportedDisabledDestinationHasANameAndExportsWithoutBecomingZero)
+{
+    ProcessorBridge processor;
+    std::string error;
+    ASSERT_TRUE(processor.loadPatch("Disabled\nver=113\n86,45057\n87,-1\n88,57344\n89,-1\n",error))<<error;
+    const auto before=processor.saveState();
+    for(int route=0;route<2;++route)
+    {
+        EXPECT_EQ(processor.midiDestination(route),-1);
+        EXPECT_EQ(editorChoiceDisplay(false,processor.midiDestination(route),editorChoices(87+route*2)),"None");
+    }
+    EXPECT_EQ(processor.saveState(),before); // Displaying the editor does not edit the patch.
+    const auto exported=synth2::parseContinuousPatch(processor.savePatch());
+    EXPECT_EQ(exported.values[87],-1);
+    EXPECT_EQ(exported.values[89],-1);
+}
+
+TEST(EditorInteraction, MidiSensitivityShowsSignedDepthAndKeepsItsNeutralBandAndFractionalEdits)
+{
+    for(const int index : {50,51})
+    {
+        EXPECT_EQ(editorValueDisplay(index,0),"-100%");
+        EXPECT_EQ(editorValueDisplay(index,20),"-68%");
+        EXPECT_EQ(editorValueDisplay(index,63),"0%");
+        EXPECT_EQ(editorValueDisplay(index,63.5),"0%");
+        EXPECT_EQ(editorValueDisplay(index,64),"0%");
+        EXPECT_EQ(editorValueDisplay(index,74),"+16%");
+        EXPECT_EQ(editorValueDisplay(index,127),"+100%");
+        EXPECT_EQ(editorValueDisplay(index,64.5),"+1%");
+    }
+}
+
+TEST(EditorInteraction, BendRangeMenuKeepsHostRangeAndRecalledOutOfMenuValues)
+{
+    const auto choices=editorChoices(40);
+    ASSERT_EQ(choices.size(),25u);
+    EXPECT_EQ(choices.front().value,0);
+    EXPECT_EQ(choices.back().value,24);
+    ProcessorBridge processor;
+    EXPECT_EQ(processor.parameter(40).minimum,0);
+    EXPECT_EQ(processor.parameter(40).maximum,127);
+    submitSource(processor,40,30);
+    const auto state=processor.saveState();
+    ProcessorBridge restored;
+    ASSERT_TRUE(restored.tryRestoreState(state.data(),static_cast<int>(state.size())));
+    EXPECT_NEAR(sourceValue(restored,40),30,1e-4);
+    EXPECT_EQ(editorChoiceDisplay(false,sourceValue(restored,40),choices),"Custom");
+    EXPECT_EQ(restored.saveState(),state);
+    submitSource(restored,40,12);
+    EXPECT_EQ(editorChoiceDisplay(false,sourceValue(restored,40),choices),"12 st");
 }

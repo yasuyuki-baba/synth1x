@@ -6,8 +6,31 @@ and Amplifier share the center column; Voice/Unison and ARP share the right.
 Effects and EQ/Pan occupy the bottom. Allocate panel space by control density
 rather than forcing every column into identical row heights. Ordinary knobs
 retain similar readable sizes; Cutoff remains the dominant larger control.
-MIDI routing uses a supplementary view. Serialized metadata and reserved fields stay outside the
-editor; their host IDs, patch values and state serialization remain supported.
+
+MIDI uses one compact panel with ordinary Pitch Bend range on the left and two
+aligned controller assignment rows on the right, separated by thin dividers.
+Keep selector widths close to their content rather than stretching every row
+across the editor. Bend range offers the supported 0–24 semitones; imported values
+outside this menu remain Custom without rewriting saved words or narrowing the
+historical 0–127 host range. Pitch Bend range is independent of selecting
+Pitch Bend as a routing input, and remains part of the sound. Each assignment row
+contains a named Input selector, continuous Sensitivity knob and named Destination
+selector. Inputs are CC1–CC11, channel aftertouch and pitch bend, stored as their
+original MIDI source words. Destinations are grouped by synthesis/effect section
+to keep menus within the editor; None stays at the root. Destinations retain
+their source parameter IDs; None stores -1. Sensitivity displays signed -100% to +100%, with source dials
+63–64 neutral; numeric entry still edits the original 0–127 source dial. These
+assignments belong to the sound, rather than a global MIDI Learn map.
+The historical host destination range remains 0–127; named editor edits and sound
+state preserve the disabled -1 sentinel independently of the host projection.
+Displaying imported assignments or synchronizing host values must not edit them.
+
+![MIDI editor: bend range and two controller assignments](../images/midi-routing.png)
+
+The image is a native Linux CLAP editor capture at 100% scale.
+
+Serialized metadata and reserved fields stay outside the editor; their host IDs,
+patch values and state serialization remain supported.
 There is no Advanced tab. Preset browsing and master
 volume remain visible. The supplementary [Library view](patch-library.md) accumulates
 imported sounds and combines bank, tag, keyword and favorite filters.

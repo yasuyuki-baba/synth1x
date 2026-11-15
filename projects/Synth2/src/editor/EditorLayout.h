@@ -6,7 +6,7 @@
 
 namespace synth2::editor
 {
-struct EditorChoice { int value; const char* label; };
+struct EditorChoice { int value; const char* label; const char* group=nullptr; };
 struct EditorBounds { int x,y,width,height; };
 struct EditorControl { int parameter; const char* label; };
 struct EditorPanel
@@ -48,6 +48,11 @@ inline std::vector<EditorChoice> editorChoices(int index)
                          {13,"1/2 triplet"},{14,"1/4 dotted"},{15,"1/4+1/8+1/16"},{16,"1/2"},
                          {17,"1/2 dotted"},{18,"1/2+1/4+1/8"},{19,"1/1"}};
         case 38: return {{0,"Poly"},{1,"Mono"},{2,"Legato"}};
+        case 40: return {{0,"0 st"},{1,"1 st"},{2,"2 st"},{3,"3 st"},{4,"4 st"},
+            {5,"5 st"},{6,"6 st"},{7,"7 st"},{8,"8 st"},{9,"9 st"},{10,"10 st"},
+            {11,"11 st"},{12,"12 st"},{13,"13 st"},{14,"14 st"},{15,"15 st"},
+            {16,"16 st"},{17,"17 st"},{18,"18 st"},{19,"19 st"},{20,"20 st"},
+            {21,"21 st"},{22,"22 st"},{23,"23 st"},{24,"24 st"}};
         case 41: case 46: return {{1,"OSC2"},{2,"OSC1 + 2"},{3,"Filter"},{4,"Amp"},{5,"Width"},{6,"FM"},{7,"Pan"}};
         case 42: case 47: return {{0,"Saw"},{1,"Triangle"},{2,"Square"},{3,"Random S&H"},{4,"Random smooth"},{5,"Sine"}};
         case 64: return {{1,"1x"},{2,"2x"},{4,"4x"}};
@@ -55,6 +60,25 @@ inline std::vector<EditorChoice> editorChoices(int index)
         case 78: return {{0,"Overdrive 1"},{1,"Overdrive 2"},{2,"Decimator drive"},{3,"Decimator"},{4,"Ring mod"},
                          {5,"Compressor"},{6,"Phaser 1"},{7,"Phaser 2"},{8,"Phaser 3"},{9,"Phaser 4"}};
         case 82: return {{0,"Stereo"},{1,"Cross"},{2,"Ping-pong"}};
+        case 86: case 88: return {
+            {45057,"CC1 - Mod Wheel"},{45058,"CC2 - Breath"},{45059,"CC3"},
+            {45060,"CC4 - Foot Controller"},{45061,"CC5 - Portamento Time"},
+            {45062,"CC6 - Data Entry"},{45063,"CC7 - Volume"},{45064,"CC8 - Balance"},
+            {45065,"CC9"},{45066,"CC10 - Pan"},{45067,"CC11 - Expression"},
+            {53248,"Channel Aftertouch"},{57344,"Pitch Bend"}};
+        case 87: case 89: return {
+            {-1,"None"},{76,"OSC1 Detune","Oscillators"},{45,"OSC1 FM","Oscillators"},{95,"Sub Level","Oscillators"},{2,"OSC2 Pitch","Oscillators"},
+            {12,"Mod Env Attack","Oscillators"},{13,"Mod Env Decay","Oscillators"},{11,"Mod Env Amount","Oscillators"},{5,"Oscillator Mix","Oscillators"},
+            {8,"Pulse Width","Oscillators"},{91,"Oscillator Phase","Oscillators"},{15,"Filter Attack","Filter"},{16,"Filter Decay","Filter"},
+            {17,"Filter Sustain","Filter"},{18,"Filter Release","Filter"},{19,"Filter Cutoff","Filter"},{20,"Filter Resonance","Filter"},
+            {21,"Filter Env Depth","Filter"},{23,"Filter Drive","Filter"},{22,"Filter Key Track","Filter"},
+            {25,"Amp Attack","Amplifier"},{26,"Amp Decay","Amplifier"},{27,"Amp Sustain","Amplifier"},{28,"Amp Release","Amplifier"},{29,"Amp Level","Amplifier"},
+            {79,"Effect Control 1","Effect"},{80,"Effect Control 2","Effect"},{81,"Effect Output","Effect"},
+            {61,"EQ Frequency","EQ / Pan"},{62,"EQ Level","EQ / Pan"},{63,"EQ Q","EQ / Pan"},{60,"EQ Tone","EQ / Pan"},{90,"Pan","EQ / Pan"},
+            {35,"Delay Time","Delay"},{83,"Delay Spread","Delay"},{36,"Delay Feedback","Delay"},{98,"Delay Tone","Delay"},{37,"Delay Mix","Delay"},
+            {52,"Chorus Time","Chorus"},{53,"Chorus Depth","Chorus"},{54,"Chorus Rate","Chorus"},{55,"Chorus Feedback","Chorus"},{56,"Chorus Level","Chorus"},
+            {39,"Glide Time","Voice"},{75,"Unison Detune","Voice"},{92,"Unison Phase","Voice"},{84,"Unison Spread","Voice"},{85,"Unison Pitch","Voice"},
+            {34,"Arp Gate","Arpeggiator"},{43,"LFO1 Rate","LFO"},{44,"LFO1 Amount","LFO"},{48,"LFO2 Rate","LFO"},{49,"LFO2 Amount","LFO"}};
         case 96: return {{0,"Sine"},{1,"Triangle"},{2,"Saw"},{3,"Pulse"}};
         case 97: return {{0,"Same"},{1,"-1 oct"}};
         default: return {};
@@ -79,7 +103,7 @@ inline const std::vector<EditorPanel>& editorPanels()
         {"LFO 2","Independent modulation","#d9aaa2",{300,444,268,160},3,
             {{58,"Enabled"},{47,"Wave"},{46,"To"},{48,"Rate"},{49,"Amount"},{69,"Tempo"},{70,"Key sync"}}},
         {"VOICE","Play mode, glide & Unison","#d9aaa2",{948,124,312,272},4,
-            {{38,"Mode"},{39,"Glide"},{74,"Auto glide"},{40,"Bend range"},{94,"Polyphony"},
+            {{38,"Mode"},{39,"Glide"},{74,"Auto glide"},{94,"Polyphony"},
              {73,"Unison"},{93,"Voices"},{75,"Detune"},{84,"Spread"},{85,"Pitch"},{92,"Phase"}}},
         {"ARPEGGIATOR","Tempo-based note motion","#d9aaa2",{948,404,312,200},3,
             {{59,"Enabled"},{31,"Pattern"},{32,"Range"},{33,"Rate"},{34,"Gate"}}},
@@ -121,13 +145,14 @@ inline EditorBounds editorControlBounds(const EditorPanel& panel,std::size_t cel
         // Longer play-setting labels need more width than the Unison labels.
         const int playWidth=(inner+24)/2;
         if(cell==0)return {x,y,playWidth,height};
-        if(cell<5)
+        if(cell==3)return {x,y+2*height,playWidth,height};
+        if(cell<3)
         {
             const int width=playWidth/2,column=static_cast<int>(cell-1)%2;
             return {x+column*width,y+(1+static_cast<int>(cell-1)/2)*height,width,height};
         }
-        const int width=(inner-playWidth)/2,column=static_cast<int>(cell-5)%2;
-        return {x+playWidth+column*width,y+static_cast<int>(cell-5)/2*height,width,height};
+        const int width=(inner-playWidth)/2,column=static_cast<int>(cell-4)%2;
+        return {x+playWidth+column*width,y+static_cast<int>(cell-4)/2*height,width,height};
     }
     if (std::string(panel.title)=="ARPEGGIATOR")
     {
@@ -201,7 +226,29 @@ inline std::vector<EditorBounds> editorPanelDividers(const EditorPanel& panel)
         return {{x+8+(panel.bounds.width+8)/2,y+38,1,panel.bounds.height-46}};
     if(std::string(panel.title)=="AMPLIFIER")
         return {{x+12,y+38+(panel.bounds.height-44)/2-6,panel.bounds.width-24,1}};
+    if(std::string(panel.title)=="MIDI")
+        return {{x+160,y+38,1,panel.bounds.height-50},
+                {x+184,y+116,panel.bounds.width-200,1}};
     return {};
+}
+inline const std::vector<EditorPanel>& editorMidiPanels()
+{
+    static const std::vector<EditorPanel> panels {
+        {"MIDI","Pitch bend and two controller assignments saved with each sound","#d9aaa2",{20,124,1000,216},3,
+            {{40,"Bend range"},{86,"Input 1"},{50,"Sensitivity"},{87,"Destination"},
+             {88,"Input 2"},{51,"Sensitivity"},{89,"Destination"}}}
+    };
+    return panels;
+}
+inline EditorBounds editorMidiControlBounds(const EditorPanel& panel,std::size_t cell)
+{
+    const int x=panel.bounds.x,y=panel.bounds.y;
+    if(cell==0)return {x+12,y+78,128,72};
+    const int row=static_cast<int>(cell-1)/3,column=static_cast<int>(cell-1)%3;
+    const int top=y+38+row*84;
+    if(column==0)return {x+210,top,280,72};
+    if(column==1)return {x+506,top,96,72};
+    return {x+618,top,366,72};
 }
 inline constexpr EditorBounds editorDelayTimingBounds {766,722,77,51};
 // Persistent controls stay outside the Synth/MIDI/Library view groups.
