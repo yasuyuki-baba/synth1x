@@ -33,7 +33,8 @@ The image is a native Linux CLAP editor capture at 100% scale.
 Serialized metadata and reserved fields stay outside the editor; their host IDs,
 patch values and state serialization remain supported.
 There is no Advanced tab. Preset browsing and master
-volume remain visible. The supplementary [Library view](patch-library.md) accumulates
+volume remain visible. The header also offers persistent [A/B sound comparison](patch-comparison.md)
+for patch audition and sound editing. The supplementary [Library view](patch-library.md) accumulates
 imported sounds and combines bank, tag, keyword and favorite filters.
 Use the Library tab for explicit view switching rather than a duplicate Library
 action button. Clicking the current patch name also opens the Library view.

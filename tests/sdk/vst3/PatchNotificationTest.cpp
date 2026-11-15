@@ -249,6 +249,32 @@ struct Synth2Vst3PatchTest
             plugin.syncQualityLatency();plugin.syncQualityLatency();
             require(host.latencyChanges==notifications+(previous!=next),"Unchanged latency requested another restart");
         }
+        // A/B uses the same framework publication path as a loaded patch.
+        require(plugin.processor.loadProgram(patch(100),0,error),"A reference load failed");
+        plugin.currentPatch="Reference";plugin.selectedPatchId="reference";
+        plugin.browser.capture(plugin.processor);plugin.browser.patchName=plugin.currentPatch;plugin.browser.selectedId=plugin.selectedPatchId;
+        plugin.comparison.reset(plugin.processor,plugin.browser);
+        plugin.libraryFilter.query="shared query";
+        require(plugin.selectComparison(1),"Select B failed");
+        require(plugin.processor.loadProgram(patch(0),1,error),"B candidate load failed");
+        plugin.currentPatch="Candidate";plugin.selectedPatchId="candidate";plugin.browser.capture(plugin.processor);
+        plugin.notifyHostOfPatch();
+        require(energy(plugin)==0,"B was not silent");
+        require(plugin.selectComparison(0),"Select A failed");
+        require(plugin.currentPatch=="Reference" && plugin.libraryFilter.query=="shared query","A/B changed identity or shared filters");
+        require(energy(plugin)>1e-8,"A/B did not restore audible A");
+        require(plugin.selectComparison(1),"Return to B failed");
+        require(energy(plugin)==0,"A/B did not restore silent B");
+        require(host.mismatches==0,"A/B published stale VST3 controller values");
+        require(plugin.copyComparison(0),"Copy A to B failed");
+        require(plugin.comparison.activeSlot()==1 && energy(plugin)>1e-8,"Copy from A did not replace active B");
+        iplug::IByteChunk comparisonState;
+        require(plugin.SerializeState(comparisonState),"A/B serialization failed");
+        require(plugin.selectComparison(0),"Select A before recall failed");
+        require(plugin.UnserializeState(comparisonState,0)==comparisonState.Size(),"A/B project recall failed");
+        require(plugin.comparison.activeSlot()==1 && plugin.currentPatch=="Reference","A/B recall lost selection or identity");
+        require(host.mismatches==0,"A/B copy published stale VST3 values");
+        std::cout<<"A/B: audible/silent switching, copy, host readback and project recall passed\n";
         checkEditorMidi(patch(100));
         plugin.setActive(false);
         plugin.setComponentHandler(nullptr);plugin.terminate();

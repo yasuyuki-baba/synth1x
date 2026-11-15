@@ -73,7 +73,10 @@ struct PresetBrowserState
     std::string serialize() const;
     static bool deserialize(const std::string &, PresetBrowserState &);
 };
-std::vector<uint8_t> savePresetSession(const ProcessorBridge &, const PresetBrowserState &);
-// Accepts legacy wrapper v1; rejects the entire transaction on malformed input.
-int restorePresetSession(const void *, int size, ProcessorBridge &, PresetBrowserState &);
+class PatchComparison;
+std::vector<uint8_t> savePresetSession(const ProcessorBridge &, const PresetBrowserState &,
+                                       const PatchComparison* comparison=nullptr);
+// Accepts wrapper v1/v2 and A/B v3; validates both slots before applying either.
+int restorePresetSession(const void *, int size, ProcessorBridge &, PresetBrowserState &,
+                         PatchComparison* comparison=nullptr);
 } // namespace synth2::host

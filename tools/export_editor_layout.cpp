@@ -23,6 +23,10 @@ int main()
     for(const auto& [name,b]:std::initializer_list<std::pair<const char*,synth2::editor::EditorBounds>>{
         {"displayScale",synth2::editor::editorDisplayScaleBounds},
         {"librarySummary",synth2::editor::editorLibrarySummaryBounds},
+        {"comparisonA",synth2::editor::editorComparisonABounds},
+        {"comparisonB",synth2::editor::editorComparisonBBounds},
+        {"copyAToB",synth2::editor::editorCopyAToBBounds},
+        {"copyBToA",synth2::editor::editorCopyBToABounds},
         {"version",synth2::editor::editorVersionBounds},
         {"oversampling",synth2::editor::editorOversamplingBounds},
         {"keyboardToggle",synth2::editor::editorKeyboardToggleBounds}})

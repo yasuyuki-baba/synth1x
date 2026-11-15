@@ -112,7 +112,9 @@ Legacy loading resolves compatible integer parameters, including defaults and
 source-version conversion, before exact promotion to floating-point dials.
 Subsequent fractional edits must not undergo legacy conversion again.
 
-The native wrapper's v2 envelope adds instance browser state and a load/save edit
-baseline around the existing processor state. It accepts wrapper v1. Both payloads
-are validated before committing a recall; library paths are never needed to restore
-the sounding processor. See [library/session behavior](../gui/patch-library.md).
+The native wrapper's v3 envelope retains both A/B sounds and their edit baselines
+plus the shared browser state and selected side. It accepts wrapper v1/v2 and
+initializes both sides from a legacy single-sound recall. Both sound payloads and
+metadata validate before committing a recall; library paths are never needed.
+See [A/B comparison](../gui/patch-comparison.md) and
+[library/session behavior](../gui/patch-library.md).

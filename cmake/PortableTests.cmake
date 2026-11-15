@@ -42,6 +42,7 @@ add_executable(Synth2PatchTests
     tests/ProcessorStateTest.cpp
     tests/HostLifecycleTest.cpp
     tests/PatchCatalogTest.cpp
+    tests/PatchComparisonTest.cpp
     tests/PresetFilesTest.cpp
     tests/PatchLibraryTest.cpp
     tests/ArchiveBankTest.cpp

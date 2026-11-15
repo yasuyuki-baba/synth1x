@@ -16,7 +16,7 @@ Synth2::Synth2(const InstanceInfo& info)
         synth2::host::initializeHostParameter(*GetParam(index),index,processor.parameter(index));
     }
     GetParam(qualityParameter)->InitEnum("Oversampling",0,{"1x","2x","4x","8x","16x"},IParam::kFlagCannotAutomate,"Quality");
-    syncParametersFromProcessor();browser.capture(processor);
+    syncParametersFromProcessor();browser.capture(processor);comparison.reset(processor,browser);
 #if defined(APP_API)
     const auto session=synth2::host::PresetFiles::loadStandaloneState();
     if(!session.empty()){IByteChunk chunk;chunk.PutBytes(session.data(),session.size());UnserializeState(chunk,0);}
@@ -113,17 +113,17 @@ Synth2::~Synth2()
 {
     if(importPrompt){{std::lock_guard lock(importPrompt->mutex);importPrompt->alive=false;}importPrompt->changed.notify_all();}
 #if defined(APP_API)
-    try {std::string error;synth2::host::PresetFiles::saveStandaloneState(synth2::host::savePresetSession(processor,captureBrowser()),error);}catch(const std::exception&){}
+    try {std::string error;synth2::host::PresetFiles::saveStandaloneState(synth2::host::savePresetSession(processor,captureBrowser(),&comparison),error);}catch(const std::exception&){}
 #endif
 }
 bool Synth2::SerializeState(IByteChunk& chunk) const
 {
-    const auto bytes=synth2::host::savePresetSession(processor,captureBrowser());chunk.PutBytes(bytes.data(),bytes.size());return true;
+    const auto bytes=synth2::host::savePresetSession(processor,captureBrowser(),&comparison);chunk.PutBytes(bytes.data(),bytes.size());return true;
 }
 int Synth2::UnserializeState(const IByteChunk& chunk,int start)
 {
     if(start<0 || start>chunk.Size())return -1;
-    const int n=synth2::host::restorePresetSession(chunk.GetData()+start,chunk.Size()-start,processor,browser);
+    const int n=synth2::host::restorePresetSession(chunk.GetData()+start,chunk.Size()-start,processor,browser,&comparison);
     if(n<0)return -1;
     browserGeneration.fetch_add(1);restoreBrowser();syncParametersFromProcessor();syncQualityLatency();stateRestored.store(true);return start+n;
 }
@@ -135,4 +135,23 @@ void Synth2::notifyHostOfPatch()
     // notifications, without replaying setters into the loaded processor.
     DirtyParametersFromUI();
     SendCurrentParamValuesFromDelegate();
+}
+
+bool Synth2::selectComparison(int slot)
+{
+    if(libraryJob.valid() || slot==comparison.activeSlot())return false;
+    browser.selectedId=selectedPatchId;browser.patchName=currentPatch;
+    if(!comparison.select(slot,processor,browser))return false;
+    selectedPatchId=browser.selectedId;currentPatch=browser.patchName;
+    keyboardPatchId.clear();browserStatus.clear();browserGeneration.fetch_add(1);
+    notifyHostOfPatch();return true;
+}
+bool Synth2::copyComparison(int source)
+{
+    if(libraryJob.valid())return false;
+    browser.selectedId=selectedPatchId;browser.patchName=currentPatch;
+    if(!comparison.copyFrom(source,processor,browser))return false;
+    selectedPatchId=browser.selectedId;currentPatch=browser.patchName;
+    keyboardPatchId.clear();browserStatus.clear();browserGeneration.fetch_add(1);
+    notifyHostOfPatch();return true;
 }

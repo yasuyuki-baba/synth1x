@@ -49,6 +49,7 @@ ISOLATED_HEADERS = {
     'editor/EditorValueDisplay.h': EDITOR_FORBIDDEN,
     'editor/ParameterPresentation.h': EDITOR_FORBIDDEN,
     'host/ParameterInfo.h': STATE_FORBIDDEN,
+    'host/PatchComparison.h': ('/SynthEngine.h', '/SynthVoice.h', '/RenderControls.h', '/iPlug2/'),
     'host/ProcessorState.h': STATE_FORBIDDEN,
     'serialization/FiniteNumber.h': STATE_FORBIDDEN,
     'midi/ArpeggiatorSettings.h': ('/RenderControls.h', '/Arpeggiator.h', '/SynthEngine.h', '/SynthVoice.h', '/patch/'),

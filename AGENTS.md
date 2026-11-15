@@ -62,6 +62,11 @@
   audition. Keep mouse hit testing, drag/velocity behavior and MIDI queueing in
   the framework; do not add source-specific note ownership to ProcessorBridge.
   The PC key map may retain editor focus, text-entry and library shortcut rules.
+- Keep A/B comparison instance-owned: each side retains its sound/loading context,
+  identity and edit baseline; browser filters and oversampling remain shared.
+  Loading/editing affects only the selected side. Persist both sounds in sessions,
+  validate both before recall and publish switches/copies through framework APIs.
+  See [A/B comparison](docs/gui/patch-comparison.md).
 - Imported sounds accumulate in a user library. Keep tags/favorites separate
   from original `.sy1` files and DAW sound state; combine bank, tag and keyword
   filters without loading a sound. Infer tags on the catalog worker from names and

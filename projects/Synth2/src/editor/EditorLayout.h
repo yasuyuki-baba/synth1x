@@ -240,9 +240,13 @@ inline EditorBounds editorMidiControlBounds(const EditorPanel& panel,std::size_t
     return {x+618,top,366,72};
 }
 inline constexpr EditorBounds editorDelayTimingBounds {766,722,77,51};
+inline constexpr EditorBounds editorComparisonABounds {240,16,310,62};
+inline constexpr EditorBounds editorComparisonBBounds {558,16,310,62};
+inline constexpr EditorBounds editorCopyAToBBounds {510,82,96,30};
+inline constexpr EditorBounds editorCopyBToABounds {614,82,96,30};
 // Persistent controls stay outside the Synth/MIDI/Library view groups.
 inline constexpr EditorBounds editorDisplayScaleBounds {20,82,144,28};
-inline constexpr EditorBounds editorLibrarySummaryBounds {250,82,484,30};
+inline constexpr EditorBounds editorLibrarySummaryBounds {250,82,252,30};
 inline constexpr EditorBounds editorVersionBounds {700,802,224,28};
 inline constexpr EditorBounds editorOversamplingBounds {940,802,148,28};
 inline constexpr EditorBounds editorKeyboardToggleBounds {1100,802,160,28};
