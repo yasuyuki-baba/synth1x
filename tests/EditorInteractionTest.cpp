@@ -2,6 +2,8 @@
 #include "editor/EditorDisplayScale.h"
 #include "editor/EditorLibraryScroll.h"
 #include "editor/EditorLibraryNavigation.h"
+#include "editor/EditorLibraryInteraction.h"
+#include "editor/EditorLibraryFilters.h"
 #include <gtest/gtest.h>
 #include "editor/EditorInteraction.h"
 #include "editor/EditorValueDisplay.h"
@@ -397,4 +399,111 @@ TEST(EditorInteraction, BendRangeMenuKeepsHostRangeAndRecalledOutOfMenuValues)
     EXPECT_EQ(restored.saveState(),state);
     submitSource(restored,40,12);
     EXPECT_EQ(editorChoiceDisplay(false,sourceValue(restored,40),choices),"12 st");
+}
+
+TEST(EditorLibraryInteraction, VisibleTextTargetsSeparateFilteringFromSoundLoading)
+{
+    using A=LibraryRowAction;using C=EditorLibraryColumns;
+    const auto tags=editorLibraryTags({"Warm","Velvet"},{"Mono"},1240,[](std::string_view text) {
+        return static_cast<float>(text.size()*6);
+    });
+    ASSERT_EQ(tags.size(),3u);
+    EXPECT_FALSE(tags[0].automatic);EXPECT_TRUE(tags[2].automatic);
+    EXPECT_EQ(editorLibraryTarget(16,1240,tags).action,A::favorite);
+    EXPECT_EQ(editorLibraryTarget(C::nameLeft+5,1240,tags).action,A::load);
+    EXPECT_EQ(editorLibraryTarget(C::nameRight+1,1240,tags).action,A::none);
+    EXPECT_EQ(editorLibraryTarget(C::bankLeft+1,1240,tags).action,A::bank);
+    EXPECT_EQ(editorLibraryTarget(C::bankRight-1,1240,tags).action,A::bank);
+    EXPECT_EQ(editorLibraryTarget(C::bankRight+1,1240,tags).action,A::none);
+    for(const auto& tag:tags)
+    {
+        const auto hit=editorLibraryTarget(tag.left+tag.width/2,1240,tags);
+        EXPECT_EQ(hit.action,A::tag);EXPECT_EQ(hit.tag,tag.text);
+        EXPECT_EQ(editorLibraryTarget(tag.left+tag.width+1,1240,tags).action,A::none);
+    }
+    EXPECT_EQ(editorLibraryTarget(1200,1240,tags).action,A::none);
+    EXPECT_EQ(editorLibraryTarget(1230,1240,tags).action,A::none);
+    EXPECT_EQ(editorLibraryTarget(-1,1240,tags).action,A::none);
+}
+
+TEST(EditorLibraryInteraction, OverflowAndUtf8TagLabelsDoNotCreateHiddenClickTargets)
+{
+    using A=LibraryRowAction;
+    const auto tags=editorLibraryTags({"柔らかい","Long label"},{"Hidden"},800,[](std::string_view text) {
+        return text=="柔らかい" ? 40.f : text=="..." ? 18.f : 90.f;
+    });
+    ASSERT_EQ(tags.size(),2u);
+    EXPECT_EQ(tags[0].text,"柔らかい");EXPECT_FALSE(tags[0].overflow);
+    EXPECT_TRUE(tags[1].overflow);
+    EXPECT_EQ(editorLibraryTarget(tags[0].left+1,800,tags).tag,"柔らかい");
+    EXPECT_EQ(editorLibraryTarget(tags[1].left+1,800,tags).action,A::none);
+    EXPECT_TRUE(editorLibraryTags({"Hidden"},{},700,[](std::string_view){return 40.f;}).empty());
+}
+
+TEST(EditorLibraryInteraction, FractionalScrollUsesTheRenderedRowAndRejectsClippedSpace)
+{
+    EXPECT_EQ(editorLibraryRow(0,510,.5,30,30),0u);
+    EXPECT_EQ(editorLibraryRow(14,510,.5,30,30),0u);
+    EXPECT_EQ(editorLibraryRow(15,510,.5,30,30),1u);
+    EXPECT_EQ(editorLibraryRow(509,510,.5,30,30),17u);
+    EXPECT_FALSE(editorLibraryRow(-1,510,.5,30,30));
+    EXPECT_FALSE(editorLibraryRow(510,510,.5,30,30));
+    EXPECT_FALSE(editorLibraryRow(0,510,0,0,30));
+    EXPECT_FALSE(editorLibraryRow(60,510,0,2,30));
+    EXPECT_EQ(editorLibraryRow(0,510,1.75,2,30),1u);
+    EXPECT_FALSE(editorLibraryRow(8,510,1.75,2,30));
+}
+
+TEST(EditorLibraryInteraction, TagMenuAndInlineLinksShareCaseInsensitiveTogglingAndLimits)
+{
+    std::vector<std::string> tags{"Pad","柔らかい"};
+    EXPECT_TRUE(editorToggleLibraryTag(tags,"pAD"));
+    EXPECT_EQ(tags,(std::vector<std::string>{"柔らかい"}));
+    EXPECT_TRUE(editorToggleLibraryTag(tags,"Mono"));
+    EXPECT_EQ(tags,(std::vector<std::string>{"柔らかい","Mono"}));
+    EXPECT_FALSE(editorToggleLibraryTag(tags,""));
+    tags.clear();for(int i=0;i<32;++i)tags.push_back("Tag "+std::to_string(i));
+    const auto full=tags;
+    EXPECT_FALSE(editorToggleLibraryTag(tags,"More"));EXPECT_EQ(tags,full);
+    EXPECT_TRUE(editorToggleLibraryTag(tags,"TAG 31"));
+    EXPECT_TRUE(editorToggleLibraryTag(tags,"More"));EXPECT_EQ(tags.size(),32u);
+}
+
+TEST(EditorLibraryFilters, OverflowRetainsEveryHiddenFilterAndGapsHaveNoAction)
+{
+    using K=LibraryFilterKind;
+    std::vector<EditorLibraryFilter> filters{{K::bank,"exact/bank/id","Bank: A very long bank path"},
+        {K::query,"pad","Search: pad"},{K::favorites,{},"Favorites"},{K::tag,"柔らかい","Tag: 柔らかい"}};
+    const auto measure=[](const auto& text){return static_cast<float>(text.size()*8);};
+    const auto chips=editorLibraryFilterChips(filters,440,measure);
+    ASSERT_EQ(chips.size(),2u);
+    EXPECT_EQ(chips.front().index,0u);EXPECT_EQ(chips.front().remaining,0u);
+    EXPECT_EQ(chips.front().width,240.f);
+    EXPECT_EQ(chips.back().index,1u);EXPECT_EQ(chips.back().remaining,3u);
+    EXPECT_LE(chips.back().left+chips.back().width,440.f);
+    EXPECT_EQ(editorLibraryFilterChipAt(1,chips),&chips[0]);
+    EXPECT_FALSE(editorLibraryFilterChipAt(242,chips));
+    EXPECT_EQ(editorLibraryFilterChipAt(chips.back().left+1,chips),&chips.back());
+    EXPECT_FALSE(editorLibraryFilterChipAt(439,chips));
+    EXPECT_FALSE(editorLibraryFilterChipAt(-1,chips));
+    EXPECT_EQ(filters[chips.back().index].value,"pad");
+    EXPECT_EQ(filters.back().value,"柔らかい");
+}
+
+TEST(EditorLibraryFilters, FullWidthShowsAllFiltersAndNarrowWidthsStillExposeOverflow)
+{
+    using K=LibraryFilterKind;
+    std::vector<EditorLibraryFilter> filters;
+    for(int i=0;i<32;++i)filters.push_back({K::tag,"Tag "+std::to_string(i),"Tag "+std::to_string(i)});
+    const auto measure=[](const auto& text){return static_cast<float>(text.size()*7);};
+    const auto all=editorLibraryFilterChips(filters,3000,measure);
+    ASSERT_EQ(all.size(),32u);EXPECT_EQ(all.back().remaining,0u);EXPECT_EQ(all.back().index,31u);
+    const auto narrow=editorLibraryFilterChips(filters,40,measure);
+    ASSERT_EQ(narrow.size(),1u);EXPECT_EQ(narrow.front().index,0u);
+    EXPECT_EQ(narrow.front().remaining,32u);EXPECT_EQ(narrow.front().width,40.f);
+    EXPECT_TRUE(editorLibraryFilterChips(filters,0,measure).empty());
+    EXPECT_TRUE(editorLibraryFilterChips({},400,measure).empty());
+    const std::vector<EditorLibraryFilter> shortLabels{{K::tag,"a","a"},{K::tag,"b","b"}};
+    const auto exact=editorLibraryFilterChips(shortLabels,80,measure);
+    ASSERT_EQ(exact.size(),2u);EXPECT_EQ(exact.back().remaining,0u);
 }

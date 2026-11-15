@@ -11,6 +11,7 @@ inline constexpr int panelTag = 3000;
 inline constexpr int midiPanelTag=3020;
 inline constexpr int keyboardTag=1010, keyboardToggleTag=1011;
 inline constexpr int libraryListTag=4000, librarySearchTag=4001, bankFilterTag=4002, tagFilterTag=4003;
+inline constexpr int libraryFiltersTag=4010;
 inline constexpr int libraryMatchesTag=4017, previousBankTag=4018, nextBankTag=4019;
 inline constexpr int favoritesTag=4004, tagsEditTag=4005, selectedNameTag=4006;
 inline constexpr int libraryFirstTag=4000, libraryLastTag=4020, tabsTag=1004;

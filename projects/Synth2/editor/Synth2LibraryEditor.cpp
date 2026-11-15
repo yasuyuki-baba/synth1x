@@ -1,3 +1,4 @@
+#include "editor/EditorLibraryInteraction.h"
 #include "../Synth2.h"
 #include "EditorControls.h"
 #include "EditorStyle.h"
@@ -106,6 +107,17 @@ void Synth2::refreshBrowser()
     if(auto* control=graphics->GetControlWithTag(tagFilterTag))
         control->SetTooltip(("Match all selected tags: "+synth2::host::PatchCatalog::tagText(selectedTags)).c_str());
     setButton(favoritesTag, libraryFilter.favoritesOnly ? "Favorites: on" : "Favorites: off");
+    using Kind=synth2::editor::LibraryFilterKind;
+    std::vector<synth2::editor::EditorLibraryFilter> activeFilters;
+    if(!libraryFilter.bankId.empty())activeFilters.push_back({Kind::bank,libraryFilter.bankId,"Bank: "+bankLabel});
+    if(!libraryFilter.query.empty())activeFilters.push_back({Kind::query,libraryFilter.query,"Search: "+libraryFilter.query});
+    if(libraryFilter.favoritesOnly)activeFilters.push_back({Kind::favorites,{},"Favorites"});
+    if(libraryFilter.registeredOnly)activeFilters.push_back({Kind::registration,{},"Registered sounds"});
+    for(const auto& tag:selectedTags)activeFilters.push_back({Kind::tag,tag,"Tag: "+tag});
+    if(auto* control=graphics->GetControlWithTag(libraryFiltersTag))
+        control->As<LibraryFiltersControl>()->setFilters(std::move(activeFilters));
+    if(auto* control=graphics->GetControlWithTag(libraryMatchesTag))
+        control->SetTooltip("Matching sounds. Ctrl/Cmd+F: Search. Up/Down: Browse. Enter: Load. Click a filter to remove only that condition.");
     if (auto *c = graphics->GetControlWithTag(libraryListTag))
         c->As<CatalogListControl>()->setResults(matches, resultOffset);
     setText(selectedNameTag,"Manual tags");
@@ -220,9 +232,9 @@ void Synth2::showBankMenu(IControl *caller)
             libraryFilter.bankId==row.bankId ? IPopupMenu::Item::kChecked : 0;
         presetMenu->AddItem(new IPopupMenu::Item(label.c_str(),flags,static_cast<int>(i)));
     }
-    showScrollableLibraryMenu(caller);
+    showScrollableLibraryMenu(caller,caller->GetRECT());
 }
-void Synth2::showScrollableLibraryMenu(IControl* caller)
+void Synth2::showScrollableLibraryMenu(IControl* caller,const IRECT& bounds)
 {
     auto* graphics=caller->GetUI();
     // The pinned SDK's custom popup has no wheel handler. Use the platform
@@ -231,13 +243,53 @@ void Synth2::showScrollableLibraryMenu(IControl* caller)
     const bool restorePopup=popup!=nullptr;
     const auto popupText=popup ? popup->GetText() : DEFAULT_TEXT;
     graphics->RemovePopupMenuControl();
-    graphics->CreatePopupMenu(*caller,*presetMenu,caller->GetRECT());
+    graphics->CreatePopupMenu(*caller,*presetMenu,bounds);
     if(restorePopup)graphics->AttachPopupMenuControl(popupText);
+}
+
+void Synth2::toggleTagFilter(const std::string& tag)
+{
+    if(!synth2::editor::editorToggleLibraryTag(libraryFilter.selectedTags,tag)) {
+        browserStatus="Select up to 32 tags.";refreshBrowser();return;
+    }
+    libraryFilter.tag.clear();keyboardPatchId.clear();
+    resultOffset=0;browserStatus.clear();refreshBrowser();
+}
+
+void Synth2::removeLibraryFilter(const synth2::editor::EditorLibraryFilter& filter)
+{
+    using Kind=synth2::editor::LibraryFilterKind;
+    switch(filter.kind) {
+        case Kind::query:libraryFilter.query.clear();break;
+        case Kind::bank:libraryFilter.bankId.clear();break;
+        case Kind::tag: {
+            const auto key=synth2::editor::editorLibraryTagKey(filter.value);
+            std::erase_if(libraryFilter.selectedTags,[&](const auto& tag) {
+                return synth2::editor::editorLibraryTagKey(tag)==key;
+            });
+            libraryFilter.tag.clear();break;
+        }
+        case Kind::favorites:libraryFilter.favoritesOnly=false;break;
+        case Kind::registration:
+            libraryFilter.registeredOnly=false;libraryFilter.registeredIds.clear();break;
+    }
+    keyboardPatchId.clear();resultOffset=0;browserStatus.clear();refreshBrowser();
+}
+
+void Synth2::showFilterMenu(IControl* caller,const std::vector<synth2::editor::EditorLibraryFilter>& filters,const IRECT& bounds)
+{
+    presetMenu=std::make_unique<IPopupMenu>("Remove filter");
+    for(const auto& filter:filters)presetMenu->AddItem(("Remove "+filter.label).c_str());
+    presetMenu->SetFunction([this,filters](IPopupMenu* menu) {
+        const int index=menu->GetChosenItemIdx();
+        if(index>=0 && static_cast<std::size_t>(index)<filters.size())removeLibraryFilter(filters[index]);
+    });
+    showScrollableLibraryMenu(caller,bounds);
 }
 
 void Synth2::showTagMenu(IControl *caller)
 {
-    const auto lower=[](std::string value) {for(auto& c:value)if(c>='A' && c<='Z')c=static_cast<char>(c-'A'+'a');return value;};
+    const auto lower=synth2::editor::editorLibraryTagKey;
     std::map<std::string,std::string> unique;
     auto scoped=libraryFilter;scoped.tag.clear();scoped.selectedTags.clear();scoped.query.clear();
     for(auto i:catalog.search(scoped))for(const auto& tag:catalog.patches()[i].allTags())unique.emplace(lower(tag),tag);
@@ -247,22 +299,14 @@ void Synth2::showTagMenu(IControl *caller)
     presetMenu=std::make_unique<IPopupMenu>("Tags (match all)");
     presetMenu->AddItem("All tags",-1,libraryFilter.selectedTags.empty() ? IPopupMenu::Item::kChecked : 0);
     for(const auto& tag:tags)presetMenu->AddItem(tag.c_str(),-1,selected(tag) ? IPopupMenu::Item::kChecked : 0);
-    presetMenu->SetFunction([this,tags,lower](IPopupMenu* menu) {
+    presetMenu->SetFunction([this,tags](IPopupMenu* menu) {
         const int index=menu->GetChosenItemIdx();
         if(index<0 || index>static_cast<int>(tags.size()))return;
-        libraryFilter.tag.clear();
-        auto& selection=libraryFilter.selectedTags;
-        if(index==0)selection.clear();
-        else {
-            const auto& tag=tags[index-1];
-            const auto found=std::find_if(selection.begin(),selection.end(),[&](const auto& other){return lower(other)==lower(tag);});
-            if(found!=selection.end())selection.erase(found);
-            else if(selection.size()<32)selection.push_back(tag);
-            else {browserStatus="Select up to 32 tags.";refreshBrowser();return;}
-        }
+        if(index>0){toggleTagFilter(tags[index-1]);return;}
+        libraryFilter.tag.clear();libraryFilter.selectedTags.clear();keyboardPatchId.clear();
         resultOffset=0;browserStatus.clear();refreshBrowser();
     });
-    showScrollableLibraryMenu(caller);
+    showScrollableLibraryMenu(caller,caller->GetRECT());
 }
 
 void Synth2::showAutomaticTagMenu(IControl* caller)
@@ -285,7 +329,7 @@ void Synth2::showAutomaticTagMenu(IControl* caller)
         else return;
         browserStatus=error;refreshBrowser();
     });
-    showScrollableLibraryMenu(caller);
+    showScrollableLibraryMenu(caller,caller->GetRECT());
 }
 
 void Synth2::stepPatch(int direction)

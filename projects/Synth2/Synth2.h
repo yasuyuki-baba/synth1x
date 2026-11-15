@@ -3,6 +3,7 @@
 #include "ProcessorBridge.h"
 #include "PatchCatalog.h"
 #include "editor/ComputerKeyboard.h"
+#include "editor/EditorLibraryFilters.h"
 #include <atomic>
 #include <array>
 #include <memory>
@@ -63,8 +64,14 @@ private:
     void reloadCatalog(bool queueIfBusy = false);
     void stepBank(int direction);
     void selectBank(const std::string& id);
+    void toggleTagFilter(const std::string& tag);
+    void removeLibraryFilter(const synth2::editor::EditorLibraryFilter& filter);
+    void showFilterMenu(iplug::igraphics::IControl* caller,
+                        const std::vector<synth2::editor::EditorLibraryFilter>& filters,
+                        const iplug::igraphics::IRECT& bounds);
     void showBankMenu(iplug::igraphics::IControl* caller);
-    void showScrollableLibraryMenu(iplug::igraphics::IControl* caller);
+    void showScrollableLibraryMenu(iplug::igraphics::IControl* caller,
+                                   const iplug::igraphics::IRECT& bounds);
     void showAutomaticTagMenu(iplug::igraphics::IControl* caller);
     void showTagMenu(iplug::igraphics::IControl* caller);
     bool handleLibraryKey(const iplug::IKeyPress& key,bool up);
