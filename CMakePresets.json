@@ -32,6 +32,20 @@
       }
     },
     {
+      "name": "windows-ci",
+      "displayName": "Windows MSVC x64 CI (Ninja)",
+      "inherits": "windows",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build-oos-windows-ci",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
+      },
+      "architecture": {
+        "value": "x64",
+        "strategy": "external"
+      }
+    },
+    {
       "name": "windows-app",
       "inherits": "windows",
       "binaryDir": "${sourceDir}/build-oos-app",
@@ -57,6 +71,16 @@
         "type": "equals",
         "lhs": "${hostSystemName}",
         "rhs": "Darwin"
+      }
+    },
+    {
+      "name": "macos-ci",
+      "displayName": "macOS Apple Silicon CI (Ninja)",
+      "inherits": "macos",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build-oos-macos-ci",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
       }
     },
     {

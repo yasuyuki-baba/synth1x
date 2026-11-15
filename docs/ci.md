@@ -8,8 +8,12 @@ Workflow actions are pinned to commits and jobs have read-only repository access
 
 `build.yml` runs on main pushes, pull requests and manual dispatch. Its portable
 matrix covers Ubuntu 24.04, Windows Server 2022/MSVC and macOS 15. Checkouts leave
-iPlug2 uninitialized. Each job configures Release with native wrappers and
-optional tools disabled, builds the actual portable bridge/tests, and runs all
+iPlug2 uninitialized. All CI builds use CMake's single-configuration Ninja
+generator with an explicit Release build type. Windows first initializes the
+MSVC x64 developer environment; Ninja runs the same MSVC compiler. Ninja is
+installed at a fixed version through the job's Python interpreter.
+Each portable job configures Release with native wrappers and optional tools
+disabled, builds the actual portable bridge/tests, and runs all
 portable CTest entries. Required Probe/comparator executables are included by the
 test configuration. Linux also runs actionlint and the independent DSP header
 audit. No virtual display or native audio/GUI packages are needed.
@@ -17,8 +21,12 @@ audit. No virtual display or native audio/GUI packages are needed.
 After portable checks pass, the reusable `native.yml` builds Linux VST3/CLAP/APP,
 Windows VST3/CLAP/APP and macOS VST3/CLAP/AUv2/APP. Linux uses Ubuntu 24.04
 x86_64 with X11 and NanoVG/GL3; its job installs the required development libraries.
-Windows uses MSVC x64; macOS uses the Xcode Apple Silicon arm64 preset and macOS 13
-deployment target. Windows/macOS use their NanoVG default renderers (GL2/Metal). The unused SDK WebView extra is disabled so its
+Windows uses the `windows-ci` Ninja preset with MSVC x64; macOS uses the
+`macos-ci` Ninja preset with Apple Clang, Apple Silicon arm64 and the macOS 13
+deployment target. These inherit the platform settings from the desktop presets;
+the local `windows` Visual Studio and `macos` Xcode presets remain available.
+Windows/macOS use their NanoVG default renderers (GL2/Metal). The unused SDK
+WebView extra is disabled so its
 WIL/WebView2 downloads do not enter configuration. Plugin deployment to system folders stays disabled.
 Native jobs do not configure the portable test target again.
 
@@ -40,20 +48,23 @@ native SDK uses its static-runtime configuration.
 ## Local equivalents
 
 ```sh
-cmake -S . -B build-oos-ci -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DSYNTH2_BUILD_IPLUG2=OFF -DSYNTH2_BUILD_TOOLS=OFF -DSYNTH2_BUILD_TESTS=ON
+cmake -S . -B build-oos-ci -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DSYNTH2_BUILD_IPLUG2=OFF -DSYNTH2_BUILD_TOOLS=OFF -DSYNTH2_BUILD_TESTS=ON
 cmake --build build-oos-ci --config Release --parallel 4
 ctest --test-dir build-oos-ci -C Release -L portable --output-on-failure --no-tests=error
 python tools/audit_dsp_headers.py --build-dir build-oos-ci
 ```
 
-The header audit requires a compile database or Ninja; the CI audit runs on Linux.
+The header audit requires a compile database or Ninja; CI also runs it explicitly
+on Linux. Install Ninja before configuring, and use an x64 Visual Studio developer
+shell on Windows so MSVC and the Windows SDK are available. Use a fresh build
+directory when switching generators.
 For native products, first initialize `iPlug2` and run the dependency helper as in
 [the desktop guide](desktop-build.md). On the corresponding native platform:
 
 ```sh
-cmake --preset windows -B build "-DSYNTH2_IPLUG2_FORMATS=VST3;CLAP;APP"
+cmake --preset windows-ci -B build "-DSYNTH2_IPLUG2_FORMATS=VST3;CLAP;APP"
 # On macOS instead:
-cmake --preset macos -B build "-DSYNTH2_IPLUG2_FORMATS=VST3;CLAP;AU;APP"
+cmake --preset macos-ci -B build "-DSYNTH2_IPLUG2_FORMATS=VST3;CLAP;AU;APP"
 cmake --build build --config Release --parallel 4
 python tools/package_native.py --build build --platform windows --manifest build/dependencies.json --output dist
 # Use --platform macos on macOS.
