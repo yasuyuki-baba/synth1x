@@ -8,4 +8,4 @@ class IPopupMenu;
 using IPopupFunction=std::function<void(IPopupMenu*)>;
 }
 #include "IGraphicsPopupMenu.h"
-namespace iplug::igraphics { class IGraphics; class IControl; }
+namespace iplug::igraphics { class IGraphics; class IControl; struct IRECT; }
