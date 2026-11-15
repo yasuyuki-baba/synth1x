@@ -16,7 +16,7 @@ inline bool editorHasUnit(int parameter)
     switch(parameter)
     {
         case 2: case 3: case 72: case 15: case 16: case 18:
-        case 25: case 26: case 28: case 50: case 51: case 61: case 62: case 63: return true;
+        case 25: case 26: case 28: case 50: case 51: case 61: case 62: case 63: case 90: return true;
         default: return false;
     }
 }
@@ -49,6 +49,15 @@ inline std::string editorValueDisplay(int parameter,double source)
                 : source>64 ? std::clamp(source,0.,127.)-64 : 0.)*100./63.;
             const double rounded=std::round(percent);
             return std::string(rounded>0 ? "+" : "")+editorDecimal(rounded==0 ? 0 : rounded,0,"%");
+        }
+        case 128:return editorDecimal(std::clamp(source,0.,1.),3);
+        case 90:
+        {
+            const double offset=std::clamp(source,0.,127.)-64.;
+            if(std::abs(offset)<1e-6)return "C";
+            const double amount=std::abs(offset)*100./(offset<0 ? 64. : 63.);
+            const int precision=std::abs(amount-std::round(amount))<1e-6 ? 0 : 1;
+            return std::string(offset<0 ? "L " : "R ")+editorDecimal(amount,precision,"%");
         }
         case 61:
         {

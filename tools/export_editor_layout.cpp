@@ -24,6 +24,8 @@ int main()
         {"displayScale",synth2::editor::editorDisplayScaleBounds},
         {"librarySummary",synth2::editor::editorLibrarySummaryBounds},
         {"presetDisplay",synth2::editor::editorPresetDisplayBounds},
+        {"masterVolume",synth2::editor::editorMasterVolumeBounds},
+        {"pan",synth2::editor::editorPanBounds},
         {"comparison",synth2::editor::editorComparisonBounds},
         {"copyAToB",synth2::editor::editorCopyAToBBounds},
         {"copyBToA",synth2::editor::editorCopyBToABounds},
@@ -82,16 +84,24 @@ int main()
     for(const auto& panel:synth2::editor::editorMidiPanels()) {
         if(!firstPanel)std::cout << ',';firstPanel=false;writePanel(panel,true);
     }
+    const auto writeHeaderControl=[&](const char* key,const synth2::editor::EditorControl& control,const synth2::editor::EditorBounds& bounds) {
+        std::cout << "," << std::quoted(key) << ":{\"parameter\":" << control.parameter << ",\"label\":" << std::quoted(control.label)
+                  << ",\"name\":" << std::quoted(processor.parameter(control.parameter).name)
+                  << ",\"diameter\":" << synth2::editor::editorKnobDiameter(control.parameter,bounds.height) << '}';
+    };
+    std::cout << ']';
+    writeHeaderControl("headerMaster",synth2::editor::editorMasterVolumeControl,synth2::editor::editorMasterVolumeBounds);
+    writeHeaderControl("headerPan",synth2::editor::editorPanControl,synth2::editor::editorPanBounds);
     const auto timing=synth2::editor::editorDelayTimingBounds;
-    std::cout << "],\"delayTimingBounds\":[" << timing.x << ',' << timing.y << ','
+    std::cout << ",\"delayTimingBounds\":[" << timing.x << ',' << timing.y << ','
               << timing.width << ',' << timing.height << "],\"parameters\":[";
-    for (int index=0;index<128;++index)
+    for (int index=0;index<processor.parameterCount;++index)
     {
         if (index) std::cout << ',';
         const auto& info=processor.parameter(index);
         const auto initial=std::lround(index==87 || index==89 ? processor.midiDestination((index-87)/2)
             : info.minimum+processor.normalizedValue(index)*(info.maximum-info.minimum));
-        std::cout << "{\"minimum\":" << ((index==87 || index==89) ? -1 : synth2::sourceMinimum(index)) << ",\"maximum\":" << synth2::sourceMaximum(index)
+        std::cout << "{\"minimum\":" << (index==128 ? info.minimum : (index==87 || index==89) ? -1 : synth2::sourceMinimum(index)) << ",\"maximum\":" << (index==128 ? info.maximum : synth2::sourceMaximum(index))
                   << ",\"initial\":" << initial
                   << ",\"integerSteps\":" << (synth2::editor::parameterUsesIntegerSteps(index) ? "true" : "false")
                   << ",\"toggle\":" << (synth2::editor::editorToggle(index) ? "true" : "false") << ",\"choices\":[";

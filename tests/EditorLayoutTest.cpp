@@ -39,6 +39,7 @@ bool overlaps(const EditorBounds& a,const EditorBounds& b)
 TEST(EditorLayout, SoundControlsAreExposedOnceAndSerializedMetadataStaysHidden)
 {
     std::array<int,128> seen{};
+    ++seen[editorPanControl.parameter];
     for (const auto& panel:editorPanels())
         for (const auto& control:panel.controls)
         { ASSERT_GE(control.parameter,0); ASSERT_LT(control.parameter,99); ++seen[control.parameter]; }
@@ -142,6 +143,14 @@ TEST(EditorLayout, UnitReadoutsFollowTimingTuningAndEqMappings)
     EXPECT_EQ(editorValueDisplay(25,127),"28.00 s");
     EXPECT_EQ(editorValueDisplay(28,0),"10.00 ms");
     EXPECT_EQ(editorValueDisplay(28,127),"60.00 s");
+    EXPECT_EQ(editorValueDisplay(128,1),"1.000");
+    EXPECT_EQ(editorValueDisplay(128,.321),"0.321");
+    EXPECT_EQ(editorValueDisplay(90,64),"C");
+    EXPECT_EQ(editorValueDisplay(90,0),"L 100%");
+    EXPECT_EQ(editorValueDisplay(90,127),"R 100%");
+    EXPECT_EQ(editorValueDisplay(90,32),"L 50%");
+    EXPECT_EQ(editorValueDisplay(90,95.5),"R 50%");
+    EXPECT_EQ(editorValueDisplay(90,63.5),"L 0.8%");
     EXPECT_EQ(editorValueDisplay(2,0),"-60 st");
     EXPECT_EQ(editorValueDisplay(2,127),"60 st");
     for (int raw=62;raw<=66;++raw) EXPECT_EQ(editorValueDisplay(3,raw),"0 ct");
@@ -291,11 +300,11 @@ TEST(EditorLayout, MidiRowsGroupSourceSensitivityAndDestinationWithoutOverlaps)
 
 TEST(EditorLayout, ComparisonActionsStayCompactBesideTheCurrentSoundDisplay)
 {
-    const std::array<EditorBounds,5> bounds{editorPresetDisplayBounds,editorComparisonBounds,
+    const std::array<EditorBounds,7> bounds{editorMasterVolumeBounds,editorPanBounds,editorPresetDisplayBounds,editorComparisonBounds,
         editorCopyAToBBounds,editorCopyBToABounds,editorLibrarySummaryBounds};
     for(std::size_t i=0;i<bounds.size();++i) {
         EXPECT_GE(bounds[i].x,0);EXPECT_GE(bounds[i].y,0);
-        EXPECT_LE(bounds[i].x+bounds[i].width,890);EXPECT_LE(bounds[i].y+bounds[i].height,112);
+        EXPECT_LE(bounds[i].x+bounds[i].width,1280);EXPECT_LE(bounds[i].y+bounds[i].height,112);
         for(std::size_t j=i+1;j<bounds.size();++j)EXPECT_FALSE(overlaps(bounds[i],bounds[j]));
     }
     EXPECT_GT(editorPresetDisplayBounds.width,editorComparisonBounds.width+editorCopyAToBBounds.width+editorCopyBToABounds.width);

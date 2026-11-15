@@ -34,6 +34,7 @@ def patch(text):
 def load_model(exporter):
     model = json.loads(subprocess.check_output([str(exporter.resolve())], text=True))
     model["names"] = json.loads((ROOT / "resources/parameter_names.json").read_text())
+    model["names"].append(model["headerMaster"]["name"])
     model["init"] = patch((ROOT / "resources/init.sy1").read_text())
     model["init"]["values"] = {index:parameter["initial"] for index,parameter in enumerate(model["parameters"])}
     return model
