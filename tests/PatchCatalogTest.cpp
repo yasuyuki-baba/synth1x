@@ -371,8 +371,80 @@ TEST(PatchTagInference, UsesWordBoundariesAndDistinctModesWithShortFeatureNames)
     EXPECT_TRUE(has(tags,"Legato"));EXPECT_FALSE(has(tags,"Mono"));EXPECT_FALSE(has(tags,"FM"));
     p[59]=0;EXPECT_FALSE(has(inferPatchTags("ARP Owned",p),"Arp"));
     p[59]=1;EXPECT_TRUE(has(inferPatchTags("ARP Owned",p),"Arp"));
-    p[25]=110;EXPECT_FALSE(has(inferPatchTags("Pluck",p),"Pluck"));
+    p[25]=110;EXPECT_TRUE(has(inferPatchTags("Pluck",p),"Pluck"));
     EXPECT_TRUE(has(inferPatchTags("Owned",p),"Slow attack"));
+}
+
+TEST(PatchTagInference, RecognizesLeadingCategoriesAndAcronymBoundariesWithoutSubstringMatches) {
+    std::array<float,129> p{};p[27]=107;
+    const std::pair<const char*,const char*> names[] {
+        {"KEY Amber","Keys"},{"key:Amber","Keys"},{"LED Copper","Lead"},
+        {"ORG Current","Organ"},{"DRM Quartz","Percussion"},{"BA Round","Bass"},
+        {"PNO Glass","Keys"},{"01 [LD] Copper","Lead"},
+        {"LDSoft","Lead"},{"BSDeep","Bass"},{"STRWarm","Strings"},
+        {"PADWarm","Pad"},{"FXSweep","FX"},{"EPiano","Keys"},{"PADs","Pad"},{"STRings","Strings"}
+    };
+    for(const auto& [name,tag]:names) {
+        SCOPED_TRACE(name);const auto tags=inferPatchTags(name,p);
+        EXPECT_EQ(std::count(tags.begin(),tags.end(),tag),1);
+    }
+    for(const auto* name:{"STRANGE","BASALT","Blossom","compass","Warm KEY","Warm LED","Warm ORG"}) {
+        SCOPED_TRACE(name);EXPECT_EQ(inferPatchTags(name,p),inferPatchTags("Owned",p));
+    }
+}
+
+TEST(PatchTagInference, PlayingModeFollowsSettingsDespiteConflictingNames) {
+    std::array<float,129> p{};
+    constexpr std::array modes{"Poly","Mono","Legato"};
+    for(int mode=0;mode<3;++mode) {
+        p[38]=static_cast<float>(mode);
+        for(const auto* name:{"Owned","POLY Amber","Mono Amber","Legato Amber","PolySynth"}) {
+            SCOPED_TRACE(name);
+            SCOPED_TRACE(mode);const auto tags=inferPatchTags(name,p);
+            for(int candidate=0;candidate<3;++candidate)
+                EXPECT_EQ(std::count(tags.begin(),tags.end(),modes[candidate]),candidate==mode ? 1 : 0);
+        }
+    }
+}
+
+TEST(PatchTagInference, NamedCategoriesHaveReasonsAndCanCoexistWithEnvelopeFeatures) {
+    std::array<float,129> p{};p[25]=110;
+    const auto suggestions=explainPatchTags("DRM Pluck pluck",p);
+    const auto find=[&](std::string_view tag) {
+        return std::find_if(suggestions.begin(),suggestions.end(),[&](const auto& item){return item.tag==tag;});
+    };
+    const auto pluck=find("Pluck");ASSERT_NE(pluck,suggestions.end());
+    ASSERT_EQ(pluck->reasons.size(),1u);EXPECT_EQ(pluck->reasons.front().rule,"name.word");
+    EXPECT_NE(pluck->reasons.front().detail.find("pluck"),std::string::npos);
+    const auto percussion=find("Percussion");ASSERT_NE(percussion,suggestions.end());
+    ASSERT_EQ(percussion->reasons.size(),1u);EXPECT_EQ(percussion->reasons.front().rule,"name.prefix");
+    const auto slow=find("Slow attack");ASSERT_NE(slow,suggestions.end());
+    ASSERT_EQ(slow->reasons.size(),1u);EXPECT_EQ(slow->reasons.front().rule,"settings.amp-attack");
+    EXPECT_EQ(inferPatchTags("Pad",std::array<float,129>{}).front(),"Pad");
+    const auto multiple=explainPatchTags("BAS Bass",p);
+    ASSERT_EQ(multiple.front().tag,"Bass");EXPECT_EQ(multiple.front().reasons.size(),2u);
+    std::vector<std::string> labels;
+    for(const auto& suggestion:suggestions) {
+        EXPECT_FALSE(suggestion.reasons.empty());labels.push_back(suggestion.tag);
+    }
+    EXPECT_EQ(labels,inferPatchTags("DRM Pluck pluck",p));
+}
+
+TEST(PatchTagInference, WindAndSequenceNamesDoNotAssertAnEnabledArpeggiator) {
+    std::array<float,129> p{};
+    for(const auto& [name,tag]:std::array<std::pair<const char*,const char*>,4>{
+            {{"WND Amber","Wind"},{"Soft Clarinet","Wind"},{"SEQ Copper","Sequence"},{"Copper sequence","Sequence"}}}) {
+        SCOPED_TRACE(name);const auto tags=inferPatchTags(name,p);
+        EXPECT_NE(std::find(tags.begin(),tags.end(),tag),tags.end());
+        EXPECT_EQ(std::find(tags.begin(),tags.end(),"Arp"),tags.end());
+    }
+    EXPECT_EQ(inferPatchTags("SQ Copper",p),inferPatchTags("Owned",p));
+    const auto bassoon=inferPatchTags("BASSoon",p);
+    EXPECT_NE(std::find(bassoon.begin(),bassoon.end(),"Wind"),bassoon.end());
+    EXPECT_EQ(std::find(bassoon.begin(),bassoon.end(),"Bass"),bassoon.end());
+    p[59]=1;const auto tags=inferPatchTags("SEQ Copper",p);
+    EXPECT_NE(std::find(tags.begin(),tags.end(),"Sequence"),tags.end());
+    EXPECT_NE(std::find(tags.begin(),tags.end(),"Arp"),tags.end());
 }
 
 TEST(PatchCatalog, AutomaticTagsRecallOverridesAndManualSpellingWinsWithoutEditingSource) {
@@ -381,12 +453,19 @@ TEST(PatchCatalog, AutomaticTagsRecallOverridesAndManualSpellingWinsWithoutEditi
     PresetImportResult result;std::string error;ASSERT_TRUE(registerSource(catalog,zip.string(),result,error))<<error;
     const auto id=catalog.patches().front().id;
     const auto text=catalog.patches().front().patch.text;
+    const auto suggestions=catalog.patches().front().automaticTags;
+    const auto explanation=catalog.patches().front().automaticTagExplanation("Pad");
+    EXPECT_NE(explanation.find("pad"),std::string::npos);
     EXPECT_EQ(catalog.search({"","","Pad"}).size(),1u);
     ASSERT_TRUE(catalog.hideAutomaticTag(id,"Pad",error))<<error;
+    EXPECT_TRUE(catalog.patches().front().automaticTagExplanation("Pad").empty());
     EXPECT_TRUE(catalog.search({"","","Pad"}).empty());
     ASSERT_TRUE(catalog.reload(error))<<error;EXPECT_TRUE(catalog.search({"","","Pad"}).empty());
+    EXPECT_EQ(catalog.tagCacheStats().reused,1u);
+    EXPECT_EQ(catalog.patches().front().automaticTags,suggestions);
     ASSERT_TRUE(catalog.setTags(id,"pAD, my own",error))<<error;
     auto patch=catalog.patches().front();
+    EXPECT_TRUE(patch.automaticTagExplanation("pAD").empty());
     EXPECT_EQ(patch.tags,(std::vector<std::string>{"pAD","my own"}));
     const auto automatic=patch.visibleAutomaticTags();
     EXPECT_EQ(std::find(automatic.begin(),automatic.end(),"Pad"),automatic.end());
@@ -395,6 +474,7 @@ TEST(PatchCatalog, AutomaticTagsRecallOverridesAndManualSpellingWinsWithoutEditi
     EXPECT_TRUE(catalog.search({"","","Pad"}).empty());
     ASSERT_TRUE(catalog.restoreAutomaticTags(id,error));
     EXPECT_EQ(catalog.search({"","","Pad"}).size(),1u);
+    EXPECT_EQ(catalog.patches().front().automaticTagExplanation("Pad"),explanation);
     EXPECT_EQ(catalog.patches().front().patch.text,text);
     PatchLibrary bank;ASSERT_TRUE(bank.openFile((root/"Owned.zip").string(),error));
     EXPECT_EQ(bank.patches().front().text,warm);
@@ -466,7 +546,8 @@ TEST(PatchCatalog, TagCacheReusesUnchangedSourcesAndTracksContentAdditionsAndDel
     std::ofstream(root/".synth2-tags.cache")<<"corrupt cache";
     ASSERT_TRUE(reopened.reload(error));EXPECT_EQ(reopened.tagCacheStats().rebuilt,2u);
     EXPECT_EQ(reopened.patches().front().tags,(std::vector<std::string>{"Keep"}));
-    std::ofstream(root/".synth2-tags.cache")<<"Synth2 tag cache 999\n";
+    std::ofstream(root/".synth2-tags.cache")<<"Synth2 tag cache "<<patchTagCacheVersion-1<<'\n'
+        <<cache.substr(cache.find('\n')+1);
     ASSERT_TRUE(reopened.reload(error));EXPECT_EQ(reopened.tagCacheStats().rebuilt,2u);
     fs::remove(root/".synth2-tags.cache");fs::create_directory(root/".synth2-tags.cache");
     ASSERT_TRUE(reopened.reload(error));EXPECT_EQ(reopened.tagCacheStats().rebuilt,2u);

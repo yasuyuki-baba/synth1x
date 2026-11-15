@@ -1,6 +1,7 @@
 #pragma once
 #include "PatchLibrary.h"
 #include "PresetFiles.h"
+#include "PatchTagInference.h"
 #include <filesystem>
 #include <utility>
 
@@ -13,8 +14,10 @@ struct CatalogPatch {
     std::vector<std::string> tags;
     std::filesystem::path file;
     std::string archiveEntry, error, location;
-    std::vector<std::string> automaticTags, hiddenTags;
+    std::vector<PatchTagSuggestion> automaticTags;
+    std::vector<std::string> hiddenTags;
     std::vector<std::string> visibleAutomaticTags() const;
+    std::string automaticTagExplanation(std::string_view tag) const;
     std::vector<std::string> allTags() const;
 
 };

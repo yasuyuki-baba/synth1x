@@ -8,6 +8,7 @@ compatibility checkout. Native APP capture is an optional Wine GUI workflow.
 | Build and run product contracts | [tests/README.md](../tests/README.md) |
 | Render patches and exact MIDI histories | [Synth2Probe](synth2_probe.cpp) |
 | Inspect resolved controls and selected DSP routes | [Synth2LoadingProbe](synth2_loading_probe.cpp) |
+| Explain automatic tags and compare rule/loading changes | [tag_patches.py](tag_patches.py), backed by Synth2TagProbe |
 | Compare WAVs for diagnostics | [CompareWaves](compare_waves.cpp) |
 | Audit DSP, voice, editor and state header compilation/dependency boundaries | audit_dsp_headers.py; GNU-style GNU/Clang Ninja/Makefile builds also provide CTest `HeaderBoundaryAudit` and target `Synth2HeaderAudit` |
 | Check portable C++ file/type names and setting suffixes | `python3 tools/lint_naming.py` or CMake target `Synth2NamingLint` |
@@ -30,7 +31,47 @@ stereo compatibility evidence.
 Configure with `SYNTH2_BUILD_TOOLS=ON` to build the offline tool targets; the
 portable `core` preset enables them. Native presets disable tools. Tests enabled
 with `SYNTH2_BUILD_TOOLS=OFF` still build the required Probe and WAV comparator,
-but omit LoadingProbe, the editor exporter and the host benchmark.
+but omit LoadingProbe, the editor exporter, the host benchmark and the tag probe.
+
+## Automatic tag reports
+
+`tag_patches.py` runs the product's portable loading and inference code without
+starting a plugin or rendering audio. It accepts a `.sy1`, ZIP/RAR/7z bank or a
+recursive directory, and writes JSON with stable relative source IDs, exact source
+SHA-256 hashes, load errors, suggested tags and their reasons. Name words/categories
+and settings have distinct rule identifiers. Reports describe heuristic suggestions,
+not measured sound classification or an accuracy score. Manual tags and hidden-tag
+overrides are not applied to these diagnostic suggestions.
+
+```sh
+cmake --preset core
+cmake --build build-oos-core --target Synth2TagProbe
+python3 tools/tag_patches.py scan path/to/patches --output before.json
+# After changing and rebuilding the inference/loading implementation:
+python3 tools/tag_patches.py scan path/to/patches --output after.json
+python3 tools/tag_patches.py compare before.json after.json --output changes.json
+```
+
+Use `--probe path/to/Synth2TagProbe` for another build; the Windows default selects
+`Synth2TagProbe.exe`. A single patch works with the same `scan` command. Omit
+`--output` to write UTF-8 JSON to stdout. Existing output files are preserved;
+choose a fresh path for each run. Scans do not register sounds, write caches or
+modify source files. Reports contain hashes rather than copies of patch source
+text. Invalid legacy title bytes become replacement characters in display text;
+the source hash still covers the original bytes.
+
+Comparison separates added/removed sources, edited source contents, tag additions
+and removals, and changes to reasons for retained tags. Totals for unchanged-source
+tag/reason changes exclude edited files. Source identities must be unique and
+report schema versions must be supported. Keep the same source layout between
+captures; changing the input root or switching between loose and archived sources
+can change identities. Compare reports against independently reviewed examples;
+increased tag coverage by itself does not establish better classification.
+
+`scan` returns 0 when all sources load, 2 when the report includes per-patch load
+errors, and 1 for a tool/input/output failure. `compare` returns 0 after producing
+a report even when differences exist. The lower-level `Synth2TagProbe` streams
+records to the Python wrapper and is built only when optional tools are enabled.
 
 Native CI helpers: `prepare_native_sdks.py` installs lock-file SDK revisions and
 writes a build-identity manifest. `package_native.py` checks the expected native

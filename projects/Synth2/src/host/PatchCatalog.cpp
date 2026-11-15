@@ -90,14 +90,54 @@ void storeOverrides(const fs::path& root,const std::string& id,const TagOverride
 void requireRoot(const fs::path& root) {
     if(root.empty())throw std::runtime_error("The user library folder is unavailable.");
 }
+std::vector<PatchTagSuggestion> readTagSuggestions(std::istream& input)
+{
+    std::size_t count;
+    if(!(input>>count) || count>64)throw std::runtime_error("Invalid tag cache suggestions");
+    std::vector<PatchTagSuggestion> result;
+    for(std::size_t i=0;i<count;++i) {
+        PatchTagSuggestion suggestion;std::size_t reasons;
+        if(!(input>>std::quoted(suggestion.tag)>>reasons) || suggestion.tag.empty()
+            || suggestion.tag.size()>128 || reasons==0 || reasons>64)
+            throw std::runtime_error("Invalid tag cache suggestion");
+        for(std::size_t r=0;r<reasons;++r) {
+            PatchTagReason reason;
+            if(!(input>>std::quoted(reason.rule)>>std::quoted(reason.detail)) || reason.rule.empty()
+                || reason.rule.size()>128 || reason.detail.empty() || reason.detail.size()>512)
+                throw std::runtime_error("Invalid tag cache reason");
+            suggestion.reasons.push_back(std::move(reason));
+        }
+        result.push_back(std::move(suggestion));
+    }
+    return result;
+}
+void writeTagSuggestions(std::ostream& output,const std::vector<PatchTagSuggestion>& suggestions)
+{
+    output<<suggestions.size();
+    for(const auto& suggestion:suggestions) {
+        output<<' '<<std::quoted(suggestion.tag)<<' '<<suggestion.reasons.size();
+        for(const auto& reason:suggestion.reasons)output<<' '<<std::quoted(reason.rule)<<' '<<std::quoted(reason.detail);
+    }
+}
 }
 
 std::vector<std::string> CatalogPatch::visibleAutomaticTags() const {
     std::vector<std::string> result;
-    for(const auto& tag:automaticTags) {
+    for(const auto& suggestion:automaticTags) {
+        const auto& tag=suggestion.tag;
         const auto matches=[&](const auto& other){return lower(other)==lower(tag);};
         if(std::none_of(tags.begin(),tags.end(),matches) && std::none_of(hiddenTags.begin(),hiddenTags.end(),matches))result.push_back(tag);
     }
+    return result;
+}
+std::string CatalogPatch::automaticTagExplanation(std::string_view tag) const {
+    const auto visible=visibleAutomaticTags();
+    if(std::none_of(visible.begin(),visible.end(),[&](const auto& label){return lower(label)==lower(std::string(tag));}))return {};
+    const auto found=std::find_if(automaticTags.begin(),automaticTags.end(),
+        [&](const auto& suggestion){return lower(suggestion.tag)==lower(std::string(tag));});
+    if(found==automaticTags.end())return {};
+    std::string result="Automatic tag: "+found->tag+".";
+    for(const auto& reason:found->reasons)result+=" "+reason.detail;
     return result;
 }
 std::vector<std::string> CatalogPatch::allTags() const {
@@ -173,19 +213,20 @@ bool PatchCatalog::reload(std::string& error) {
         const auto cachePath=directory/".synth2-tags.cache";
         const std::string cacheHeader="Synth2 tag cache "+std::to_string(patchTagCacheVersion)+"\n";
         constexpr std::size_t cacheLimit=64*1024*1024;
-        struct CachedTags {std::string source,error;std::vector<std::string> tags;};
+        struct CachedTags {std::string source,error;std::vector<PatchTagSuggestion> tags;};
         std::map<std::string,CachedTags> cached;
         std::string oldCache;
         try {
             oldCache=read(cachePath,cacheLimit);
             if(oldCache.starts_with(cacheHeader)) {
                 std::istringstream in(oldCache.substr(cacheHeader.size()));
-                for(std::string id,source,problem,tags;in>>std::ws && !in.eof();) {
-                    if(cached.size()>=maximumCatalogPatches || !(in>>std::quoted(id)>>std::quoted(source)>>std::quoted(problem)>>std::quoted(tags)))
+                for(std::string id,source,problem;in>>std::ws && !in.eof();) {
+                    if(cached.size()>=maximumCatalogPatches || !(in>>std::quoted(id)>>std::quoted(source)>>std::quoted(problem)))
                         throw std::runtime_error("Invalid tag cache");
                     if(id.size()>32768 || source.size()>PatchLibrary::maximumPatchBytes || problem.size()>16384)
                         throw std::runtime_error("Invalid tag cache record");
-                    cached.emplace(std::move(id),CachedTags{std::move(source),std::move(problem),splitTags(tags)});
+                    auto tags=readTagSuggestions(in);
+                    cached.emplace(std::move(id),CachedTags{std::move(source),std::move(problem),std::move(tags)});
                 }
             }
         }catch(...) {cached.clear();}
@@ -223,11 +264,12 @@ bool PatchCatalog::reload(std::string& error) {
             }else {
                 ++stats.rebuilt;
                 if(scratch.loadPatch(patch.patch.text,patch.error))
-                    patch.automaticTags=inferPatchTags(scratch.currentPatchName(),parseContinuousPatch(scratch.savePatch()).values);
+                    patch.automaticTags=explainPatchTags(scratch.currentPatchName(),parseContinuousPatch(scratch.savePatch()).values);
             }
             std::ostringstream record;
             record<<std::quoted(patch.id)<<' '<<std::quoted(patch.patch.text)<<' '
-                  <<std::quoted(patch.error)<<' '<<std::quoted(tagText(patch.automaticTags))<<'\n';
+                  <<std::quoted(patch.error)<<' ';
+            writeTagSuggestions(record,patch.automaticTags);record<<'\n';
             const auto bytes=record.str();
             if(static_cast<std::size_t>(updated.tellp())+bytes.size()<=cacheLimit)updated<<bytes;
         }
@@ -281,7 +323,7 @@ bool PatchCatalog::hideAutomaticTag(const std::string& id,const std::string& tag
         requireRoot(directory);
         const auto found=std::find_if(entries.begin(),entries.end(),[&](const auto& p){return p.id==id;});
         if(found==entries.end())throw std::runtime_error("This patch is no longer in the library.");
-        if(std::find(found->automaticTags.begin(),found->automaticTags.end(),tag)==found->automaticTags.end())
+        if(std::none_of(found->automaticTags.begin(),found->automaticTags.end(),[&](const auto& suggestion){return suggestion.tag==tag;}))
             throw std::runtime_error("This automatic tag is no longer available.");
         auto hidden=found->hiddenTags;
         if(std::none_of(hidden.begin(),hidden.end(),[&](const auto& other){return lower(tag)==lower(other);}))hidden.push_back(tag);

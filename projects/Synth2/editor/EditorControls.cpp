@@ -370,7 +370,11 @@ void CatalogListControl::OnMouseOver(float x,float y,const IMouseMod& mod) {
         const auto target=targetAt(x,item);action=target.action;
         auto tooltip=item.patch.name+"\n"+item.bankName+"\n"+host::PatchCatalog::tagText(item.allTags());
         if(action==LibraryRowAction::bank)tooltip+="\nClick to filter this bank.";
-        if(action==LibraryRowAction::tag)tooltip+="\nClick to toggle tag filter: "+target.tag;
+        if(action==LibraryRowAction::tag) {
+            const auto explanation=item.automaticTagExplanation(target.tag);
+            tooltip=explanation.empty() ? "Manual tag: "+target.tag+"." : explanation;
+            tooltip+=" Click to toggle this tag filter.";
+        }
         SetTooltip(tooltip.c_str());
     }
     else SetTooltip("Click a sound name to audition, a bank to filter, or a tag to toggle its filter.");
