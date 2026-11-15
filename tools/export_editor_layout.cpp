@@ -23,8 +23,8 @@ int main()
     for(const auto& [name,b]:std::initializer_list<std::pair<const char*,synth2::editor::EditorBounds>>{
         {"displayScale",synth2::editor::editorDisplayScaleBounds},
         {"librarySummary",synth2::editor::editorLibrarySummaryBounds},
-        {"comparisonA",synth2::editor::editorComparisonABounds},
-        {"comparisonB",synth2::editor::editorComparisonBBounds},
+        {"presetDisplay",synth2::editor::editorPresetDisplayBounds},
+        {"comparison",synth2::editor::editorComparisonBounds},
         {"copyAToB",synth2::editor::editorCopyAToBBounds},
         {"copyBToA",synth2::editor::editorCopyBToABounds},
         {"version",synth2::editor::editorVersionBounds},
@@ -37,7 +37,7 @@ int main()
     std::cout << "},\"appearance\":{";
     bool firstColor=true;
     for (const auto& color:std::initializer_list<std::pair<const char*,const char*>>{
-        {"background",a.background},{"header",a.header},{"headerEdge",a.headerEdge},{"panel",a.panel},
+        {"background",a.background},{"header",a.header},{"headerEdge",a.headerEdge},{"panel",a.panel},{"selectedRow",a.selectedRow},
         {"filterPanel",a.filterPanel},{"border",a.border},{"text",a.text},{"muted",a.muted},{"accent",a.accent},
         {"display",a.display},{"displayText",a.displayText},{"control",a.control},{"controlEdge",a.controlEdge},
         {"track",a.track},{"pointer",a.pointer}})

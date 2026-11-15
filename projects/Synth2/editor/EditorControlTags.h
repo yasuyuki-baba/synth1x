@@ -7,7 +7,7 @@ inline constexpr int oversamplingTag=1013;
 inline constexpr int displayScaleTag=1014;
 inline constexpr int delayTimingTag=1030;
 inline constexpr int bankTag = 1000, presetTag = 1001, statusTag = 1002, parameterTag = 2000;
-inline constexpr int comparisonBTag=1040,copyATag=1041,copyBTag=1042;
+inline constexpr int comparisonTag=1040,copyATag=1041,copyBTag=1042;
 inline constexpr int panelTag = 3000;
 inline constexpr int midiPanelTag=3020;
 inline constexpr int keyboardTag=1010, keyboardToggleTag=1011;

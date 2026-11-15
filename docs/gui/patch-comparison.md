@@ -1,12 +1,13 @@
 # A/B sound comparison
 
-Two sound displays remain in the header on Synth, MIDI and Library. A and B each
-retain a complete sound/loading snapshot, its patch name, library identity and
-load/save edit baseline. The selected side has an accent border. Both names and
-edit markers stay visible; long labels use measured ellipsis and full tooltips.
+The header on Synth, MIDI and Library shows only the selected sound's name,
+edit marker, bank and tags in a full-width display. Long labels use measured
+ellipsis and full tooltips. A compact, subdued A/B selector and smaller directional
+copy buttons sit below the display beside the library count. Each side retains a
+complete sound/loading snapshot, patch name, library identity and edit baseline.
 
-Click the other display to switch the sounding side. Click the selected display
-to open Library. Loading a Library sound, using the header's previous/next arrows
+Select A or B to switch the sounding side. Click the patch display to open Library.
+Loading a Library sound, using the header's previous/next arrows
 or editing a parameter changes only the selected side. The other side is retained
 until an explicit copy replaces it. A > B replaces B with A, including unsaved
 edits; B > A does the reverse. Copying into the selected side immediately applies

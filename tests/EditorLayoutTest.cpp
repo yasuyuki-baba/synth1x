@@ -289,14 +289,14 @@ TEST(EditorLayout, MidiRowsGroupSourceSensitivityAndDestinationWithoutOverlaps)
     }
 }
 
-TEST(EditorLayout, ComparisonControlsKeepBothNamesAndActionsInThePersistentHeader)
+TEST(EditorLayout, ComparisonActionsStayCompactBesideTheCurrentSoundDisplay)
 {
-    const std::array<EditorBounds,5> bounds{editorComparisonABounds,editorComparisonBBounds,
+    const std::array<EditorBounds,5> bounds{editorPresetDisplayBounds,editorComparisonBounds,
         editorCopyAToBBounds,editorCopyBToABounds,editorLibrarySummaryBounds};
     for(std::size_t i=0;i<bounds.size();++i) {
         EXPECT_GE(bounds[i].x,0);EXPECT_GE(bounds[i].y,0);
         EXPECT_LE(bounds[i].x+bounds[i].width,890);EXPECT_LE(bounds[i].y+bounds[i].height,112);
         for(std::size_t j=i+1;j<bounds.size();++j)EXPECT_FALSE(overlaps(bounds[i],bounds[j]));
     }
-    EXPECT_EQ(editorComparisonABounds.width,editorComparisonBBounds.width);
+    EXPECT_GT(editorPresetDisplayBounds.width,editorComparisonBounds.width+editorCopyAToBBounds.width+editorCopyBToABounds.width);
 }

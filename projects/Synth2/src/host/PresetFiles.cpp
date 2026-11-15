@@ -578,10 +578,9 @@ bool decodeSoundSession(const void* data,int size,
         if(!PresetBrowserState::deserialize(std::string(reinterpret_cast<const char*>(bytes+pos),length),result.sound.identity))return false;
         pos+=static_cast<int>(length);
     } else result.sound.identity.patchName=state->patchName;
-    for(int i=0;i<ProcessorBridge::parameterCount;++i) {
+    if(version==1)for(int i=0;i<ProcessorBridge::parameterCount;++i) {
         const float value=(state->values[i]-static_cast<float>(info[i].minimum))/static_cast<float>(info[i].maximum-info[i].minimum);
-        if(version==1)result.sound.identity.baseline[i]=value;
-        else if(std::abs(value-result.sound.identity.baseline[i])>1e-7)result.sound.modified=true;
+        result.sound.identity.baseline[i]=value;
     }
     result.size=pos;result.version=static_cast<int>(version);return true;
 }
