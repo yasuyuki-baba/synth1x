@@ -91,12 +91,20 @@ void SectionControl::Draw(IGraphics& g) {
     const auto heading=IRECT(mRECT.L+12,mRECT.T+8,mRECT.R-10,mRECT.T+26);
     g.DrawText(IText(Typography::heading,color(section.accent),"Synth2UIBold",EAlign::Near),section.title,heading);
     g.DrawLine(color(appearance.border),heading.L,mRECT.T+30,heading.R,mRECT.T+30,nullptr,0.5f);
+    for(const auto& group:synth2::editor::editorPanelGroups(section)) {
+        g.FillRoundRect(color(appearance.groupPanel),rect(group),3.f);
+        g.DrawRoundRect(color(appearance.border),rect(group),3.f,nullptr,0.5f);
+    }
     for(const auto& divider:synth2::editor::editorPanelDividers(section))
         g.FillRect(color(appearance.border),rect(divider));
 }
 
 PanelKnobControl::PanelKnobControl(const IRECT& bounds,int parameter,const char* label,const IVStyle& style)
-    : IVKnobControl(bounds,parameter,label,style.WithLabelText(style.labelText.WithSize(Typography::label))
+    : IVKnobControl(bounds,parameter,label,(synth2::editor::editorOscillatorGrouped(parameter)
+        ? style.WithColor(kBG,color(appearance.groupPanel)) : style)
+        .WithLabelText((synth2::editor::editorGroupHeading(parameter)
+            ? style.labelText.WithFont("Synth2UIBold").WithFGColor(color(appearance.groupText)) : style.labelText)
+            .WithSize(Typography::label))
         .WithValueText(style.valueText.WithSize(Typography::value)),true,false) {
     mTrackToHandleDistance=2.5f;
     SetTooltip("Drag to adjust. Click value to edit the original source number.");
@@ -140,7 +148,8 @@ SourceChoiceControl::SourceChoiceControl(const IRECT& bounds,int parameter,const
 void SourceChoiceControl::Draw(IGraphics& g) {
     const auto raw=sourceValue();
     const auto value=synth2::editor::editorChoiceDisplay(toggle,raw,choices);
-    g.DrawText(IText(Typography::label,muted,"Synth2UI"),label,
+    const bool heading=synth2::editor::editorGroupHeading(GetParamIdx());
+    g.DrawText(IText(Typography::label,heading ? color(appearance.groupText) : muted,heading ? "Synth2UIBold" : "Synth2UI"),label,
                IRECT(mRECT.L,mRECT.T,mRECT.R,mRECT.T+16));
     const auto box=IRECT(mRECT.L+4,mRECT.T+20,mRECT.R-4,std::min(mRECT.B-4,mRECT.T+48));
     g.FillRoundRect(color(appearance.control),box,3.f);
@@ -155,13 +164,15 @@ void SourceChoiceControl::Draw(IGraphics& g) {
     const auto display=value=="Random smooth" ? std::string("Rnd smooth") : value;
     const bool midiChoice=GetParamIdx()==40 || (GetParamIdx()>=86 && GetParamIdx()<=89);
     const auto fitted=synth2::editor::editorFitText(display,box.W()-(midiChoice ? 28.f : 10.f),measure);
-    auto valueBounds=box.GetPadded(-3.f);
+    auto valueBounds=IRECT(box.L+3.f,box.T,box.R-3.f,box.B);
     if(midiChoice) {
         valueBounds.R-=20.f;
         g.FillTriangle(muted,box.R-15,box.MH()-2,box.R-7,box.MH()-2,box.R-11,box.MH()+3);
     }
     g.DrawText(choiceText,fitted.c_str(),valueBounds);
-    SetTooltip((std::string(label)+": "+value).c_str());
+    auto tooltip=std::string(label)+": "+value;
+    if(const auto* help=synth2::editor::editorControlHelp(GetParamIdx()))tooltip=std::string(help)+" Current: "+value+".";
+    SetTooltip(tooltip.c_str());
 }
 
 void SourceChoiceControl::OnMouseDown(float,float,const IMouseMod&) {

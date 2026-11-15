@@ -61,6 +61,11 @@ TEST(EditorLayout, ControlsFitWithoutCollidingWithPanelsOrTheBrowserAndKeyboard)
     {
         const auto& panel=panels[p]; SCOPED_TRACE(panel.title);
         ASSERT_FALSE(panel.controls.empty()); ASSERT_GT(panel.columns,0);
+        for(const auto& group:editorPanelGroups(panel)) {
+            EXPECT_GE(group.x,panel.bounds.x+4);EXPECT_GE(group.y,panel.bounds.y+32);
+            EXPECT_LE(group.x+group.width,panel.bounds.x+panel.bounds.width-4);
+            EXPECT_LE(group.y+group.height,panel.bounds.y+panel.bounds.height-4);
+        }
         if(std::string(panel.title)=="DELAY")
         {
             EXPECT_GE(editorDelayTimingBounds.x,panel.bounds.x+8);

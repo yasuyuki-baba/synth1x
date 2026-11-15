@@ -161,7 +161,8 @@ void Synth2::layoutEditor(IGraphics* graphics)
                     return range.minimum+processor.normalizedValue(index)*(range.maximum-range.minimum);
                 });
             else control=new PanelKnobControl(bounds,item.parameter,item.label,style.WithColor(kPR,tint));
-            const auto tooltip=processor.parameter(item.parameter).name;
+            const auto* help=synth2::editor::editorControlHelp(item.parameter);
+            const auto tooltip=help ? std::string(help) : processor.parameter(item.parameter).name;
             control->SetTooltip(tooltip.c_str());
             graphics->AttachControl(control,parameterTag+item.parameter);
         }

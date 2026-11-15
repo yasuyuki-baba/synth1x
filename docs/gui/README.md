@@ -1,8 +1,8 @@
 # Editor behavior and visual contract
 
 Ordinary sound design belongs on one Synth surface with Synth1-inspired functional
-groups. Oscillators occupy the wider left column above the two LFOs. Filter
-and Amplifier share the center column; adjacent Voice and Unison panels sit above
+groups. Oscillators occupy the wider left column above adjacent Voice and Unison
+panels. Filter and Amplifier share the center column; the two LFOs stack above
 ARP in the right column.
 Effects and EQ occupy the bottom. Pan remains in the persistent header beside
 Master volume on every view. Allocate panel space by control density
@@ -58,15 +58,24 @@ units below the panel top. Both LFOs use a selector row followed by Rate, Amount
 Tempo and Key sync, with full-size Rate/Amount knobs. Chorus uses three full-width
 lower-row columns.
 Use Synth1's original functional groupings as a reference while retaining the
-larger Nord Lead 2-inspired Cutoff and its filter emphasis. Oscillator rows group
-OSC1/Sub, OSC2, Mod Env and shared mix/tuning controls. Voice groups Mode and
-Polyphony above paired Glide/Auto glide controls. Unison has its own adjacent
-panel, with Enabled/Voices, Detune/Spread and Pitch/Phase pairs. Amplifier separates
+larger Nord Lead 2-inspired Cutoff and its filter emphasis. Oscillator rows frame
+OSC1 and OSC2 side by side, with OSC1-based Sub and a separate interaction frame
+below. OSC1 groups Wave/Detune; OSC2 groups Wave/Pitch/Fine/Track. Sub groups
+Wave/Octave/Level. FM (OSC2 to OSC1), Sync (OSC1 to OSC2) and Ring (OSC1 times OSC2)
+share the interaction frame. The waveform selectors carry OSC1/OSC2/Sub headings,
+and interaction labels show the oscillator relationships. Mod Env and shared
+mix/tuning controls remain below those frames; Pulse width, shared Fine and Start phase
+labels distinguish their scope from OSC2 tuning. Tooltips explain Sub's OSC1/Mix
+dependency, Ring's priority over FM, and phase settings that apply at note-on.
+Voice sits directly below the
+oscillators, with Mode/Auto glide above Polyphony/Glide. Adjacent Unison keeps
+Enabled, Voices, Detune, Spread, Pitch and Phase in one centered row. Both LFOs
+retain a selector row and full-size lower knobs in the right column. Amplifier separates
 ADSR from level/velocity. EQ arranges Frequency/Level and Q/Tone in two compact rows. The bottom row distributes width by control density, keeping ordinary knob
 spacing close across Effect, Chorus, Delay and EQ. Time retains its tempo and
 stereo-delay readout directly below it. Muted rose headings and thin internal dividers
 provide hierarchy without reducing label sizes or moving controls off the main
-surface. Native drawing and review studies share divider and delay readout bounds;
+surface. Native drawing and review studies share group frames, dividers and delay readout bounds;
 studies use placeholders for live tempo and stereo delay times.
 Native drawing and review tools consume the shared typography policy.
 

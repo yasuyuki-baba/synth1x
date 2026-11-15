@@ -94,6 +94,8 @@ def render(model, view="synth"):
         box(x,y,w,h,a["filterPanel"] if section["title"]=="FILTER" else a["panel"],3,a["border"])
         text(x+12,y+22,section["title"],t["heading"],tone,weight="bold")
         nodes.append(f'<path d="M{x+12},{y+30} H{x+w-10}" stroke="{a["border"]}" stroke-width=".5"/>')
+        for gx,gy,gw,gh in section["groups"]:
+            box(gx,gy,gw,gh,a["groupPanel"],3,a["border"])
         for dx,dy,dw,dh in section["dividers"]:
             nodes.append(f'<rect x="{dx}" y="{dy}" width="{dw}" height="{dh}" fill="{a["border"]}"/>')
         for control in section["controls"]:
@@ -101,19 +103,23 @@ def render(model, view="synth"):
             index = control["parameter"]
             meta = model["parameters"][index]
             value = values[index]
-            text(x+w/2,y+11,control["label"],t["label"],a["muted"],"middle")
+            heading=control["groupLabel"]
+            text(x+w/2,y+11,control["label"],t["label"],a["groupText"] if heading else a["muted"],
+                 "middle","bold" if heading else "normal")
             if meta["toggle"] or meta["choices"]:
-                box(x+4,y+20,w-8,min(28,h-24),radius=4)
+                choice_height=min(28,h-24)
+                cy=y+20+choice_height/2
+                box(x+4,y+20,w-8,choice_height,radius=4)
                 label = "ON" if value else "OFF"
                 if not meta["toggle"]:
                     label = next((entry[1] for entry in meta["choices"] if entry[0]==value),"Default" if value==0 else "Custom")
                 label = "Rnd smooth" if label == "Random smooth" else label
                 size = t["button"]
-                text(x+w/2-(10 if index==40 or 86<=index<=89 else 0),y+37,label,size,align="middle")
+                text(x+w/2-(10 if index==40 or 86<=index<=89 else 0),cy+size/3,label,size,align="middle")
                 if index==40 or 86<=index<=89:
-                    nodes.append(f'<path d="M{x+w-19},{y+32} h8 l-4,5 z" fill="{a["muted"]}"/>')
+                    nodes.append(f'<path d="M{x+w-19},{cy-2} h8 l-4,5 z" fill="{a["muted"]}"/>')
                 if meta["toggle"]:
-                    nodes.append(f'<circle cx="{x+12}" cy="{y+32.5}" r="2" fill="{a["accent"] if value else a["track"]}"/>')
+                    nodes.append(f'<circle cx="{x+12}" cy="{cy}" r="2" fill="{a["accent"] if value else a["track"]}"/>')
             else:
                 knob(control)
     if view=="synth":
