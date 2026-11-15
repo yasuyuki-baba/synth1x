@@ -9,6 +9,7 @@
 #include "render/RandomArpAdmission.h"
 #include "CoreResources.h"
 #include "dsp/LfoHistory.h"
+#include "dsp/MidiRoutingHistory.h"
 #include "render/ReceiverParameterMapping.h"
 #include <Synth1NativeLoading.h>
 #include <Synth1PatchNativeControls.h>
@@ -341,7 +342,7 @@ struct ProcessorBridge::Impl
         {
             const auto initial=initialControls();const auto edits=runtimeEdits();
             for(int i=0;i<99;++i)if(!(edits[i/64]&(uint64_t{1}<<(i%64))))
-                patch.values[i]=static_cast<float>(std::clamp(initial[i],sourceMinimum(i),sourceMaximum(i)));
+                patch.values[i]=isDisabledMidiDestination(i,initial[i]) ? -1.f : static_cast<float>(std::clamp(initial[i],sourceMinimum(i),sourceMaximum(i)));
         }
         if(!continuousControls)for(int i=0;i<128;++i)patch.values[i]=std::round(patch.values[i]);
         return formatContinuousPatch(patch);
@@ -428,6 +429,29 @@ struct ProcessorBridge::Impl
 ProcessorBridge::ProcessorBridge():impl(std::make_unique<Impl>()){}
 ProcessorBridge::~ProcessorBridge()=default;
 const ParameterInfo& ProcessorBridge::parameter(int index)const{return impl->info.at(index);}
+double ProcessorBridge::midiDestination(int route) const
+{
+    if(route<0 || route>1)throw std::out_of_range("Invalid MIDI route");
+    const int index=87+route*2;
+    if(!impl->directControls && impl->nativeSourceLoading.load()
+        && std::lround(impl->values[126].load())==impl->nativeSourceVersion.load()
+        && (impl->nativeRuntimeEdits[index/64].load()&(uint64_t{1}<<(index%64)))==0)
+        return impl->nativeInitialControls[index].load();
+    return impl->values[index].load();
+}
+bool ProcessorBridge::setMidiDestination(int route,int destination)
+{
+    if(route<0 || route>1 || !dsp::MidiRoutingHistory::validDestination(destination))return false;
+    const int index=87+route*2;
+    if(destination>=0)impl->setSource(index,static_cast<float>(destination));
+    else
+    {
+        const float previous=impl->values[index].exchange(-1.f);
+        impl->parameterValueChanged(index,-1.f/127.f,previous);
+        impl->parameterRevision.fetch_add(1,std::memory_order_release);
+    }
+    return true;
+}
 double ProcessorBridge::normalizedValue(int index)const{return impl->normalized(index);}
 void ProcessorBridge::setNormalizedValue(int index,double value){impl->setNormalized(index,value);}
 void ProcessorBridge::prepare(double rate,int frames)

@@ -19,6 +19,10 @@ route sensitivity p50/p51 is continuous, while source/destination p86–p89 is d
 Preserve source ranges: sparse choices such as
 chorus 1/2/4 must not be replaced by menu ordinals or narrowed enum ranges.
 Known choices have names; historical noncanonical values remain representable.
+MIDI destinations p87/p89 also preserve the disabled patch value -1 in sound state
+and version 200 patch files. The named editor handles that value explicitly while
+the existing host range remains 0–127. Its clamped host projection and unchanged
+host echoes must not overwrite the disabled assignment.
 SDK editing steps do not quantize the loading adapter or saved bridge state;
 opening the editor or synchronizing SDK values must not send parameter setters
 back into the processor. Fractional historical selector values remain in bridge

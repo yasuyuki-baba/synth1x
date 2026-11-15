@@ -218,6 +218,22 @@ struct Synth2Vst3PatchTest
         data.inputParameterChanges=&fractionalEcho;
         plugin.ProcessParameterChanges(data,outgoing);
         require(plugin.processor.saveState()==fractionalBefore,"Host echo rounded fractional recalled values");
+        require(plugin.processor.setMidiDestination(0,-1),"MIDI destination disable failed");
+        const auto disabledBefore=plugin.processor.saveState();
+        plugin.notifyHostOfPatch();
+        require(plugin.GetParam(87)->GetMin()==0 && plugin.GetParam(87)->GetMax()==127,
+                "MIDI destination host range changed");
+        require(plugin.processor.saveState()==disabledBefore,"Notification changed disabled MIDI routing");
+        Steinberg::Vst::ParameterChanges disabledEcho;
+        for(int i=0;i<plugin.NParams();++i)
+        {
+            Steinberg::int32 queueIndex=0,pointIndex=0;
+            disabledEcho.addParameterData(i,queueIndex)->addPoint(0,plugin.getParamNormalized(i),pointIndex);
+        }
+        data.inputParameterChanges=&disabledEcho;
+        plugin.ProcessParameterChanges(data,outgoing);
+        require(plugin.processor.saveState()==disabledBefore,"Host echo changed disabled MIDI routing");
+        require(plugin.processor.midiDestination(0)==-1,"Disabled MIDI destination became zero");
         // Repeated UI ticks must not repeatedly request a latency restart.
         for(int factor:{4,1})
         {

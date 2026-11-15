@@ -92,7 +92,7 @@ std::optional<ProcessorState> decodeProcessorState(const void* data,int size,
         int index=-1;for(int i=0;i<parameterCount;++i)if(info[i].id==id){index=i;break;}
         if(index<0 || seen[index])return std::nullopt;
         const auto parsed=serialization::parseFiniteNumber(valueText);
-        if(!parsed || *parsed<info[index].minimum || *parsed>info[index].maximum)return std::nullopt;
+        if(!parsed || (!isDisabledMidiDestination(index,*parsed) && (*parsed<info[index].minimum || *parsed>info[index].maximum)))return std::nullopt;
         const double value=*parsed;
         next[index]=static_cast<float>(value);seen[index]=true;++count;
     }

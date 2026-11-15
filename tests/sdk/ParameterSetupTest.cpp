@@ -26,6 +26,7 @@ int main()
 
     iplug::IParam source;
     initializeHostParameter(source,86,{"p86","MIDI source",-1,65535,0});
+    require(source.NDisplayTexts()==0);
     source.Set(-1); require(source.Value()==-1);
     source.Set(45057); require(source.Value()==45057);
     source.Set(53247.7); require(source.Value()==53248);
@@ -48,7 +49,13 @@ int main()
     initializeHostParameter(destination,87,{"p87","Destination",0,127,0});
     fine.Set(67.125);require(!fine.GetStepped() && fine.Value()==67.125);
     sensitivity.Set(64.125);require(!sensitivity.GetStepped() && sensitivity.Value()==64.125);
+    require(destination.GetMin()==0 && destination.GetMax()==127 && destination.NDisplayTexts()==0);
     destination.Set(19.25);require(destination.GetStepped() && destination.Value()==19);
+
+    iplug::IParam bend;
+    initializeHostParameter(bend,40,{"p40","Pitch bend",0,127,12./127});
+    require(bend.GetMin()==0 && bend.GetMax()==127 && bend.NDisplayTexts()==0);
+    bend.Set(30);require(bend.Value()==30); // Recalled source words remain representable.
 
     iplug::IParam master;
     initializeHostParameter(master,128,{"masterVolume","Master Volume",0,1,1});

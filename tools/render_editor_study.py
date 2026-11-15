@@ -9,7 +9,7 @@ from pathlib import Path
 from preview_editor import ROOT, load_model
 
 
-def render(model):
+def render(model, view="synth"):
     a = model["appearance"]
     t = model["typography"]
     nodes = ['<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="920" viewBox="0 0 1280 920">',
@@ -55,10 +55,10 @@ def render(model):
         box(x, 82, w, 30)
         text(x+w/2, 101, label, 11, align="middle")
     for x, label in [(900,"Synth"),(1020,"MIDI"),(1140,"Library")]:
-        box(x,82,119,30,"#442c34" if x==900 else a["control"])
+        box(x,82,119,30,"#442c34" if label.lower()==view else a["control"])
         text(x+59,101,label,11,align="middle")
 
-    for section in model["panels"]:
+    for section in model["midiPanels"] if view=="midi" else model["panels"]:
         x,y,w,h = section["bounds"]
         tone = section["accent"]
         box(x,y,w,h,a["filterPanel"] if section["title"]=="FILTER" else a["panel"],3,a["border"])
@@ -76,10 +76,12 @@ def render(model):
                 box(x+4,y+20,w-8,min(28,h-24),radius=4)
                 label = "ON" if value else "OFF"
                 if not meta["toggle"]:
-                    label = next((label for v,label in meta["choices"] if v==value),"Default" if value==0 else "Custom")
+                    label = next((entry[1] for entry in meta["choices"] if entry[0]==value),"Default" if value==0 else "Custom")
                 label = "Rnd smooth" if label == "Random smooth" else label
                 size = t["button"]
-                text(x+w/2,y+37,label,size,align="middle")
+                text(x+w/2-(10 if index==40 or 86<=index<=89 else 0),y+37,label,size,align="middle")
+                if index==40 or 86<=index<=89:
+                    nodes.append(f'<path d="M{x+w-19},{y+32} h8 l-4,5 z" fill="{a["muted"]}"/>')
                 if meta["toggle"]:
                     nodes.append(f'<circle cx="{x+12}" cy="{y+32.5}" r="2" fill="{a["accent"] if value else a["track"]}"/>')
             else:
@@ -99,9 +101,10 @@ def render(model):
                 nodes.append(f'<path d="M{x1:.2f},{y1:.2f} L{x2:.2f},{y2:.2f}" stroke="{a["pointer"]}" stroke-width="1.8"/>')
                 readout = meta["unitDisplay"][max(0,min(127,int(value+.5)))] if meta["unitDisplay"] else f"{value:g}"
                 text(cx,y+29+diameter,readout,t["value"],a["muted"],"middle")
-    x,y,w,h = model["delayTimingBounds"]
-    for line,label in enumerate(("-- BPM","L -- ms","R -- ms")):
-        text(x,y+12+line*17,label,t["auxiliary"],a["muted"])
+    if view=="synth":
+        x,y,w,h = model["delayTimingBounds"]
+        for line,label in enumerate(("-- BPM","L -- ms","R -- ms")):
+            text(x,y+12+line*17,label,t["auxiliary"],a["muted"])
     text(20,818,"No sounds yet. Use Add sounds...",11,a["muted"])
     x,y,w,h=model["chrome"]["version"]
     text(x+w,y+h/2+4,"v"+model["version"],t["auxiliary"],a["muted"],"end")
@@ -160,8 +163,9 @@ def main():
     parser.add_argument("--exporter",type=Path,default=ROOT/"build-oos-core/ExportEditorLayout")
     parser.add_argument("--output",type=Path,default=ROOT/"build/editor/synth2-study.svg")
     parser.add_argument("--png",action="store_true")
+    parser.add_argument("--view",choices=("synth","midi"),default="synth")
     args = parser.parse_args()
-    svg = render(load_model(args.exporter))
+    svg = render(load_model(args.exporter),args.view)
     args.output.parent.mkdir(parents=True,exist_ok=True)
     args.output.write_text(svg)
     if args.png: png(svg,args.output.with_suffix('.png'))

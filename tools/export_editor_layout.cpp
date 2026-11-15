@@ -46,10 +46,7 @@ int main()
               << ",\"label\":" << T::label << ",\"value\":" << T::value
               << ",\"button\":" << T::button << ",\"heading\":" << T::heading
               << ",\"patchTitle\":" << T::patchTitle << "},\"panels\":[";
-    bool firstPanel=true;
-    for (const auto& panel:synth2::editor::editorPanels())
-    {
-        if (!firstPanel) std::cout << ','; firstPanel=false;
+    const auto writePanel=[&](const synth2::editor::EditorPanel& panel,bool midi) {
         std::cout << "{\"title\":" << std::quoted(panel.title) << ",\"description\":" << std::quoted(panel.description)
                   << ",\"accent\":" << std::quoted(panel.accent) << ",\"bounds\":[" << panel.bounds.x << ','
                   << panel.bounds.y << ',' << panel.bounds.width << ',' << panel.bounds.height << "],\"dividers\":[";
@@ -65,13 +62,21 @@ int main()
         {
             if (!first) std::cout << ','; first=false;
             const auto& control=panel.controls[cell];
-            const auto b=synth2::editor::editorControlBounds(panel,cell);
+            const auto b=midi ? synth2::editor::editorMidiControlBounds(panel,cell) : synth2::editor::editorControlBounds(panel,cell);
             std::cout << "{\"parameter\":" << control.parameter << ",\"label\":" << std::quoted(control.label)
                       << ",\"bounds\":[" << b.x << ',' << b.y << ',' << b.width << ',' << b.height << "]"
                       << ",\"diameter\":" << synth2::editor::editorKnobDiameter(control.parameter,b.height)
                       << ",\"tone\":" << std::quoted(control.parameter==19 ? a.accent : a.pointer) << '}';
         }
         std::cout << "]}";
+    };
+    bool firstPanel=true;
+    for(const auto& panel:synth2::editor::editorPanels()) {
+        if(!firstPanel)std::cout << ',';firstPanel=false;writePanel(panel,false);
+    }
+    std::cout << "],\"midiPanels\":[";firstPanel=true;
+    for(const auto& panel:synth2::editor::editorMidiPanels()) {
+        if(!firstPanel)std::cout << ',';firstPanel=false;writePanel(panel,true);
     }
     const auto timing=synth2::editor::editorDelayTimingBounds;
     std::cout << "],\"delayTimingBounds\":[" << timing.x << ',' << timing.y << ','
@@ -80,8 +85,9 @@ int main()
     {
         if (index) std::cout << ',';
         const auto& info=processor.parameter(index);
-        const auto initial=std::lround(info.minimum+processor.normalizedValue(index)*(info.maximum-info.minimum));
-        std::cout << "{\"minimum\":" << synth2::sourceMinimum(index) << ",\"maximum\":" << synth2::sourceMaximum(index)
+        const auto initial=std::lround(index==87 || index==89 ? processor.midiDestination((index-87)/2)
+            : info.minimum+processor.normalizedValue(index)*(info.maximum-info.minimum));
+        std::cout << "{\"minimum\":" << ((index==87 || index==89) ? -1 : synth2::sourceMinimum(index)) << ",\"maximum\":" << synth2::sourceMaximum(index)
                   << ",\"initial\":" << initial
                   << ",\"integerSteps\":" << (synth2::editor::parameterUsesIntegerSteps(index) ? "true" : "false")
                   << ",\"toggle\":" << (synth2::editor::editorToggle(index) ? "true" : "false") << ",\"choices\":[";
@@ -89,7 +95,7 @@ int main()
         for (const auto& choice:synth2::editor::editorChoices(index))
         {
             if (!first) std::cout << ','; first=false;
-            std::cout << '[' << choice.value << ',' << std::quoted(choice.label) << ']';
+            std::cout << '[' << choice.value << ',' << std::quoted(choice.label) << ',' << std::quoted(choice.group ? choice.group : "") << ']';
         }
         std::cout << "],\"unitDisplay\":[";
         if (synth2::editor::editorHasUnit(index))

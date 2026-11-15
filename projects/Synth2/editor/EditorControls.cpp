@@ -133,8 +133,8 @@ void PanelKnobControl::DrawIndicatorTrack(IGraphics& g,float angle,float cx,floa
     g.DrawArc(GetParamIdx()==19 ? accent : color(appearance.pointer),cx,cy,radius,-135.f,angle,nullptr,1.25f);
 }
 
-SourceChoiceControl::SourceChoiceControl(const IRECT& bounds,int parameter,const char* label,std::function<double()> sourceValue)
-    : IControl(bounds,parameter), sourceValue(std::move(sourceValue)), label(label), toggle(synth2::editor::editorToggle(parameter)),
+SourceChoiceControl::SourceChoiceControl(const IRECT& bounds,int parameter,const char* label,std::function<double()> sourceValue,std::function<void(int)> submitSource)
+    : IControl(bounds,parameter), sourceValue(std::move(sourceValue)), submitSource(std::move(submitSource)), label(label), toggle(synth2::editor::editorToggle(parameter)),
       choices(synth2::editor::editorChoices(parameter)) {}
 
 void SourceChoiceControl::Draw(IGraphics& g) {
@@ -153,8 +153,14 @@ void SourceChoiceControl::Draw(IGraphics& g) {
         IRECT bounds;const std::string copy(text);g.MeasureText(choiceText,copy.c_str(),bounds);return bounds.W();
     };
     const auto display=value=="Random smooth" ? std::string("Rnd smooth") : value;
-    const auto fitted=synth2::editor::editorFitText(display,box.W()-10.f,measure);
-    g.DrawText(choiceText,fitted.c_str(),box.GetPadded(-3.f));
+    const bool midiChoice=GetParamIdx()==40 || (GetParamIdx()>=86 && GetParamIdx()<=89);
+    const auto fitted=synth2::editor::editorFitText(display,box.W()-(midiChoice ? 28.f : 10.f),measure);
+    auto valueBounds=box.GetPadded(-3.f);
+    if(midiChoice) {
+        valueBounds.R-=20.f;
+        g.FillTriangle(muted,box.R-15,box.MH()-2,box.R-7,box.MH()-2,box.R-11,box.MH()+3);
+    }
+    g.DrawText(choiceText,fitted.c_str(),valueBounds);
     SetTooltip((std::string(label)+": "+value).c_str());
 }
 
@@ -164,16 +170,36 @@ void SourceChoiceControl::OnMouseDown(float,float,const IMouseMod&) {
     else
     {
         menu.Clear();
-        for (const auto& choice:choices) menu.AddItem(choice.label);
+        for(std::size_t i=0;i<choices.size();++i)
+        {
+            const auto& choice=choices[i];
+            auto* target=&menu;
+            if(choice.group)
+            {
+                target=nullptr;
+                for(int item=0;item<menu.NItems();++item)
+                    if(std::string(menu.GetItem(item)->GetText())==choice.group)
+                        target=menu.GetItem(item)->GetSubmenu();
+                if(!target) {
+                    target=new IPopupMenu;
+                    menu.AddItem(choice.group,target);
+                }
+            }
+            const int flags=std::abs(sourceValue()-choice.value)<.001 ? IPopupMenu::Item::kChecked : 0;
+            target->AddItem(new IPopupMenu::Item(choice.label,flags,static_cast<int>(i)));
+        }
         GetUI()->CreatePopupMenu(*this,menu,mRECT);
     }
 }
 
 void SourceChoiceControl::OnPopupMenuSelection(IPopupMenu* selection,int) {
-    if (!selection) return;
-    const int index=selection->GetChosenItemIdx();
+    if (!selection || !selection->GetChosenItem()) return;
+    const int index=selection->GetChosenItem()->GetTag();
     if (const auto source=synth2::editor::editorSelectedSourceValue(choices,index))
-        SetValueFromUserInput(GetParam()->ToNormalized(*source));
+    {
+        if(submitSource)submitSource(*source);
+        else SetValueFromUserInput(GetParam()->ToNormalized(*source));
+    }
 }
 
 CatalogListControl::CatalogListControl(const IRECT& bounds,const synth2::host::PatchCatalog& catalog,

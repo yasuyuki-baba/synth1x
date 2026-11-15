@@ -48,7 +48,7 @@ TEST(EditorLayout, SoundControlsAreExposedOnceAndSerializedMetadataStaysHidden)
     ASSERT_EQ(editorViews.size(),3u);
     EXPECT_STREQ(editorViews[0],"Synth");EXPECT_STREQ(editorViews[1],"MIDI");
     EXPECT_STREQ(editorViews[editorLibraryView],"Library");
-    for (int index : {50,51,86,87,88,89})
+    for (int index : {40,50,51,86,87,88,89})
         for (const auto& panel:editorPanels())
             for (const auto& control:panel.controls) EXPECT_NE(control.parameter,index);
 }
@@ -124,7 +124,8 @@ TEST(EditorLayout, ChoicesRetainSourceWordsIncludingNonconsecutiveChorusValues)
         std::set<int> seen;
         for (const auto& choice:editorChoices(index))
         {
-            EXPECT_GE(choice.value,synth2::sourceMinimum(index)); EXPECT_LE(choice.value,synth2::sourceMaximum(index));
+            if(!synth2::isDisabledMidiDestination(index,choice.value))EXPECT_GE(choice.value,synth2::sourceMinimum(index));
+            EXPECT_LE(choice.value,synth2::sourceMaximum(index));
             EXPECT_TRUE(seen.insert(choice.value).second);
         }
     }
@@ -239,4 +240,50 @@ TEST(EditorBankMenu, AdjacentBanksSkipHeadingsAndStopAtEitherEnd)
     EXPECT_FALSE(editorAdjacentBank(rows,"Set/Pads/Deep",1));
     EXPECT_FALSE(editorAdjacentBank(editorBankMenuRows({}),"",1));
     EXPECT_EQ(editorAdjacentBank(rows,"deleted",1),"Set/Lead");
+}
+
+TEST(EditorLayout, MidiRowsGroupSourceSensitivityAndDestinationWithoutOverlaps)
+{
+    ASSERT_EQ(editorMidiPanels().size(),1u);
+    std::set<int> parameters;
+    for(const auto& panel:editorMidiPanels())
+    {
+        ASSERT_EQ(panel.controls.size(),7u);
+        for(std::size_t i=0;i<panel.controls.size();++i)
+        {
+            EXPECT_TRUE(parameters.insert(panel.controls[i].parameter).second);
+            const auto b=editorMidiControlBounds(panel,i);
+            EXPECT_GE(b.x,panel.bounds.x);
+            EXPECT_GE(b.y,panel.bounds.y+38);
+            EXPECT_LE(b.x+b.width,panel.bounds.x+panel.bounds.width);
+            EXPECT_LE(b.y+b.height,panel.bounds.y+panel.bounds.height);
+            for(std::size_t j=i+1;j<panel.controls.size();++j)
+                EXPECT_FALSE(overlaps(b,editorMidiControlBounds(panel,j)));
+        }
+    }
+    EXPECT_EQ(parameters,(std::set<int>{40,50,51,86,87,88,89}));
+    for(std::size_t i=0;i<editorMidiPanels().size();++i)
+        for(std::size_t j=i+1;j<editorMidiPanels().size();++j)
+            EXPECT_FALSE(overlaps(editorMidiPanels()[i].bounds,editorMidiPanels()[j].bounds));
+    for(int source : {86,88})
+    {
+        const auto choices=editorChoices(source);
+        ASSERT_EQ(choices.size(),13u);
+        EXPECT_EQ(choices.front().value,45057);
+        EXPECT_EQ(choices.back().value,57344);
+    }
+    for(int destination : {87,89})
+    {
+        const auto choices=editorChoices(destination);
+        ASSERT_EQ(choices.size(),53u);
+        EXPECT_EQ(choices.front().value,-1);
+        EXPECT_EQ(choices.front().group,nullptr);
+        std::map<std::string,int> groupSizes;
+        for(std::size_t i=1;i<choices.size();++i) {
+            ASSERT_NE(choices[i].group,nullptr);
+            ++groupSizes[choices[i].group];
+        }
+        EXPECT_LE(groupSizes.size(),12u);
+        for(const auto& [group,size]:groupSizes)EXPECT_LE(size,13);
+    }
 }
