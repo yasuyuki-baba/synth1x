@@ -2,6 +2,7 @@
 #include "host/PatchCatalog.h"
 #include "host/ProcessorBridge.h"
 #include "host/PatchTagInference.h"
+#include "editor/EditorLibraryInteraction.h"
 #include "patch/PatchFormat.h"
 #include <miniz.h>
 #include <atomic>
@@ -485,4 +486,32 @@ TEST(PatchCatalog, TagCacheUpdatesChangedZipEntriesAndRecallsInvalidSourceErrors
     ASSERT_TRUE(catalog.reload(error));EXPECT_EQ(catalog.tagCacheStats().rebuilt,0u);
     EXPECT_EQ(catalog.tagCacheStats().reused,2u);EXPECT_EQ(catalog.patches()[1].error,failure);
     EXPECT_TRUE(catalog.patches()[1].automaticTags.empty());
+}
+
+TEST(PatchCatalog, InlineBankAndTagFiltersCombineWithSearchAndFavorites)
+{
+    CatalogFiles files;
+    for(const auto& bank : {"Bank A","Bank B"})fs::create_directories(files.dir/bank);
+    std::ofstream(files.dir/"Bank A"/"one.sy1")<<"Warm One\nver=113\n19,97\n29,87\n";
+    std::ofstream(files.dir/"Bank A"/"two.sy1")<<"Warm Two\nver=113\n19,97\n29,87\n";
+    std::ofstream(files.dir/"Bank B"/"three.sy1")<<"Warm Three\nver=113\n19,97\n29,87\n";
+    PatchCatalog catalog(files.dir);std::string error;
+    ASSERT_TRUE(catalog.reload(error))<<error;
+    ASSERT_EQ(catalog.patches().size(),3u);
+    for(const auto& patch:catalog.patches())
+    {
+        ASSERT_TRUE(catalog.setFavorite(patch.id,true,error));
+        ASSERT_TRUE(catalog.setTags(patch.id,patch.patch.name=="Warm Two" ? "Choice, Glass" : "Choice, Velvet",error));
+    }
+    CatalogFilter filter;filter.query="warm";filter.favoritesOnly=true;filter.selectedTags={"Choice"};
+    ASSERT_EQ(catalog.search(filter).size(),3u);
+    filter.bankId="Bank A";
+    ASSERT_EQ(catalog.search(filter).size(),2u);
+    ASSERT_TRUE(synth2::editor::editorToggleLibraryTag(filter.selectedTags,"Velvet"));
+    const auto matches=catalog.search(filter);
+    ASSERT_EQ(matches.size(),1u);EXPECT_EQ(catalog.patches()[matches[0]].patch.name,"Warm One");
+    EXPECT_EQ(filter.query,"warm");EXPECT_TRUE(filter.favoritesOnly);EXPECT_EQ(filter.bankId,"Bank A");
+    EXPECT_EQ(filter.selectedTags,(std::vector<std::string>{"Choice","Velvet"}));
+    ASSERT_TRUE(synth2::editor::editorToggleLibraryTag(filter.selectedTags,"velvet"));
+    EXPECT_EQ(catalog.search(filter).size(),2u);
 }

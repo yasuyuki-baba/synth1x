@@ -1,4 +1,6 @@
 #pragma once
+#include "editor/EditorLibraryInteraction.h"
+#include "editor/EditorLibraryFilters.h"
 #include "IControls.h"
 #include "editor/EditorLayout.h"
 #include "editor/EditorPresetDisplay.h"
@@ -91,6 +93,7 @@ public:
     CatalogListControl(const IRECT& bounds,const host::PatchCatalog& catalog,
         const std::string& selected,const std::string& keyboardSelection,std::function<void(std::size_t)> load,
         std::function<void(const std::string&,bool)> favorite,
+        std::function<void(const std::string&)> bank,std::function<void(const std::string&)> tag,
         std::function<void(double)> scroll,std::function<void(const char*)> import);
     void setResults(std::vector<std::size_t> results,double start);
     void Draw(IGraphics& graphics) override;
@@ -99,6 +102,7 @@ public:
     void OnMouseUp(float x,float y,const IMouseMod& modifiers) override;
     void OnMouseWheel(float x,float y,const IMouseMod& modifiers,float delta) override;
     void OnMouseOver(float x,float y,const IMouseMod& modifiers) override;
+    void OnMouseOut() override;
     void OnDrop(const char* path) override;
     void OnDropMultiple(const std::vector<const char*>& paths) override;
 private:
@@ -108,14 +112,38 @@ private:
     std::vector<std::size_t> matches;
     double offset=0,drawOffset=0,animationStart=0;
     bool draggingScroll=false;
-    float scrollGrab=0;
+    float scrollGrab=0,hoverX=-1,hoverY=-1;
+    std::vector<EditorLibraryTag> rowTags(const host::CatalogPatch& item) const;
+    std::optional<std::size_t> rowAt(float y) const;
+    EditorLibraryTarget targetAt(float x,const host::CatalogPatch& item) const;
     IRECT scrollTrack() const;
     IRECT scrollThumb() const;
     void dragScroll(float y);
     std::function<void(std::size_t)> load;
     std::function<void(const std::string&,bool)> favorite;
+    std::function<void(const std::string&)> filterBank,filterTag;
     std::function<void(double)> scroll;
     std::function<void(const char*)> import;
+};
+
+// Compact removal buttons; the native popup exposes conditions that do not fit.
+class LibraryFiltersControl final : public IControl
+{
+public:
+    LibraryFiltersControl(const IRECT& bounds,
+        std::function<void(const EditorLibraryFilter&)> remove,
+        std::function<void(IControl*,const std::vector<EditorLibraryFilter>&,const IRECT&)> more);
+    void setFilters(std::vector<EditorLibraryFilter> filters);
+    void Draw(IGraphics& graphics) override;
+    void OnMouseDown(float x,float y,const IMouseMod& modifiers) override;
+    void OnMouseOver(float x,float y,const IMouseMod& modifiers) override;
+    void OnMouseOut() override;
+private:
+    std::vector<EditorLibraryFilterChip> chips() const;
+    std::vector<EditorLibraryFilter> filters;
+    float hoverX=-1;
+    std::function<void(const EditorLibraryFilter&)> remove;
+    std::function<void(IControl*,const std::vector<EditorLibraryFilter>&,const IRECT&)> more;
 };
 
 class SearchControl final : public IEditableTextControl

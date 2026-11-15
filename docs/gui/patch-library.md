@@ -34,6 +34,26 @@ end and long bank paths at the beginning, using measured UTF-8-safe text widths
 to prevent column overlap. Row tooltips expose the full title, bank path and tags. Filtering does not change the selected
 sound or mark another row as selected.
 
+Clicking a bank name in the BANK column selects that exact bank through the same
+filter path as the bank selector. Clicking an individual visible manual or
+automatic tag toggles that tag in the AND filter, using the tag menu's case
+matching and 32-tag limit. Search text, favorites and the other tag selections
+remain intact; bank selection clears registration-only filtering as usual.
+These links reset the scroll/candidate and preserve the sounding patch and edit
+baseline. The filter toolbar reflects each selection. A compact row beside the matching
+count lists active bank, search, favorites, registration and tag conditions as
+removal buttons. Clicking a condition removes only that condition and preserves
+all others. Long labels are measured and ellipsized; hover reveals the complete
+condition. A measured `+N more` button opens a native, scrollable menu for removing
+individual conditions that do not fit. This row keeps the result viewport's
+height unchanged; keyboard help remains visible when no conditions are selected
+and is also available on the matching count's tooltip. Bank/tag links use a hand
+cursor and an accent underline on hover. Tag gaps, overflow markers and column
+gutters do not audition a sound; sound-name cells and the separate favorite
+indicator retain their own actions. SOUND uses a narrower column so BANK can
+show more of a long directory/archive path without reducing tag space.
+
+
 ## Keyboard patch selection
 
 Ctrl+F (Windows) or Command+F (macOS) opens Library and focuses the search field.

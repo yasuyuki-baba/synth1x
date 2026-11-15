@@ -212,6 +212,7 @@ TEST(EditorLayout, LibraryColumnsLeaveGuttersAndRoomForTags)
     EXPECT_LE(C::nameRight+12,C::bankLeft);
     EXPECT_LE(C::bankRight+12,C::tagsLeft);
     EXPECT_GE(C::bankRight-C::bankLeft,250);
+    EXPECT_GT(C::bankRight-C::bankLeft,C::nameRight-C::nameLeft);
     EXPECT_GE(1232-C::tagsLeft,500);
 }
 

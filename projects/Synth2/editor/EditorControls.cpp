@@ -206,11 +206,13 @@ CatalogListControl::CatalogListControl(const IRECT& bounds,const synth2::host::P
                    const std::string& selected,const std::string& keyboardSelection,
                    std::function<void(std::size_t)> load,
                    std::function<void(const std::string&,bool)> favorite,
+                   std::function<void(const std::string&)> bank,std::function<void(const std::string&)> tag,
                    std::function<void(double)> scroll,
                    std::function<void(const char*)> import)
     : IControl(bounds),catalog(catalog),selected(selected),keyboardSelection(keyboardSelection),load(std::move(load)),
-      favorite(std::move(favorite)),scroll(std::move(scroll)),import(std::move(import)) {
-    SetTooltip("Click a sound to audition. Click + / - to favorite. Scroll to browse sounds. Drag the scrollbar to jump.");
+      favorite(std::move(favorite)),filterBank(std::move(bank)),filterTag(std::move(tag)),
+      scroll(std::move(scroll)),import(std::move(import)) {
+    SetTooltip("Click a sound name to audition, a bank to filter, or a tag to toggle its filter. Click + / - to favorite.");
 }
 
 void CatalogListControl::setResults(std::vector<std::size_t> results,double start) {
@@ -230,6 +232,22 @@ void CatalogListControl::setResults(std::vector<std::size_t> results,double star
         },100);
     }
     SetDirty(false);
+}
+
+std::vector<EditorLibraryTag> CatalogListControl::rowTags(const host::CatalogPatch& item) const {
+    return synth2::editor::editorLibraryTags(item.tags,item.visibleAutomaticTags(),mRECT.W(),[&](std::string_view value) {
+        IRECT measured;const std::string text(value);
+        GetUI()->MeasureText(IText(Typography::label,ink,"Synth2UI",EAlign::Near),text.c_str(),measured);
+        return measured.W();
+    });
+}
+std::optional<std::size_t> CatalogListControl::rowAt(float y) const {
+    return synth2::editor::editorLibraryRow(y-mRECT.T,mRECT.H(),drawOffset,matches.size(),libraryRowHeight);
+}
+EditorLibraryTarget CatalogListControl::targetAt(float x,const host::CatalogPatch& item) const {
+    auto target=synth2::editor::editorLibraryTarget(x-mRECT.L,mRECT.W(),rowTags(item));
+    if(target.action==LibraryRowAction::bank && item.bankId.empty())return {};
+    return target;
 }
 
 IRECT CatalogListControl::scrollTrack() const {
@@ -283,30 +301,27 @@ void CatalogListControl::Draw(IGraphics& g) {
         const auto label=item.patch.name+(item.error.empty() ? "" : " [Cannot load]");
         const auto titleText=isSelected ? text.WithFont("Synth2UIBold").WithFGColor(color(appearance.displayText)) : text;
         using Columns=synth2::editor::EditorLibraryColumns;
-        const auto drawFitted=[&](const IText& style,const std::string& value,const IRECT& cell,bool keepEnd=false) {
+        const auto tags=rowTags(item);
+        const auto hovered=hoverY>=y && hoverY<y+libraryRowHeight
+            ? synth2::editor::editorLibraryTarget(hoverX-mRECT.L,mRECT.W(),tags) : EditorLibraryTarget{};
+        const auto drawFitted=[&](const IText& style,const std::string& value,const IRECT& cell,bool keepEnd=false,bool underline=false) {
             const auto measure=[&](std::string_view text) {
                 IRECT measured;const std::string copy(text);g.MeasureText(style,copy.c_str(),measured);return measured.W();
             };
             const auto fitted=synth2::editor::editorFitText(value,cell.W(),measure,keepEnd);
             g.DrawText(style,fitted.c_str(),cell);
+            if(underline)g.DrawLine(accent,cell.L,cell.MH()+8,cell.L+measure(fitted),cell.MH()+8,nullptr,1.f);
         };
         drawFitted(titleText,label,IRECT(mRECT.L+Columns::nameLeft,y,mRECT.L+Columns::nameRight,y+libraryRowHeight));
-        drawFitted(text.WithSize(Typography::label).WithFGColor(muted),item.bankName,
-                   IRECT(mRECT.L+Columns::bankLeft,y,mRECT.L+Columns::bankRight,y+libraryRowHeight),true);
-        float tagX=mRECT.L+Columns::tagsLeft;
-        const float tagRight=mRECT.R-26;
-        const auto drawTag=[&](const std::string& tag,bool automatic) {
-            if(tagX>=tagRight)return;
-            const auto tagText=text.WithSize(Typography::label).WithFGColor(automatic ? muted : ink);
-            IRECT measured;g.MeasureText(tagText,tag.c_str(),measured);
-            const float width=measured.W()+10;
-            if(tagX+width>tagRight) {
-                drawFitted(tagText,"...",IRECT(tagX,y,tagRight,y+libraryRowHeight));tagX=tagRight;return;
-            }
-            g.DrawText(tagText,tag.c_str(),IRECT(tagX,y,tagX+width,y+libraryRowHeight));tagX+=width;
-        };
-        for(const auto& tag:item.tags)drawTag(tag,false);
-        for(const auto& tag:item.visibleAutomaticTags())drawTag(tag,true);
+        const bool bankHover=hovered.action==LibraryRowAction::bank && !item.bankId.empty();
+        drawFitted(text.WithSize(Typography::label).WithFGColor(bankHover ? accent : muted),item.bankName,
+                   IRECT(mRECT.L+Columns::bankLeft,y,mRECT.L+Columns::bankRight,y+libraryRowHeight),true,bankHover);
+        for(const auto& tag:tags) {
+            const bool tagHover=hovered.action==LibraryRowAction::tag && hovered.tag==tag.text;
+            const auto style=text.WithSize(Typography::label).WithFGColor(tagHover ? accent : tag.automatic ? muted : ink);
+            const IRECT cell(mRECT.L+tag.left,y,mRECT.L+tag.left+tag.width,y+libraryRowHeight);
+            drawFitted(style,tag.text,cell,false,tagHover);
+        }
     }
     g.PathClipRegion(IRECT());
     g.FillRoundRect(background,scrollTrack(),4.f);
@@ -322,11 +337,19 @@ void CatalogListControl::OnMouseDown(float x,float y,const IMouseMod&) {
         scrollGrab=thumb.Contains(x,y) ? y-thumb.T : thumb.H()/2;
         dragScroll(y);return;
     }
-    const auto row=static_cast<std::size_t>((y-mRECT.T)/libraryRowHeight+drawOffset);
-    if(row>=matches.size())return;
-    const auto index=matches[row];const auto item=catalog.patches()[index];
-    if(x<mRECT.L+32)favorite(item.id,!item.favorite);
-    else load(index);
+    const auto row=rowAt(y);
+    if(!row)return;
+    const auto index=matches[*row];const auto& item=catalog.patches()[index];
+    const auto target=targetAt(x,item);
+    switch(target.action) {
+        case LibraryRowAction::favorite: {
+            const auto id=item.id;const bool value=!item.favorite;favorite(id,value);break;
+        }
+        case LibraryRowAction::bank: {const auto id=item.bankId;filterBank(id);break;}
+        case LibraryRowAction::tag: filterTag(target.tag);break;
+        case LibraryRowAction::load: load(index);break;
+        case LibraryRowAction::none: break;
+    }
 }
 
 void CatalogListControl::OnMouseDrag(float,float y,float,float,const IMouseMod&) {
@@ -338,14 +361,25 @@ void CatalogListControl::OnMouseUp(float,float,const IMouseMod&) {
 }
 
 void CatalogListControl::OnMouseOver(float x,float y,const IMouseMod& mod) {
-    const auto row=static_cast<std::size_t>((y-mRECT.T)/libraryRowHeight+drawOffset);
+    hoverX=x;hoverY=y;
+    LibraryRowAction action=LibraryRowAction::none;
+    const auto row=rowAt(y);
     if(x>=mRECT.R-18)SetTooltip("Drag to scroll through matching sounds.");
-    else if(row<matches.size()) {
-        const auto& item=catalog.patches()[matches[row]];
-        const auto tooltip=item.patch.name+"\n"+item.bankName+"\n"+host::PatchCatalog::tagText(item.allTags());
+    else if(row) {
+        const auto& item=catalog.patches()[matches[*row]];
+        const auto target=targetAt(x,item);action=target.action;
+        auto tooltip=item.patch.name+"\n"+item.bankName+"\n"+host::PatchCatalog::tagText(item.allTags());
+        if(action==LibraryRowAction::bank)tooltip+="\nClick to filter this bank.";
+        if(action==LibraryRowAction::tag)tooltip+="\nClick to toggle tag filter: "+target.tag;
         SetTooltip(tooltip.c_str());
     }
-    IControl::OnMouseOver(x,y,mod);
+    else SetTooltip("Click a sound name to audition, a bank to filter, or a tag to toggle its filter.");
+    GetUI()->SetMouseCursor(action==LibraryRowAction::none ? ECursor::ARROW : ECursor::HAND);
+    IControl::OnMouseOver(x,y,mod);SetDirty(false);
+}
+void CatalogListControl::OnMouseOut() {
+    hoverX=hoverY=-1;
+    GetUI()->SetMouseCursor();IControl::OnMouseOut();SetDirty(false);
 }
 
 void CatalogListControl::OnMouseWheel(float,float,const IMouseMod&,float delta) {
@@ -355,6 +389,86 @@ void CatalogListControl::OnMouseWheel(float,float,const IMouseMod&,float delta) 
 void CatalogListControl::OnDrop(const char* path) {import(path);}
 
 void CatalogListControl::OnDropMultiple(const std::vector<const char*>& paths) {for(const auto* path:paths)import(path);}
+
+LibraryFiltersControl::LibraryFiltersControl(const IRECT& bounds,
+    std::function<void(const EditorLibraryFilter&)> remove,
+    std::function<void(IControl*,const std::vector<EditorLibraryFilter>&,const IRECT&)> more)
+    : IControl(bounds),remove(std::move(remove)),more(std::move(more)) {}
+
+void LibraryFiltersControl::setFilters(std::vector<EditorLibraryFilter> value)
+{
+    if(filters==value)return;
+    filters=std::move(value);hoverX=-1;SetTooltip("");SetDirty(false);
+}
+
+std::vector<EditorLibraryFilterChip> LibraryFiltersControl::chips() const
+{
+    return editorLibraryFilterChips(filters,mRECT.W(),[&](const std::string& label) {
+        IRECT bounds;GetUI()->MeasureText(IText(Typography::button,ink,"Synth2UI"),label.c_str(),bounds);
+        return bounds.W();
+    });
+}
+
+void LibraryFiltersControl::Draw(IGraphics& g)
+{
+    if(filters.empty()) {
+        g.DrawText(IText(Typography::auxiliary,muted,"Synth2UI",EAlign::Far),
+            "Ctrl/Cmd+F: Search   /   Up/Down: Browse   /   Enter: Load",mRECT);
+        return;
+    }
+    const auto text=IText(Typography::button,ink,"Synth2UI",EAlign::Near);
+    const auto measure=[&](std::string_view value) {
+        IRECT bounds;const std::string copy(value);g.MeasureText(text,copy.c_str(),bounds);return bounds.W();
+    };
+    for(const auto& chip:chips()) {
+        const auto bounds=IRECT(mRECT.L+chip.left,mRECT.T,mRECT.L+chip.left+chip.width,mRECT.B);
+        const bool hover=hoverX>=chip.left && hoverX<chip.left+chip.width;
+        g.FillRoundRect(hover ? color(appearance.selectedRow) : panel,bounds,3.f);
+        g.DrawRoundRect(hover ? accent : color(appearance.border),bounds,3.f,nullptr,.5f);
+        const auto label=chip.remaining ? editorLibraryMoreFilters(chip.remaining) : filters[chip.index].label;
+        const float labelWidth=bounds.W()-(chip.remaining ? 16.f : 30.f);
+        const auto fitted=!chip.remaining && filters[chip.index].kind==LibraryFilterKind::bank
+            ? "Bank: "+editorFitText(std::string_view(label).substr(6),labelWidth-measure("Bank: "),measure,true)
+            : editorFitText(label,labelWidth,measure);
+        g.DrawText(text.WithFGColor(hover ? accent : ink),fitted.c_str(),
+            IRECT(bounds.L+8,bounds.T,bounds.R-(chip.remaining ? 8.f : 22.f),bounds.B));
+        if(!chip.remaining) {
+            const float x=bounds.R-11,y=bounds.MH();
+            g.DrawLine(hover ? accent : muted,x-3,y-3,x+3,y+3,nullptr,1.f);
+            g.DrawLine(hover ? accent : muted,x-3,y+3,x+3,y-3,nullptr,1.f);
+        }
+    }
+}
+
+void LibraryFiltersControl::OnMouseDown(float x,float y,const IMouseMod& modifiers)
+{
+    if(!modifiers.L || y<mRECT.T || y>=mRECT.B)return;
+    const auto layout=chips();const auto* chip=editorLibraryFilterChipAt(x-mRECT.L,layout);
+    if(!chip)return;
+    if(chip->remaining) {
+        const std::vector<EditorLibraryFilter> hidden(filters.begin()+chip->index,filters.end());
+        const IRECT anchor(mRECT.L+chip->left,mRECT.T,mRECT.L+chip->left+chip->width,mRECT.B);
+        more(this,hidden,anchor);
+    } else {
+        // The callback refreshes this control, so do not borrow its filter value.
+        const auto filter=filters[chip->index];remove(filter);
+    }
+}
+
+void LibraryFiltersControl::OnMouseOver(float x,float y,const IMouseMod& modifiers)
+{
+    IControl::OnMouseOver(x,y,modifiers);hoverX=x-mRECT.L;
+    const auto layout=chips();const auto* chip=editorLibraryFilterChipAt(hoverX,layout);
+    GetUI()->SetMouseCursor(chip ? ECursor::HAND : ECursor::ARROW);
+    const auto tooltip=chip ? chip->remaining ? "Remove a hidden filter" : "Remove "+filters[chip->index].label
+        : std::string("Ctrl/Cmd+F: Search. Up/Down: Browse. Enter: Load. Tags match all selected conditions.");
+    SetTooltip(tooltip.c_str());SetDirty(false);
+}
+
+void LibraryFiltersControl::OnMouseOut()
+{
+    IControl::OnMouseOut();hoverX=-1;GetUI()->SetMouseCursor(ECursor::ARROW);SetDirty(false);
+}
 
 SearchControl::SearchControl(const IRECT& bounds, const char* text, const IText& style,
               std::function<void(const char*)> change,const char* placeholder)

@@ -220,13 +220,17 @@ void Synth2::layoutEditor(IGraphics* graphics)
     graphics->AttachControl(new ActionButtonControl(IRECT(332,136,600,172),[this](IControl* caller) { showBankMenu(caller); },"All banks",style),bankFilterTag);
     graphics->AttachControl(new ActionButtonControl(IRECT(684,136,874,172),[this](IControl* caller) { showTagMenu(caller); },"All tags",style),tagFilterTag);
     graphics->AttachControl(new ActionButtonControl(IRECT(886,136,1034,172),[this](IControl*) {
-        libraryFilter.favoritesOnly=!libraryFilter.favoritesOnly;resultOffset=0;browserStatus.clear();refreshBrowser();
+        libraryFilter.favoritesOnly=!libraryFilter.favoritesOnly;keyboardPatchId.clear();resultOffset=0;browserStatus.clear();refreshBrowser();
     },"Favorites: off",style),favoritesTag);
     graphics->AttachControl(new ActionButtonControl(IRECT(1046,136,1138,172),[this](IControl*) { reloadCatalog(true); },"Refresh",style),4008);
     graphics->AttachControl(new ActionButtonControl(IRECT(1150,136,1260,172),[this](IControl*) {
-        libraryFilter={};resultOffset=0;browserStatus.clear();refreshBrowser();
+        libraryFilter={};keyboardPatchId.clear();resultOffset=0;browserStatus.clear();refreshBrowser();
     },"Clear filters",style),4009);
-    graphics->AttachControl(new ITextControl(IRECT(244,180,1260,200),"Ctrl/Cmd+F: Search   /   Up/Down: Browse   /   Enter: Load",text.WithSize(Typography::auxiliary).WithFGColor(muted).WithAlign(EAlign::Far)),4010);
+    graphics->AttachControl(new LibraryFiltersControl(IRECT(244,178,1260,202),
+        [this](const synth2::editor::EditorLibraryFilter& filter) { removeLibraryFilter(filter); },
+        [this](IControl* caller,const std::vector<synth2::editor::EditorLibraryFilter>& filters,const IRECT& bounds) {
+            showFilterMenu(caller,filters,bounds);
+        }),libraryFiltersTag);
     graphics->AttachControl(new ITextControl(IRECT(20,180,226,200),"",text.WithSize(Typography::auxiliary).WithFGColor(muted).WithAlign(EAlign::Near)),libraryMatchesTag);
     using Columns=synth2::editor::EditorLibraryColumns;
     graphics->AttachControl(new ITextControl(IRECT(20+Columns::nameLeft,204,20+Columns::nameRight,226),"SOUND",text.WithSize(Typography::auxiliary).WithFGColor(muted).WithAlign(EAlign::Near)),4011);
@@ -238,6 +242,8 @@ void Synth2::layoutEditor(IGraphics* graphics)
             std::string error;if(!catalog.setFavorite(id,favorite,error))browserStatus=error;
             else browserStatus.clear();refreshBrowser();
         },
+        [this](const std::string& bank) { selectBank(bank); },
+        [this](const std::string& tag) { toggleTagFilter(tag); },
         [this](double offset) {
             resultOffset=offset;refreshBrowser();
         },[this](const char* path) { importBank(path); }),libraryListTag);
