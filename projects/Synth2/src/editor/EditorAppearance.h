@@ -12,6 +12,8 @@ struct EditorAppearance
     const char* headerEdge="#aa4a59";
     const char* panel="#232226";
     const char* filterPanel="#3a272e";
+    const char* groupPanel="#2c272a";
+    const char* groupText="#d9aaa2";
     const char* border="#494044";
     const char* text="#f0ebe2";
     const char* muted="#b5aaa6";

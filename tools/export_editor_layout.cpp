@@ -40,7 +40,8 @@ int main()
     bool firstColor=true;
     for (const auto& color:std::initializer_list<std::pair<const char*,const char*>>{
         {"background",a.background},{"header",a.header},{"headerEdge",a.headerEdge},{"panel",a.panel},{"selectedRow",a.selectedRow},
-        {"filterPanel",a.filterPanel},{"border",a.border},{"text",a.text},{"muted",a.muted},{"accent",a.accent},
+        {"filterPanel",a.filterPanel},{"groupPanel",a.groupPanel},{"groupText",a.groupText},
+        {"border",a.border},{"text",a.text},{"muted",a.muted},{"accent",a.accent},
         {"display",a.display},{"displayText",a.displayText},{"control",a.control},{"controlEdge",a.controlEdge},
         {"track",a.track},{"pointer",a.pointer}})
     {
@@ -62,6 +63,12 @@ int main()
             if(!firstDivider)std::cout << ',';firstDivider=false;
             std::cout << '[' << b.x << ',' << b.y << ',' << b.width << ',' << b.height << ']';
         }
+        std::cout << "],\"groups\":[";
+        bool firstGroup=true;
+        for(const auto& b:synth2::editor::editorPanelGroups(panel)) {
+            if(!firstGroup)std::cout << ',';firstGroup=false;
+            std::cout << '[' << b.x << ',' << b.y << ',' << b.width << ',' << b.height << ']';
+        }
         std::cout << "],\"controls\":[";
         bool first=true;
         for (std::size_t cell=0;cell<panel.controls.size();++cell)
@@ -72,6 +79,8 @@ int main()
             std::cout << "{\"parameter\":" << control.parameter << ",\"label\":" << std::quoted(control.label)
                       << ",\"bounds\":[" << b.x << ',' << b.y << ',' << b.width << ',' << b.height << "]"
                       << ",\"diameter\":" << synth2::editor::editorKnobDiameter(control.parameter,b.height)
+                      << ",\"groupLabel\":" << (synth2::editor::editorGroupHeading(control.parameter) ? "true" : "false")
+                      << ",\"help\":" << std::quoted(synth2::editor::editorControlHelp(control.parameter) ? synth2::editor::editorControlHelp(control.parameter) : "")
                       << ",\"tone\":" << std::quoted(control.parameter==19 ? a.accent : a.pointer) << '}';
         }
         std::cout << "]}";
