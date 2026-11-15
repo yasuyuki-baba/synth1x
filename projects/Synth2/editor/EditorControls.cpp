@@ -270,10 +270,18 @@ void CatalogListControl::dragScroll(float y) {
            synth2::editor::editorLibraryScrollLimit(matches.size(),visibleRows));
 }
 
+void CatalogListControl::setEmptyMessage(const std::string& title,const std::string& detail) {
+    if(emptyTitle==title && emptyDetail==detail)return;
+    emptyTitle=title;emptyDetail=detail;SetDirty(false);
+}
+
 void CatalogListControl::Draw(IGraphics& g) {
     g.FillRect(panel,mRECT);
     if(matches.empty()) {
-        g.DrawText(IText(15.f,muted,"Synth2UI"),"No matching sounds. Clear a filter or add a sound bank.",mRECT);
+        g.DrawText(IText(Typography::body,ink,"Synth2UI"),emptyTitle.c_str(),
+            IRECT(mRECT.L+12,mRECT.MH()-25,mRECT.R-12,mRECT.MH()));
+        g.DrawText(IText(Typography::label,muted,"Synth2UI"),emptyDetail.c_str(),
+            IRECT(mRECT.L+12,mRECT.MH()+3,mRECT.R-12,mRECT.MH()+28));
         return;
     }
     const auto first=static_cast<std::size_t>(drawOffset);

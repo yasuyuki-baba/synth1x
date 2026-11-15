@@ -5,6 +5,7 @@
 #include "host/PatchComparison.h"
 #include "editor/ComputerKeyboard.h"
 #include "editor/EditorLibraryFilters.h"
+#include "editor/EditorLibraryStatus.h"
 #include <atomic>
 #include <array>
 #include <memory>
@@ -107,6 +108,7 @@ private:
         std::array<double,synth2::host::ProcessorBridge::parameterCount> savedBaseline{};
     };
     std::future<LibraryJob> libraryJob;
+    synth2::editor::LibraryOperation libraryOperation=synth2::editor::LibraryOperation::scan;
     std::shared_ptr<ImportPrompt> importPrompt;
     bool conflictShown = false;
     std::unique_ptr<iplug::igraphics::IPopupMenu> libraryMenu, conflictMenu, saveMenu;

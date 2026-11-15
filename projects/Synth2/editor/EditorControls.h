@@ -96,6 +96,7 @@ public:
         std::function<void(const std::string&)> bank,std::function<void(const std::string&)> tag,
         std::function<void(double)> scroll,std::function<void(const char*)> import);
     void setResults(std::vector<std::size_t> results,double start);
+    void setEmptyMessage(const std::string& title,const std::string& detail);
     void Draw(IGraphics& graphics) override;
     void OnMouseDown(float x,float y,const IMouseMod& modifiers) override;
     void OnMouseDrag(float x,float y,float dX,float dY,const IMouseMod& modifiers) override;
@@ -110,6 +111,7 @@ private:
     const std::string& selected;
     const std::string& keyboardSelection;
     std::vector<std::size_t> matches;
+    std::string emptyTitle,emptyDetail;
     double offset=0,drawOffset=0,animationStart=0;
     bool draggingScroll=false;
     float scrollGrab=0,hoverX=-1,hoverY=-1;
