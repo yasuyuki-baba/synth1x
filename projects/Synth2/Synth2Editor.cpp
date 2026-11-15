@@ -112,10 +112,21 @@ void Synth2::layoutEditor(IGraphics* graphics)
     graphics->AttachControl(new ITextControl(rect(synth2::editor::editorLibrarySummaryBounds),"",text.WithSize(Typography::label).WithAlign(EAlign::Near)),bankTag);
     graphics->AttachControl(new ActionButtonControl(IRECT(756,82,820,112),[this](IControl* caller) { showImportMenu(caller); },"Add...",style));
     graphics->AttachControl(new ActionButtonControl(IRECT(826,82,878,112),[this](IControl* caller){showSaveMenu(caller);},"Save",style));
-    graphics->AttachControl(new PresetDisplayControl(IRECT(240,16,878,78),[this](IControl* caller) {
-        showPresetMenu(caller);
-    },"",style.WithColor(kBG,color(appearance.display)).WithColor(kFG,color(appearance.display))
-        .WithLabelText(text.WithFont("Synth2Mono").WithSize(Typography::patchTitle).WithFGColor(color(appearance.displayText)))),presetTag);
+    for(int slot=0;slot<2;++slot) {
+        const auto bounds=slot==0 ? synth2::editor::editorComparisonABounds : synth2::editor::editorComparisonBBounds;
+        graphics->AttachControl(new PresetDisplayControl(rect(bounds),[this,slot](IControl* caller) {
+            if(slot==comparison.activeSlot())showPresetMenu(caller);
+            else if(selectComparison(slot))refreshBrowser();
+        },"",style.WithColor(kBG,color(appearance.display)).WithColor(kFG,color(appearance.display))
+            .WithLabelText(text.WithFont("Synth2Mono").WithSize(Typography::patchTitle).WithFGColor(color(appearance.displayText)))),
+            slot==0 ? presetTag : comparisonBTag);
+    }
+    graphics->AttachControl(new ActionButtonControl(rect(synth2::editor::editorCopyAToBBounds),[this](IControl*) {
+        if(copyComparison(0))refreshBrowser();
+    },"A > B",style),copyATag);
+    graphics->AttachControl(new ActionButtonControl(rect(synth2::editor::editorCopyBToABounds),[this](IControl*) {
+        if(copyComparison(1))refreshBrowser();
+    },"B > A",style),copyBTag);
     graphics->AttachControl(new ActionButtonControl(IRECT(890,16,934,78),[this](IControl*) { stepPatch(-1); },"<",style));
     graphics->AttachControl(new ActionButtonControl(IRECT(944,16,988,78),[this](IControl*) { stepPatch(1); },">",style));
 

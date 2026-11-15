@@ -60,3 +60,6 @@ notifications, DAW/wrapper behavior, GUI behavior or standalone audio-device
 operation. The separate VST3 patch-publication regression also checks serialized
 state, real host edits and explicit UI setter history; this test exercises the shipped modules instead of a
 headless recompile of the wrapper.
+
+Persisted A/B sessions also restore authored tone/mute/tone selections at 8x
+through each format, preserving both sounds without the editor or external banks.

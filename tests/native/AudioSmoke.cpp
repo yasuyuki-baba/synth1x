@@ -1,5 +1,6 @@
 #include "SmokeHost.h"
 #include "host/PresetFiles.h"
+#include "host/PatchComparison.h"
 #include "host/ProcessorBridge.h"
 #include "patch/PatchFormat.h"
 
@@ -141,6 +142,21 @@ int main(int argc, char** argv)
                 render(*host, 96, smoke::Midi::noteOff); // Allow the zero-release envelope/FIR to drain.
                 check(label + " released", render(*host, 16, smoke::Midi::none), false, silenceLimit);
             }
+        }
+        // Exercise the persisted A/B envelope through every actual format.
+        synth2::host::ProcessorBridge processor;
+        synth2::host::PresetBrowserState browser;
+        const auto tone=patchState(std::filesystem::path(argv[3])/"0-tone.sy1",8);
+        const auto mute=patchState(std::filesystem::path(argv[3])/"1-mute.sy1",8);
+        smoke::require(synth2::host::restorePresetSession(tone.data(),tone.size(),processor,browser)>0,"A/B tone fixture failed");
+        synth2::host::PatchComparison comparison;comparison.reset(processor,browser);
+        smoke::require(comparison.select(1,processor,browser),"Select fixture B failed");
+        smoke::require(synth2::host::restorePresetSession(mute.data(),mute.size(),processor,browser)>0,"A/B mute fixture failed");
+        for(const int slot:{0,1,0}) {
+            smoke::require(comparison.select(slot,processor,browser),"Switch fixture A/B failed");
+            host->load(synth2::host::savePresetSession(processor,browser,&comparison));
+            check(format+" A/B slot "+std::to_string(slot),render(*host,96,smoke::Midi::noteOn),slot==0);
+            render(*host,96,smoke::Midi::noteOff);
         }
         std::cout << "PASS: " << format << " patch/state/MIDI/audio smoke" << std::endl;
         return 0;

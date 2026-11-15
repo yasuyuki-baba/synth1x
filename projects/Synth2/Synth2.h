@@ -2,6 +2,7 @@
 #include "IPlug_include_in_plug_hdr.h"
 #include "ProcessorBridge.h"
 #include "PatchCatalog.h"
+#include "host/PatchComparison.h"
 #include "editor/ComputerKeyboard.h"
 #include "editor/EditorLibraryFilters.h"
 #include <atomic>
@@ -79,6 +80,8 @@ private:
     void loadLibraryPatch(std::size_t index);
     void stepPatch(int direction);
     void notifyHostOfPatch();
+    bool selectComparison(int slot);
+    bool copyComparison(int source);
     void savePreset(bool saveAs);
     void showSaveMenu(iplug::igraphics::IControl*);
     void writePreset(const std::filesystem::path&, bool confirm, const std::string& title = {});
@@ -108,6 +111,7 @@ private:
     bool conflictShown = false;
     std::unique_ptr<iplug::igraphics::IPopupMenu> libraryMenu, conflictMenu, saveMenu;
     synth2::host::ProcessorBridge processor;
+    synth2::host::PatchComparison comparison;
     bool prepared = false;
     synth2::host::PatchCatalog catalog {synth2::host::PatchCatalog::userDirectory()};
     synth2::host::CatalogFilter libraryFilter;

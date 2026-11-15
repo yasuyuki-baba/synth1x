@@ -288,3 +288,15 @@ TEST(EditorLayout, MidiRowsGroupSourceSensitivityAndDestinationWithoutOverlaps)
         for(const auto& [group,size]:groupSizes)EXPECT_LE(size,13);
     }
 }
+
+TEST(EditorLayout, ComparisonControlsKeepBothNamesAndActionsInThePersistentHeader)
+{
+    const std::array<EditorBounds,5> bounds{editorComparisonABounds,editorComparisonBBounds,
+        editorCopyAToBBounds,editorCopyBToABounds,editorLibrarySummaryBounds};
+    for(std::size_t i=0;i<bounds.size();++i) {
+        EXPECT_GE(bounds[i].x,0);EXPECT_GE(bounds[i].y,0);
+        EXPECT_LE(bounds[i].x+bounds[i].width,890);EXPECT_LE(bounds[i].y+bounds[i].height,112);
+        for(std::size_t j=i+1;j<bounds.size();++j)EXPECT_FALSE(overlaps(bounds[i],bounds[j]));
+    }
+    EXPECT_EQ(editorComparisonABounds.width,editorComparisonBBounds.width);
+}

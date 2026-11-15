@@ -67,12 +67,28 @@ void Synth2::refreshBrowser()
     const auto selected = std::find_if(catalog.patches().begin(), catalog.patches().end(),
                                        [&](const auto &p) { return p.id == selectedPatchId; });
     const bool canEdit = selected != catalog.patches().end();
-    const auto bankName = canEdit ? selected->bankName : std::string{};
-    const auto display=synth2::editor::editorPresetDisplay(currentPatch,bankName,browser.modified(processor),
-        canEdit ? selected->tags : std::vector<std::string>{},
-        canEdit ? selected->visibleAutomaticTags() : std::vector<std::string>{});
-    if(auto* c=graphics->GetControlWithTag(presetTag))
-        c->As<PresetDisplayControl>()->setDisplay(display);
+    const bool modified=browser.modified(processor);
+    for(int slot=0;slot<2;++slot) {
+        const bool active=slot==comparison.activeSlot();
+        const auto& other=comparison.other();
+        const auto& id=active ? selectedPatchId : other.identity.selectedId;
+        const auto entry=active ? selected : std::find_if(catalog.patches().begin(),catalog.patches().end(),[&](const auto& p){return p.id==id;});
+        const bool found=entry!=catalog.patches().end();
+        const auto display=synth2::editor::editorPresetDisplay(
+            std::string(slot==0 ? "A: " : "B: ")+(active ? currentPatch : other.identity.patchName),
+            found ? entry->bankName : std::string{},active ? modified : other.modified,
+            found ? entry->tags : std::vector<std::string>{},
+            found ? entry->visibleAutomaticTags() : std::vector<std::string>{});
+        if(auto* c=graphics->GetControlWithTag(slot==0 ? presetTag : comparisonBTag)) {
+            auto* control=c->As<PresetDisplayControl>();control->setDisplay(display);control->setSelected(active);
+            control->SetDisabled(libraryJob.valid());
+            control->SetTooltip((display.tooltip()+(active ? "\nSelected. Click to open Library." : "\nClick to compare this sound.")).c_str());
+        }
+    }
+    for(const auto tag:{copyATag,copyBTag})if(auto* control=graphics->GetControlWithTag(tag)) {
+        control->SetDisabled(libraryJob.valid());
+        control->SetTooltip(tag==copyATag ? "Replace B with A, including edits." : "Replace A with B, including edits.");
+    }
     setText(statusTag,browserStatus);
     setText(librarySearchTag, libraryFilter.query);
     std::string bankLabel = "All banks";
@@ -566,22 +582,30 @@ void Synth2::savePreset(bool saveAs)
     const auto root = catalog.root().u8string();
     WDL_String file((name + ".sy1").c_str()), path(reinterpret_cast<const char *>(root.c_str()));
     const std::weak_ptr<int> lifetime = dialogLifetime;
+    const auto generation=browserGeneration.load();
     ui->PromptForFile(
         file, path, EFileAction::Save, "sy1",
-        [this, lifetime](const WDL_String &chosen, const WDL_String &)
+        [this, lifetime,generation](const WDL_String &chosen, const WDL_String &)
         {
             if (lifetime.expired() || !chosen.GetLength())
                 return;
+            if(generation!=browserGeneration.load()) {
+                browserStatus="Comparison changed. Choose Save again.";refreshBrowser();return;
+            }
             writePreset(std::filesystem::path(std::u8string(chosen.Get(), chosen.Get() + chosen.GetLength())),
                         false);
         });
 }
 void Synth2::writePreset(const std::filesystem::path &destination, bool confirm, const std::string &title)
 {
-    auto save = [this, destination, title]
+    const auto generation=browserGeneration.load();
+    auto save = [this, destination, title,generation]
     {
         if (libraryJob.valid())
             return;
+        if(generation!=browserGeneration.load()) {
+            browserStatus="Comparison changed. Choose Save again.";refreshBrowser();return;
+        }
         try
         {
             auto patch = synth2::parseContinuousPatch(processor.savePatch());
@@ -594,7 +618,6 @@ void Synth2::writePreset(const std::filesystem::path &destination, bool confirm,
                                       .lexically_relative(std::filesystem::weakly_canonical(catalog.root()));
             auto snapshot = browser;
             snapshot.capture(processor);
-            auto generation = browserGeneration.load();
             libraryJob = std::async(std::launch::async,
                                     [root, relative, text, name, snapshot, generation]
                                     {

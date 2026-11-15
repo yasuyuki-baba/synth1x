@@ -32,9 +32,13 @@ def render(model, view="synth"):
     text(20, 53, "SYNTH", 29, weight="bold")
     text(126, 53, "2", 29, weight="bold")
     text(20, 74, "VIRTUAL ANALOG SYNTHESIZER", 11)
-    box(240, 16, 638, 62, a["display"])
-    text(250, 54, "Init", t["patchTitle"],a["displayText"],font="monospace")
-    text(858, 54, "⌄", 14, a["muted"], "middle")
+    for key,label in [("comparisonA","A: Init"),("comparisonB","B: Init")]:
+        x,y,w,h=model["chrome"][key]
+        box(x,y,w,h,a["display"],stroke=a["accent"] if key=="comparisonA" else a["controlEdge"])
+        text(x+10,y+h/2+7,label,t["patchTitle"],a["displayText"],font="monospace")
+    for key,label in [("copyAToB","A > B"),("copyBToA","B > A")]:
+        x,y,w,h=model["chrome"][key];box(x,y,w,h)
+        text(x+w/2,y+h/2+5,label,t["button"],align="middle")
     for x, label in [(890, "‹"), (944, "›")]:
         box(x, 16, 44, 62)
         text(x+22, 54, label, 21, align="middle")

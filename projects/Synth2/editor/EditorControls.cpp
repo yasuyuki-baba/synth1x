@@ -36,6 +36,7 @@ void PresetDisplayControl::setDisplay(const synth2::editor::EditorPresetDisplay&
 void PresetDisplayControl::Draw(IGraphics& g)
 {
     ActionButtonControl::Draw(g);
+    if(selected)g.DrawRoundRect(accent,mRECT,2.f,nullptr,1.5f);
     const auto title=IText(Typography::patchTitle,color(appearance.displayText),"Synth2Mono",EAlign::Near);
     const auto fitted=[&](const IText& style,const std::string& value,const IRECT& bounds,bool keepEnd=false) {
         const auto measure=[&](std::string_view text) {
