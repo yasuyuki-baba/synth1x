@@ -102,9 +102,10 @@ inline const std::vector<EditorPanel>& editorPanels()
             {{57,"Enabled"},{42,"Wave"},{41,"To"},{43,"Rate"},{44,"Amount"},{67,"Tempo"},{68,"Key sync"}}},
         {"LFO 2","Independent modulation","#d9aaa2",{300,444,268,160},3,
             {{58,"Enabled"},{47,"Wave"},{46,"To"},{48,"Rate"},{49,"Amount"},{69,"Tempo"},{70,"Key sync"}}},
-        {"VOICE","Play mode, glide & Unison","#d9aaa2",{948,124,312,272},4,
-            {{38,"Mode"},{39,"Glide"},{74,"Auto glide"},{94,"Polyphony"},
-             {73,"Unison"},{93,"Voices"},{75,"Detune"},{84,"Spread"},{85,"Pitch"},{92,"Phase"}}},
+        {"VOICE","Play mode, polyphony & glide","#d9aaa2",{948,124,164,272},2,
+            {{38,"Mode"},{94,"Polyphony"},{39,"Glide"},{74,"Auto glide"}}},
+        {"UNISON","Voice stacking & stereo spread","#d9aaa2",{1120,124,140,272},2,
+            {{73,"Enabled"},{93,"Voices"},{75,"Detune"},{84,"Spread"},{85,"Pitch"},{92,"Phase"}}},
         {"ARPEGGIATOR","Tempo-based note motion","#d9aaa2",{948,404,312,200},3,
             {{59,"Enabled"},{31,"Pattern"},{32,"Range"},{33,"Rate"},{34,"Gate"}}},
         {"EFFECT","Drive & character","#d9aaa2",{20,612,268,178},3,
@@ -139,20 +140,10 @@ inline EditorBounds editorControlBounds(const EditorPanel& panel,std::size_t cel
     }
     if (std::string(panel.title)=="VOICE")
     {
-        // Play mode/glide on the left; all Unison controls on the right.
         const int x=panel.bounds.x+8,y=panel.bounds.y+38;
-        const int inner=panel.bounds.width-16,height=(panel.bounds.height-44)/3;
-        // Longer play-setting labels need more width than the Unison labels.
-        const int playWidth=(inner+24)/2;
-        if(cell==0)return {x,y,playWidth,height};
-        if(cell==3)return {x,y+2*height,playWidth,height};
-        if(cell<3)
-        {
-            const int width=playWidth/2,column=static_cast<int>(cell-1)%2;
-            return {x+column*width,y+(1+static_cast<int>(cell-1)/2)*height,width,height};
-        }
-        const int width=(inner-playWidth)/2,column=static_cast<int>(cell-4)%2;
-        return {x+playWidth+column*width,y+static_cast<int>(cell-4)/2*height,width,height};
+        const int width=panel.bounds.width-16,height=(panel.bounds.height-44)/3;
+        if(cell<2)return {x,y+static_cast<int>(cell)*height,width,height};
+        return {x+static_cast<int>(cell-2)*(width/2),y+2*height,width/2,height};
     }
     if (std::string(panel.title)=="ARPEGGIATOR")
     {
@@ -222,8 +213,6 @@ inline std::vector<EditorBounds> editorPanelDividers(const EditorPanel& panel)
         const int width=(panel.bounds.width-16)/6,height=(panel.bounds.height-44)/4;
         return {{x+8+3*width,y+40,1,height-4},{x+8+3*width,y+40+height,1,height-4}};
     }
-    if(std::string(panel.title)=="VOICE")
-        return {{x+8+(panel.bounds.width+8)/2,y+38,1,panel.bounds.height-46}};
     if(std::string(panel.title)=="AMPLIFIER")
         return {{x+12,y+38+(panel.bounds.height-44)/2-6,panel.bounds.width-24,1}};
     if(std::string(panel.title)=="MIDI")

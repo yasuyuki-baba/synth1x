@@ -2,7 +2,8 @@
 
 Ordinary sound design belongs on one Synth surface with Synth1-inspired functional
 groups. Oscillators occupy the wider left column above the two LFOs. Filter
-and Amplifier share the center column; Voice/Unison and ARP share the right.
+and Amplifier share the center column; adjacent Voice and Unison panels sit above
+ARP in the right column.
 Effects and EQ/Pan occupy the bottom. Allocate panel space by control density
 rather than forcing every column into identical row heights. Ordinary knobs
 retain similar readable sizes; Cutoff remains the dominant larger control.
@@ -56,9 +57,10 @@ Tempo and Key sync, with full-size Rate/Amount knobs. Chorus uses three full-wid
 lower-row columns.
 Use Synth1's original functional groupings as a reference while retaining the
 larger Nord Lead 2-inspired Cutoff and its filter emphasis. Oscillator rows group
-OSC1/Sub, OSC2, Mod Env and shared mix/tuning controls. Voice separates play/glide
-settings from Unison; Amplifier separates ADSR from level/velocity. EQ keeps
-Frequency, Level and Q together. Muted rose headings and thin internal dividers
+OSC1/Sub, OSC2, Mod Env and shared mix/tuning controls. Voice groups Mode and
+Polyphony above paired Glide/Auto glide controls. Unison has its own adjacent
+panel, with Enabled/Voices, Detune/Spread and Pitch/Phase pairs. Amplifier separates
+ADSR from level/velocity. EQ keeps Frequency, Level and Q together. Muted rose headings and thin internal dividers
 provide hierarchy without reducing label sizes or moving controls off the main
 surface. Native drawing and review studies share divider and delay readout bounds;
 studies use placeholders for live tempo and stereo delay times.
