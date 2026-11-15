@@ -26,9 +26,31 @@ def render(model, view="synth"):
         color = color or a["text"]
         nodes.append(f'<text x="{x}" y="{y}" font-family="{font}" font-size="{size}" font-weight="{weight}" fill="{color}" text-anchor="{align}">{escape(str(label))}</text>')
 
-    values = [0.] * 128
+    values = [0.] * len(model["parameters"])
     for index, value in model["init"]["values"].items():
         values[int(index)] = value
+    def knob(control):
+        x,y,w,h=control["bounds"]
+        meta=model["parameters"][control["parameter"]]
+        value=values[control["parameter"]]
+        diameter = control["diameter"]
+        cx,cy = x+w/2,y+17+diameter/2
+        radius = diameter/2-1
+        normalized = (value-meta["minimum"])/(meta["maximum"]-meta["minimum"])
+        end = math.radians(135+normalized*270)
+        def point(a,r): return cx+r*math.cos(a),cy+r*math.sin(a)
+        # Polyline arcs use the same 270-degree sweep as the native knob.
+        for fraction, stroke in [(1,a["track"]),(normalized,control["tone"])]:
+            points = " ".join(f"{point(math.radians(135+270*fraction*i/60),radius)[0]:.2f},{point(math.radians(135+270*fraction*i/60),radius)[1]:.2f}" for i in range(61))
+            nodes.append(f'<polyline points="{points}" fill="none" stroke="{stroke}" stroke-width="1.25" stroke-linecap="round"/>')
+        nodes.append(f'<circle cx="{cx}" cy="{cy}" r="{radius-3}" fill="{a["control"]}" stroke="{a["controlEdge"]}" stroke-width="1"/>')
+        x1,y1 = point(end,(radius-3)*.56)
+        x2,y2 = point(end,(radius-3)*.96)
+        nodes.append(f'<path d="M{x1:.2f},{y1:.2f} L{x2:.2f},{y2:.2f}" stroke="{a["pointer"]}" stroke-width="1.8"/>')
+        readout = meta["unitDisplay"][max(0,min(127,int(value+.5)))] if meta["unitDisplay"] else f"{value:g}"
+        if control["parameter"]==128:readout=f"{value:.3f}"
+        text(cx,y+29+diameter,readout,t["value"],a["muted"],"middle")
+
     text(20, 53, "SYNTH", 29, weight="bold")
     text(126, 53, "2", 29, weight="bold")
     text(20, 74, "VIRTUAL ANALOG SYNTHESIZER", 11)
@@ -45,10 +67,11 @@ def render(model, view="synth"):
     for x, label in [(890, "‹"), (944, "›")]:
         box(x, 16, 44, 62)
         text(x+22, 54, label, 21, align="middle")
-    text(1020, 30, "MASTER VOLUME", 10)
-    text(1260, 30, "100%", 10, align="end")
-    box(1020, 46, 240, 4, a["text"], 2, "none")
-    nodes.append(f'<circle cx="1253" cy="48" r="6" fill="{a["text"]}"/>')
+    for key,bounds in [("headerMaster","masterVolume"),("headerPan","pan")]:
+        control=dict(model[key],bounds=model["chrome"][bounds],tone=a["pointer"])
+        x,y,w,h=control["bounds"]
+        text(x+w/2,y+11,control["label"],t["label"],a["muted"],"middle")
+        knob(control)
     def dropdown(bounds,label,label_width,value,label_color=None):
         x,y,w,h=bounds
         text(x,y+h/2+4,label,t["auxiliary"],label_color)
@@ -92,26 +115,11 @@ def render(model, view="synth"):
                 if meta["toggle"]:
                     nodes.append(f'<circle cx="{x+12}" cy="{y+32.5}" r="2" fill="{a["accent"] if value else a["track"]}"/>')
             else:
-                diameter = control["diameter"]
-                cx,cy = x+w/2,y+17+diameter/2
-                radius = diameter/2-1
-                normalized = (value-meta["minimum"])/(meta["maximum"]-meta["minimum"])
-                end = math.radians(135+normalized*270)
-                def point(a,r): return cx+r*math.cos(a),cy+r*math.sin(a)
-                # Polyline arcs use the same 270-degree sweep as the native knob.
-                for fraction, stroke in [(1,a["track"]),(normalized,control["tone"])]:
-                    points = " ".join(f"{point(math.radians(135+270*fraction*i/60),radius)[0]:.2f},{point(math.radians(135+270*fraction*i/60),radius)[1]:.2f}" for i in range(61))
-                    nodes.append(f'<polyline points="{points}" fill="none" stroke="{stroke}" stroke-width="1.25" stroke-linecap="round"/>')
-                nodes.append(f'<circle cx="{cx}" cy="{cy}" r="{radius-3}" fill="{a["control"]}" stroke="{a["controlEdge"]}" stroke-width="1"/>')
-                x1,y1 = point(end,(radius-3)*.56)
-                x2,y2 = point(end,(radius-3)*.96)
-                nodes.append(f'<path d="M{x1:.2f},{y1:.2f} L{x2:.2f},{y2:.2f}" stroke="{a["pointer"]}" stroke-width="1.8"/>')
-                readout = meta["unitDisplay"][max(0,min(127,int(value+.5)))] if meta["unitDisplay"] else f"{value:g}"
-                text(cx,y+29+diameter,readout,t["value"],a["muted"],"middle")
+                knob(control)
     if view=="synth":
         x,y,w,h = model["delayTimingBounds"]
         for line,label in enumerate(("-- BPM","L -- ms","R -- ms")):
-            text(x,y+12+line*17,label,t["auxiliary"],a["muted"])
+            text(x+w/2,y+12+line*17,label,t["auxiliary"],a["muted"],"middle")
     text(20,818,"No sounds yet. Use Add sounds...",11,a["muted"])
     x,y,w,h=model["chrome"]["version"]
     text(x+w,y+h/2+4,"v"+model["version"],t["auxiliary"],a["muted"],"end")

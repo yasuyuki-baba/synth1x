@@ -4,7 +4,8 @@ Ordinary sound design belongs on one Synth surface with Synth1-inspired function
 groups. Oscillators occupy the wider left column above the two LFOs. Filter
 and Amplifier share the center column; adjacent Voice and Unison panels sit above
 ARP in the right column.
-Effects and EQ/Pan occupy the bottom. Allocate panel space by control density
+Effects and EQ occupy the bottom. Pan remains in the persistent header beside
+Master volume on every view. Allocate panel space by control density
 rather than forcing every column into identical row heights. Ordinary knobs
 retain similar readable sizes; Cutoff remains the dominant larger control.
 
@@ -61,7 +62,9 @@ larger Nord Lead 2-inspired Cutoff and its filter emphasis. Oscillator rows grou
 OSC1/Sub, OSC2, Mod Env and shared mix/tuning controls. Voice groups Mode and
 Polyphony above paired Glide/Auto glide controls. Unison has its own adjacent
 panel, with Enabled/Voices, Detune/Spread and Pitch/Phase pairs. Amplifier separates
-ADSR from level/velocity. EQ keeps Frequency, Level and Q together. Muted rose headings and thin internal dividers
+ADSR from level/velocity. EQ arranges Frequency/Level and Q/Tone in two compact rows. The bottom row distributes width by control density, keeping ordinary knob
+spacing close across Effect, Chorus, Delay and EQ. Time retains its tempo and
+stereo-delay readout directly below it. Muted rose headings and thin internal dividers
 provide hierarchy without reducing label sizes or moving controls off the main
 surface. Native drawing and review studies share divider and delay readout bounds;
 studies use placeholders for live tempo and stereo delay times.
@@ -78,6 +81,14 @@ The corner handle also scales the UI. Both paths retain the scale when the
 software keyboard changes the logical height. Platform pixel scaling is accounted
 for separately. Bounds below the minimum scaled canvas
 size cannot contain the full canvas at the supported minimum scale.
+
+The header groups **Master volume** and **Pan** as matching round knobs, aligned
+at the label, indicator and value bands. Master volume retains the 0–1 gain
+readout with three decimal places. Pan shows C at source value 64 and L/R percentages on either side;
+clicking its readout still edits the original 0–127 source value. Both controls
+remain visible on Synth, MIDI and Library. Moving Pan does not change host IDs,
+patch values, A/B ownership or its existing DSP placement. The lower panel is
+labelled EQ and retains its Tone knob.
 
 The persistent header places **Scale** below the logo on the left, so it stays
 accessible when an enlarged view extends beyond the screen. The library sound

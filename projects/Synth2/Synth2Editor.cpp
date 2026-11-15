@@ -105,7 +105,14 @@ void Synth2::layoutEditor(IGraphics* graphics)
         .WithValueText(text.WithSize(Typography::value).WithVAlign(EVAlign::Bottom)).WithRoundness(0.1f);
     graphics->AttachControl(new ITextControl(IRECT(20,16,214,65),"SYNTH2",text.WithFont("Synth2UIBold").WithSize(29.f).WithAlign(EAlign::Near)));
     graphics->AttachControl(new ITextControl(IRECT(20,62,214,78),"VIRTUAL ANALOG SYNTHESIZER",text.WithSize(11.f).WithAlign(EAlign::Near)));
-    graphics->AttachControl(new IVSliderControl(IRECT(1020,16,1260,72),128,"Master volume",style,true,EDirection::Horizontal));
+    const auto& volume=synth2::editor::editorMasterVolumeControl;
+    auto* volumeControl=new PanelKnobControl(rect(synth2::editor::editorMasterVolumeBounds),volume.parameter,volume.label,style);
+    volumeControl->SetTooltip("Master volume. Click the value to enter a gain from 0 to 1.");
+    graphics->AttachControl(volumeControl,parameterTag+volume.parameter);
+    const auto& pan=synth2::editor::editorPanControl;
+    auto* panControl=new PanelKnobControl(rect(synth2::editor::editorPanBounds),pan.parameter,pan.label,style);
+    panControl->SetTooltip("Stereo balance. C is center. Click the value to edit the original 0-127 source value (64 is center).");
+    graphics->AttachControl(panControl,parameterTag+pan.parameter);
     graphics->AttachControl(new DisplayScaleControl(rect(synth2::editor::editorDisplayScaleBounds),
         [this](float scale){requestEditorScale(scale);}),displayScaleTag);
     refreshEditorScale();
@@ -165,7 +172,7 @@ void Synth2::layoutEditor(IGraphics* graphics)
     {
         auto* timing=new ITextControl(IRECT(timingBounds.x,timingBounds.y+line*17,
             timingBounds.x+timingBounds.width,timingBounds.y+(line+1)*17),"",
-            text.WithFGColor(muted).WithSize(Typography::auxiliary).WithAlign(EAlign::Near));
+            text.WithFGColor(muted).WithSize(Typography::auxiliary).WithAlign(EAlign::Center));
         timing->SetTooltip("Playback tempo and current left/right delay times, including Spread. Invalid host tempo uses 120 BPM.");
         graphics->AttachControl(timing,delayTimingTag+line);
     }

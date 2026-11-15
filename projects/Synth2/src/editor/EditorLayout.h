@@ -74,7 +74,7 @@ inline std::vector<EditorChoice> editorChoices(int index)
             {21,"Filter Env Depth","Filter"},{23,"Filter Drive","Filter"},{22,"Filter Key Track","Filter"},
             {25,"Amp Attack","Amplifier"},{26,"Amp Decay","Amplifier"},{27,"Amp Sustain","Amplifier"},{28,"Amp Release","Amplifier"},{29,"Amp Level","Amplifier"},
             {79,"Effect Control 1","Effect"},{80,"Effect Control 2","Effect"},{81,"Effect Output","Effect"},
-            {61,"EQ Frequency","EQ / Pan"},{62,"EQ Level","EQ / Pan"},{63,"EQ Q","EQ / Pan"},{60,"EQ Tone","EQ / Pan"},{90,"Pan","EQ / Pan"},
+            {61,"EQ Frequency","EQ"},{62,"EQ Level","EQ"},{63,"EQ Q","EQ"},{60,"EQ Tone","EQ"},{90,"Pan","Output"},
             {35,"Delay Time","Delay"},{83,"Delay Spread","Delay"},{36,"Delay Feedback","Delay"},{98,"Delay Tone","Delay"},{37,"Delay Mix","Delay"},
             {52,"Chorus Time","Chorus"},{53,"Chorus Depth","Chorus"},{54,"Chorus Rate","Chorus"},{55,"Chorus Feedback","Chorus"},{56,"Chorus Level","Chorus"},
             {39,"Glide Time","Voice"},{75,"Unison Detune","Voice"},{92,"Unison Phase","Voice"},{84,"Unison Spread","Voice"},{85,"Unison Pitch","Voice"},
@@ -108,14 +108,14 @@ inline const std::vector<EditorPanel>& editorPanels()
             {{73,"Enabled"},{93,"Voices"},{75,"Detune"},{84,"Spread"},{85,"Pitch"},{92,"Phase"}}},
         {"ARPEGGIATOR","Tempo-based note motion","#d9aaa2",{948,404,312,200},3,
             {{59,"Enabled"},{31,"Pattern"},{32,"Range"},{33,"Rate"},{34,"Gate"}}},
-        {"EFFECT","Drive & character","#d9aaa2",{20,612,268,178},3,
+        {"EFFECT","Drive & character","#d9aaa2",{20,612,292,178},3,
             {{77,"Enabled"},{78,"Type"},{81,"Output"},{79,"Control 1"},{80,"Control 2"}}},
-        {"CHORUS","Width & movement","#d9aaa2",{300,612,268,178},4,
+        {"CHORUS","Width & movement","#d9aaa2",{324,612,300,178},4,
             {{66,"Enabled"},{64,"Voices"},{52,"Time"},{53,"Depth"},{54,"Rate"},{55,"Feedback"},{56,"Level"}}},
-        {"DELAY","Space & repeats","#d9aaa2",{580,612,356,178},4,
+        {"DELAY","Space & repeats","#d9aaa2",{636,612,392,178},4,
             {{65,"Enabled"},{82,"Type"},{35,"Time"},{36,"Feedback"},{37,"Mix"},{83,"Spread"},{98,"Tone"}}},
-        {"EQ / PAN","Final tone & stereo placement","#d9aaa2",{948,612,312,178},3,
-            {{61,"Frequency"},{62,"Level"},{63,"Q"},{60,"Tone"},{90,"Pan"}}}
+        {"EQ","Equalizer and tone shaping","#d9aaa2",{1040,612,220,178},2,
+            {{61,"Frequency"},{62,"Level"},{63,"Q"},{60,"Tone"}}}
     };
     return panels;
 }
@@ -152,11 +152,6 @@ inline EditorBounds editorControlBounds(const EditorPanel& panel,std::size_t cel
         if(cell==0)return {x,y,width,height};
         if(cell==1)return {x+width,y,width*2,height};
         return {x+static_cast<int>(cell-2)*width,y+height,width,height};
-    }
-    if (std::string(panel.title)=="EQ / PAN" && cell>=3)
-    {
-        const int width=(panel.bounds.width-16)/2,height=(panel.bounds.height-44)/2;
-        return {panel.bounds.x+8+static_cast<int>(cell-3)*width,panel.bounds.y+38+height,width,height};
     }
     if (std::string(panel.title)=="FILTER")
     {
@@ -199,6 +194,9 @@ inline EditorBounds editorControlBounds(const EditorPanel& panel,std::size_t cel
     const int rows=(static_cast<int>(panel.controls.size())+panel.columns-1)/panel.columns;
     const int width=(panel.bounds.width-16)/panel.columns;
     const int height=(panel.bounds.height-44)/rows;
+    // Keep Time's hit area above the timing readout while retaining its choice height.
+    if(std::string(panel.title)=="DELAY" && panel.controls[cell].parameter==35)
+        return {panel.bounds.x+8+2*width,panel.bounds.y+38,width,52};
     // Reserve the cell below Time for tempo and actual stereo delay times.
     if(std::string(panel.title)=="DELAY" && panel.controls[cell].parameter==98)
         return {panel.bounds.x+8+3*width,panel.bounds.y+38+height,width,height};
@@ -239,7 +237,11 @@ inline EditorBounds editorMidiControlBounds(const EditorPanel& panel,std::size_t
     if(column==1)return {x+506,top,96,72};
     return {x+618,top,366,72};
 }
-inline constexpr EditorBounds editorDelayTimingBounds {766,722,77,51};
+inline constexpr EditorBounds editorDelayTimingBounds {840,702,78,51};
+inline constexpr EditorControl editorMasterVolumeControl {128,"Master volume"};
+inline constexpr EditorControl editorPanControl {90,"Pan"};
+inline constexpr EditorBounds editorMasterVolumeBounds {1020,12,116,68};
+inline constexpr EditorBounds editorPanBounds {1144,12,116,68};
 inline constexpr EditorBounds editorPresetDisplayBounds {240,16,638,62};
 inline constexpr EditorBounds editorComparisonBounds {546,82,72,30};
 inline constexpr EditorBounds editorCopyAToBBounds {628,82,52,30};
