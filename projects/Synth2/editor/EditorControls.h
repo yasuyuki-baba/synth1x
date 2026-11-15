@@ -29,11 +29,9 @@ class PresetDisplayControl final : public ActionButtonControl
 public:
     using ActionButtonControl::ActionButtonControl;
     void setDisplay(const synth2::editor::EditorPresetDisplay& display);
-    void setSelected(bool value) { selected=value;SetDirty(false); }
     void Draw(IGraphics& graphics) override;
 private:
     synth2::editor::EditorPresetDisplay display;
-    bool selected=false;
 };
 
 // Covers the complete editor after the optional keyboard changes its height.

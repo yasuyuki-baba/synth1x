@@ -9,7 +9,6 @@ struct PatchComparisonSound
 {
     std::vector<uint8_t> state;
     PresetBrowserState identity;
-    bool modified=false;
 };
 class PatchComparison
 {

@@ -68,22 +68,16 @@ void Synth2::refreshBrowser()
                                        [&](const auto &p) { return p.id == selectedPatchId; });
     const bool canEdit = selected != catalog.patches().end();
     const bool modified=browser.modified(processor);
-    for(int slot=0;slot<2;++slot) {
-        const bool active=slot==comparison.activeSlot();
-        const auto& other=comparison.other();
-        const auto& id=active ? selectedPatchId : other.identity.selectedId;
-        const auto entry=active ? selected : std::find_if(catalog.patches().begin(),catalog.patches().end(),[&](const auto& p){return p.id==id;});
-        const bool found=entry!=catalog.patches().end();
-        const auto display=synth2::editor::editorPresetDisplay(
-            std::string(slot==0 ? "A: " : "B: ")+(active ? currentPatch : other.identity.patchName),
-            found ? entry->bankName : std::string{},active ? modified : other.modified,
-            found ? entry->tags : std::vector<std::string>{},
-            found ? entry->visibleAutomaticTags() : std::vector<std::string>{});
-        if(auto* c=graphics->GetControlWithTag(slot==0 ? presetTag : comparisonBTag)) {
-            auto* control=c->As<PresetDisplayControl>();control->setDisplay(display);control->setSelected(active);
-            control->SetDisabled(libraryJob.valid());
-            control->SetTooltip((display.tooltip()+(active ? "\nSelected. Click to open Library." : "\nClick to compare this sound.")).c_str());
-        }
+    const auto display=synth2::editor::editorPresetDisplay(currentPatch,
+        canEdit ? selected->bankName : std::string{},modified,
+        canEdit ? selected->tags : std::vector<std::string>{},
+        canEdit ? selected->visibleAutomaticTags() : std::vector<std::string>{});
+    if(auto* c=graphics->GetControlWithTag(presetTag))
+        c->As<PresetDisplayControl>()->setDisplay(display);
+    if(auto* control=graphics->GetControlWithTag(comparisonTag)) {
+        control->SetValue(comparison.activeSlot());control->SetDirty(false);
+        control->SetDisabled(libraryJob.valid());
+        control->SetTooltip("Switch A/B. Each side keeps its sound and edits; Library loads affect the selected side.");
     }
     for(const auto tag:{copyATag,copyBTag})if(auto* control=graphics->GetControlWithTag(tag)) {
         control->SetDisabled(libraryJob.valid());

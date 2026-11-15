@@ -27,7 +27,7 @@ TEST(PatchComparison, BrowsingAndEditingBothSlotsPreservesExactSourceAndSharedFi
     p.setNormalizedValue(19,.4321);ASSERT_TRUE(p.setMidiDestination(0,-1));
     const auto a=p.saveState();const auto baselineA=view.baseline;
     ASSERT_TRUE(comparison.select(1,p,view));
-    EXPECT_TRUE(comparison.other().modified);EXPECT_EQ(comparison.other().state,a);
+    EXPECT_EQ(comparison.other().state,a);
     load(p,view,"Candidate lead",37);p.setNormalizedValue(3,.314159);
     const auto b=p.saveState();
     ASSERT_TRUE(comparison.select(0,p,view));
@@ -53,7 +53,7 @@ TEST(PatchComparison, CopiesWorkInBothDirectionsWithoutChangingTheSelectedSide)
     p.setNormalizedValue(19,.125);const auto edit=p.saveState();
     ASSERT_TRUE(comparison.select(1,p,view));
     ASSERT_TRUE(comparison.copyFrom(0,p,view));EXPECT_EQ(p.saveState(),edit);EXPECT_EQ(comparison.activeSlot(),1);
-    EXPECT_TRUE(view.modified(p));EXPECT_TRUE(comparison.other().modified);
+    EXPECT_TRUE(view.modified(p));EXPECT_EQ(comparison.other().identity.baseline,view.baseline);
     EXPECT_FALSE(comparison.select(2,p,view));EXPECT_FALSE(comparison.copyFrom(-1,p,view));EXPECT_EQ(p.saveState(),edit);
 }
 TEST(PatchComparison, SessionRecallRetainsBothSoundsBaselinesAndSelectionWithoutFiles)
@@ -67,7 +67,7 @@ TEST(PatchComparison, SessionRecallRetainsBothSoundsBaselinesAndSelectionWithout
     ProcessorBridge recalled;PresetBrowserState browser;PatchComparison restored;
     ASSERT_EQ(restorePresetSession(saved.data(),saved.size(),recalled,browser,&restored),saved.size());
     EXPECT_EQ(restored.activeSlot(),1);EXPECT_EQ(recalled.saveState(),b);EXPECT_TRUE(browser.modified(recalled));
-    EXPECT_TRUE(restored.other().modified);EXPECT_EQ(restored.other().state,a);
+    EXPECT_EQ(restored.other().state,a);
     EXPECT_EQ(savePresetSession(recalled,browser,&restored),saved);
     ASSERT_TRUE(restored.select(0,recalled,browser));EXPECT_EQ(recalled.saveState(),a);
     EXPECT_EQ(browser.query,"common search");EXPECT_TRUE(browser.modified(recalled));EXPECT_EQ(browser.patchName,"Reference");

@@ -23,13 +23,13 @@ The processor starts with Init and the library starts empty; no factory bank is
 bundled, privileged or automatically added.
 
 The persistent [A/B header](patch-comparison.md) retains both sounds. The selected
-side receives Library loads; switching sides preserves the current filters. Each
-display shows its patch name and edited marker on the first
+side receives Library loads; switching sides preserves the current filters. The
+display shows only the selected sound's patch name and edited marker on the first
 line, with the selected entry's bank path on a smaller second line and its tags
 on a third line. Header tags use the same manual/automatic colors as the list;
 long content is ellipsized and the tooltip includes every tag. Init and sounds
 without a matching catalog entry show only the patch name. The tooltip includes
-the full title, bank path and tags. The selected display remains clickable to open the Library view. The
+the full title, bank path and tags. The display remains clickable to open the Library view. The
 selected result row uses a contrasting background, a left accent stripe and a bold
 title; favorites remain a separate indicator. Long titles are ellipsized at the
 end and long bank paths at the beginning, using measured UTF-8-safe text widths

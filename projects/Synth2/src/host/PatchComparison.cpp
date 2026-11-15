@@ -11,7 +11,6 @@ PatchComparisonSound PatchComparison::capture(const ProcessorBridge& processor,c
     result.identity.selectedId=browser.selectedId;
     result.identity.patchName=browser.patchName;
     result.identity.baseline=browser.baseline;
-    result.modified=browser.modified(processor);
     return result;
 }
 void PatchComparison::reset(const ProcessorBridge& processor,const PresetBrowserState& browser)
