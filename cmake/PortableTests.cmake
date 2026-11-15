@@ -125,3 +125,9 @@ add_test(NAME BuildVersionTests
     COMMAND ${CMAKE_COMMAND} -E env "CMAKE_COMMAND=${CMAKE_COMMAND}"
         ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/tests/test_build_version.py -v)
 set_tests_properties(BuildVersionTests PROPERTIES LABELS "portable;python" TIMEOUT 60)
+
+add_test(NAME TagReportTests COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/tests/test_tag_reports.py -v)
+set_tests_properties(TagReportTests PROPERTIES LABELS "portable;python" TIMEOUT 60)
+if(SYNTH2_BUILD_TOOLS)
+    set_tests_properties(TagReportTests PROPERTIES ENVIRONMENT "SYNTH2_TAG_PROBE_BIN=$<TARGET_FILE:Synth2TagProbe>")
+endif()

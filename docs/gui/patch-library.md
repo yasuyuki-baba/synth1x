@@ -164,7 +164,7 @@ cache has an explicit inference/loading revision; rule or loading changes must
 bump that revision. Cache publication is atomic. Missing, corrupt or incompatible
 caches rebuild; an unwritable cache does not block library use. The cache is bounded
 to 64 MiB; entries beyond the bound remain usable and are reclassified next scan.
-It contains copies of source text and derived tags/errors, while manual tags and
+It contains copies of source text and derived tags, reasons and errors, while manual tags and
 hidden-tag overrides stay in separate user metadata. Backups may omit the cache.
 External additions, deletions and replacements are detected on Refresh or editor
 reopen; the cache does not introduce a background filesystem watcher.
@@ -187,13 +187,30 @@ when inference rules or the source change. Hiding a tag does not remove a manual
 copy. User overrides are published atomically in the existing `.tags` sidecar;
 legacy comma-separated tag sidecars remain readable.
 
-Name rules recognize whole English words, camel-case boundaries and selected
-leading abbreviations such as BS, LD and PD. They suggest Bass, Lead, Pad, Pluck,
-Keys, Organ, Strings, Brass, Bell, Percussion, FX and Arp. Obvious disagreements
-with envelope settings (or a disabled arpeggiator for an Arp name) defer that
-name suggestion. Other name matches remain heuristic; they are not ground truth.
+Name rules recognize whole English words, camel-case boundaries (including
+acronyms followed by a capitalized word, such as LDSoft) and selected leading
+abbreviations. Bass accepts BS/BAS/BA, Lead LD/LED, Pad PD, Pluck PLK,
+Keys KYS/KY/KEY/PNO, Organ ORG, Strings STR, Brass BRS, Wind WND, Sequence SEQ,
+Bell BL and Percussion PRC/DRM. Abbreviations match leading tokens, including after numbering
+or punctuation, rather than arbitrary substrings. They suggest Bass, Lead, Pad, Pluck,
+Keys, Organ, Strings, Brass, Wind, Bell, Percussion, Sequence, FX and Arp. Wind
+includes named woodwind and reed instruments. Sequence is a name-derived category;
+it does not assert that the arpeggiator is enabled. Arp follows the actual
+arpeggiator setting, including when it appears in the name. Named Pad, Pluck and
+Percussion categories remain visible alongside envelope features such as Slow attack;
+an amp envelope alone does not determine intended use. Name matches remain
+heuristic; they are not ground truth.
 
-Feature tags include Mono and Legato as distinct modes, Unison, FM, Sync, Ring mod,
+Each automatic suggestion retains its matched name word/category or a settings
+explanation. Hovering an automatic tag in the Library list shows that explanation;
+manual tags and hidden automatic tags do not expose an automatic explanation.
+Cached reasons survive refresh/reopen without loading the sound again. The
+offline [tag report tool](../../tools/README.md#automatic-tag-reports) uses the same
+loading and inference code and adds rule identifiers for diagnostics. No audio is
+rendered for either form of explanation.
+
+Feature tags include Poly, Mono and Legato as distinct modes resolved from settings
+even when the name suggests a different mode, plus Unison, FM, Sync, Ring mod,
 Noise, Arp, Distortion, Slow attack, Long release, Short decay and Filter pluck.
 They describe settings, not guaranteed audible characteristics. Slow attack means
 at least 150 ms nominal amp attack; Long release means at least one second nominal

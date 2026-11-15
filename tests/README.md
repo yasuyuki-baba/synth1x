@@ -23,6 +23,7 @@ FETCHCONTENT_SOURCE_DIR_GOOGLETEST). The `core` preset uses `build-oos-core`.
 | GainRegressionTests | Analytic gain formula and self-authored Probe input |
 | WaveComparisonTests | Generated WAVs and generic comparator behavior |
 | MeasurementToolsTests | Standard-library WAV/hash/subprocess contracts |
+| TagReportTests | Read-only authored patch/bank/directory scans, JSON reasons and source hashes, CLI errors, and before/after report differences; probe integration runs when optional tools are enabled |
 | BuildToolsTests | Local Git SDK fixtures and synthetic native archive completeness, notices/metadata and bundle preservation |
 | NamingLint / NamingLintTests | Portable C++ file/type spelling and setting-type suffixes, including patch/core; synthetic lint diagnostics |
 | HeaderBoundaryAudit | GNU-style GNU/Clang frontends with Ninja/Makefiles: independent DSP/voice/editor/state header compilation and forbidden transitive dependencies |
