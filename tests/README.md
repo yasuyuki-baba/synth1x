@@ -59,14 +59,20 @@ For an additional local memory/undefined-behavior check with GCC or Clang:
 
 ```sh
 cmake -S . -B build/sanitized -DSYNTH2_BUILD_IPLUG2=OFF \
+  -DXZ_SANDBOX=no \
   -DCMAKE_BUILD_TYPE=Debug \
   '-DCMAKE_CXX_FLAGS=-fsanitize=address,undefined -fno-omit-frame-pointer' \
   '-DCMAKE_C_FLAGS=-fsanitize=address,undefined -fno-omit-frame-pointer' \
   '-DCMAKE_EXE_LINKER_FLAGS=-fsanitize=address,undefined'
-cmake --build build/sanitized --target Synth2PatchTests --parallel 4
+cmake --build build/sanitized --target Synth2PatchTests Synth2RealtimeTests --parallel 4
 ASAN_OPTIONS=detect_leaks=1 UBSAN_OPTIONS=halt_on_error=1 \
   ./build/sanitized/Synth2PatchTests
+ASAN_OPTIONS=detect_leaks=1 UBSAN_OPTIONS=halt_on_error=1 \
+  ./build/sanitized/Synth2RealtimeTests
 ```
+
+The xz command-line sandbox must be disabled for sanitizer builds; this does not
+change the library's archive limits or enable additional archive formats.
 
 Actual GUI/DAW/device checks are outside automated-test scope and are not tracked
 as missing tests. An optional [manual guide](../docs/validation/manual-platform.md) is available.
@@ -142,6 +148,10 @@ For sanitizer validation, build both `Synth2PatchTests` and `Synth2RealtimeTests
 in the sanitizer directory and run both with the documented sanitizer environment.
 LeakSanitizer requires an environment without ptrace attachment. Do not suppress
 an actual sanitizer report to obtain a passing run.
+
+The same isolated heap interceptor also runs `VoiceOwnership`, which injects a
+container allocation failure and verifies immediate destruction of transferred
+voices and sounds. It does not simulate process-wide memory exhaustion.
 
 ## Continuous integration
 

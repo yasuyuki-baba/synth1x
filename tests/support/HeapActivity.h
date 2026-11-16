@@ -5,6 +5,8 @@ namespace testheap
 struct Counts { std::size_t allocations{}, deallocations{}, cAllocations{}, cDeallocations{}; };
 // Only the measured host thread is tracked. GTest/setup/inspection stay outside.
 extern thread_local Counts* active;
+// One-shot fault injection for ownership-transfer exception tests.
+extern thread_local bool failNextCppAllocation;
 struct Scope
 {
     explicit Scope(Counts& counts) { active=&counts; }
