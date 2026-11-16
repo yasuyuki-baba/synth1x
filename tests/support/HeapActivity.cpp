@@ -4,7 +4,10 @@
 #if defined(_MSC_VER)
 #include <malloc.h>
 #endif
-namespace testheap { thread_local Counts* active=nullptr; }
+namespace testheap {
+thread_local Counts* active=nullptr;
+thread_local bool failNextCppAllocation=false;
+}
 #if defined(SYNTH2_TEST_WRAP_C_HEAP)
 extern "C" void* __real_malloc(std::size_t);
 extern "C" void* __real_calloc(std::size_t,std::size_t);
@@ -31,6 +34,10 @@ namespace
 {
 void* allocate(std::size_t size)
 {
+    if(testheap::failNextCppAllocation) {
+        testheap::failNextCppAllocation=false;
+        throw std::bad_alloc();
+    }
     if(testheap::active) ++testheap::active->allocations;
 #if defined(SYNTH2_TEST_WRAP_C_HEAP)
     auto* pointer=__real_malloc(size ? size : 1);

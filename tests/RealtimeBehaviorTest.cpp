@@ -7,6 +7,55 @@
 #include <cstdlib>
 #include <new>
 
+namespace
+{
+struct CountedSound final : synth2::audio::Sound
+{
+    explicit CountedSound(int& count):destroyed(count){}
+    ~CountedSound() override {++destroyed;}
+    bool appliesToNote(int) override {return true;}
+    bool appliesToChannel(int) override {return true;}
+    int& destroyed;
+};
+struct CountedVoice final : synth2::audio::Voice
+{
+    explicit CountedVoice(int& count):destroyed(count){}
+    ~CountedVoice() override {++destroyed;}
+    bool canPlaySound(synth2::audio::Sound*) override {return true;}
+    void startNote(int,float,synth2::audio::Sound*,int) override {}
+    void stopNote(float,bool) override {}
+    void pitchWheelMoved(int) override {}
+    void controllerMoved(int,int) override {}
+    void renderNextBlock(synth2::audio::AudioBuffer<float>&,int,int) override {}
+    int& destroyed;
+};
+}
+
+TEST(VoiceOwnership, FailedContainerAllocationReleasesTransferredObjects)
+{
+    int soundsDestroyed=0,voicesDestroyed=0;
+    synth2::audio::VoiceBank bank;
+    auto* sound=new CountedSound(soundsDestroyed);
+    bool soundFailed=false;
+    testheap::failNextCppAllocation=true;
+    try {bank.addSound(sound);}catch(const std::bad_alloc&) {soundFailed=true;}
+    testheap::failNextCppAllocation=false;
+    EXPECT_TRUE(soundFailed);
+    EXPECT_EQ(soundsDestroyed,1);
+    // Keep a failing regression run from itself leaking the orphan.
+    if(soundFailed && soundsDestroyed==0)delete sound;
+
+    auto* voice=new CountedVoice(voicesDestroyed);
+    bool voiceFailed=false;
+    testheap::failNextCppAllocation=true;
+    try {bank.addVoice(voice);}catch(const std::bad_alloc&) {voiceFailed=true;}
+    testheap::failNextCppAllocation=false;
+    EXPECT_TRUE(voiceFailed);
+    EXPECT_EQ(voicesDestroyed,1);
+    if(voiceFailed && voicesDestroyed==0)delete voice;
+    EXPECT_EQ(bank.getNumVoices(),0);
+}
+
 TEST(RealtimeBehavior, TrackerDetectsAllocationsAndDeallocations)
 {
     testheap::Counts counts;

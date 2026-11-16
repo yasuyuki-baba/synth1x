@@ -2,6 +2,7 @@
 #include "AudioTypes.h"
 #include "Midi.h"
 #include <memory>
+#include <utility>
 
 namespace synth2::audio
 {
@@ -43,8 +44,17 @@ public:
     VoiceBank(){pitch.fill(8192);}
     virtual ~VoiceBank()=default;
     void setNoteStealingEnabled(bool value){stealNotes=value;}
-    void addVoice(Voice* voice){voice->sampleRate=sampleRate;voices.emplace_back(voice);}
-    void addSound(Sound* sound){sounds.emplace_back(sound);}
+    void addVoice(Voice* voice)
+    {
+        std::unique_ptr<Voice> owned(voice);
+        owned->sampleRate=sampleRate;
+        voices.push_back(std::move(owned));
+    }
+    void addSound(Sound* sound)
+    {
+        std::unique_ptr<Sound> owned(sound);
+        sounds.push_back(std::move(owned));
+    }
     int getNumVoices()const{return static_cast<int>(voices.size());}
     Voice* getVoice(int i)const{return voices.at(static_cast<size_t>(i)).get();}
     Sound* getSound(int i)const{return sounds.at(static_cast<size_t>(i)).get();}
