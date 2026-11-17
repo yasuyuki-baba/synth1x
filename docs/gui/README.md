@@ -299,8 +299,10 @@ edits reverted to the opening values close without confirmation. A valid text
 entry still in progress is committed to the preview before checking for changes.
 Closing the main editor or unloading the plugin still restores the opening
 palette directly, since host-driven teardown cannot be vetoed by a child editor.
-**Default colors** previews the built-in appearance;
-it is saved only by Apply. A failed save keeps the window open with an error and
+**Default colors** asks **Restore default colors?** before replacing all General
+colors and group overrides with the built-in appearance. Cancel, Escape and Return
+keep the current preview. An already-default palette needs no confirmation.
+The reset previews immediately after confirmation and is saved only by Apply. A failed save keeps the window open with an error and
 preserves the cancellation baseline. Invalid saved preferences leave the current
 palette intact and report the error in the editor status.
 
