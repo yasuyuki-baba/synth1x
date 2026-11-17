@@ -19,12 +19,14 @@ template<class T> int keyIndex(const T& keys,std::string_view key) {
     for(std::size_t i=0;i<keys.size();++i)if(keys[i]==key)return static_cast<int>(i);
     return -1;
 }
-}
-bool EditorPaletteStore::load(const std::filesystem::path& path,editor::EditorPalette& palette,std::string& error)
+bool readPalette(const std::filesystem::path& path,editor::EditorPalette& palette,std::string& error,bool missingUsesDefaults)
 {
     error.clear();
     try {
-        if(!std::filesystem::exists(path)){palette=editor::EditorPalette{};return true;}
+        if(!std::filesystem::exists(path)) {
+            if(!missingUsesDefaults)throw std::runtime_error("The selected palette file no longer exists.");
+            palette=editor::EditorPalette{};return true;
+        }
         if(std::filesystem::file_size(path)>65536)throw std::runtime_error("Palette file is too large.");
         std::ifstream in(path,std::ios::binary);
         const std::string text((std::istreambuf_iterator<char>(in)),{});
@@ -53,6 +55,15 @@ bool EditorPaletteStore::load(const std::filesystem::path& path,editor::EditorPa
     } catch(const std::filesystem::filesystem_error&) {
         error="Could not read palette preferences. Check the settings folder permissions.";return false;
     } catch(const std::exception& exception){error=exception.what();return false;}
+}
+}
+bool EditorPaletteStore::load(const std::filesystem::path& path,editor::EditorPalette& palette,std::string& error)
+{
+    return readPalette(path,palette,error,true);
+}
+bool EditorPaletteStore::importFile(const std::filesystem::path& path,editor::EditorPalette& palette,std::string& error)
+{
+    return readPalette(path,palette,error,false);
 }
 bool EditorPaletteStore::save(const std::filesystem::path& path,const editor::EditorPalette& palette,std::string& error)
 {

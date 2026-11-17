@@ -281,3 +281,11 @@ checks that discard confirmation is needed for changed color/alpha values or
 inheritance overrides, and stops being needed after exact restoration, cancellation
 or application. Native Cancel/title-bar interactions and confirmation rendering
 are covered by the manual palette-window procedure.
+
+`EditorPaletteTest.ExportedDraftImportsAllScopesAndAlphaWithoutApplyingTheEdit`
+checks a shared XML round trip with General colors, every group's overrides,
+inheritance removal, alpha and a Unicode filename while retaining the draft's
+cancellation baseline. `MissingOrInvalidImportsPreserveTheCurrentPreviewAndDiscardBaseline`
+checks that explicit import rejects missing, malformed, unsupported and oversized
+files atomically; missing preference files still load defaults. Native chooser,
+replacement confirmation and preview/apply behavior use the manual exchange guide.

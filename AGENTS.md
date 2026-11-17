@@ -67,6 +67,8 @@
   Label only custom group overrides; omit inherited/global-only cell badges.
   Confirm discarding unsaved palette differences on Cancel/title-bar close,
   preserving the preview when editing continues.
+  Import/export the complete XML palette from that editor; import previews until
+  Apply, and export retains unsaved edits and the cancellation baseline.
   Do not add bundled palette variants. See the palette section in the GUI contract.
 - Use iPlug2's standard keyboard control and MIDI delivery for software-keyboard
   audition. Keep mouse hit testing, drag/velocity behavior and MIDI queueing in
