@@ -6,6 +6,7 @@
 #include "editor/ComputerKeyboard.h"
 #include "editor/EditorLibraryFilters.h"
 #include "editor/EditorLibraryStatus.h"
+#include "editor/EditorPalette.h"
 #include <atomic>
 #include <array>
 #include <memory>
@@ -13,9 +14,12 @@
 #include <mutex>
 #include <condition_variable>
 
-class Synth2 final : public iplug::Plugin
+namespace synth2::editor::native {class EditorPaletteWindow;}
+
+class Synth2 final : public iplug::Plugin, public synth2::editor::PaletteOwner
 {
 public:
+    const synth2::editor::EditorPalette& currentPalette() const override {return editorPalette;}
     ~Synth2() override;
     explicit Synth2(const iplug::InstanceInfo& info);
     void ProcessBlock(iplug::sample**, iplug::sample** outputs, int frames) override;
@@ -33,6 +37,14 @@ public:
     void OnUIClose() override;
 
 private:
+    void loadPalettePreferences();
+    void showPaletteEditor();
+    void updatePaletteEditor();
+    void closePaletteEditor();
+    std::string palettePreferenceError;
+    synth2::editor::EditorPalette editorPalette;
+    synth2::editor::EditorPaletteEdit paletteEdit;
+    std::shared_ptr<synth2::editor::native::EditorPaletteWindow> paletteWindow;
     friend struct Synth2Vst3PatchTest;
     static constexpr int qualityParameter=synth2::host::ProcessorBridge::parameterCount;
     void syncParametersFromProcessor();

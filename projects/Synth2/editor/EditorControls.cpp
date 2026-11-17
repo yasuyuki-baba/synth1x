@@ -35,8 +35,9 @@ void PresetDisplayControl::setDisplay(const synth2::editor::EditorPresetDisplay&
 
 void PresetDisplayControl::Draw(IGraphics& g)
 {
+    const auto appearance=controlAppearance(*this);
     ActionButtonControl::Draw(g);
-    const auto title=IText(Typography::patchTitle,color(appearance.displayText),"Synth2Mono",EAlign::Near);
+    const auto title=IText(Typography::patchTitle,appearance.displayText,"Synth2Mono",EAlign::Near);
     const auto fitted=[&](const IText& style,const std::string& value,const IRECT& bounds,bool keepEnd=false) {
         const auto measure=[&](std::string_view text) {
             IRECT measured;const std::string copy(text);g.MeasureText(style,copy.c_str(),measured);return measured.W();
@@ -49,14 +50,14 @@ void PresetDisplayControl::Draw(IGraphics& g)
         return;
     }
     fitted(title,display.title,IRECT(mRECT.L+10,mRECT.T+2,mRECT.R-10,mRECT.T+26));
-    const auto detailText=IText(Typography::label,muted,"Synth2UI",EAlign::Near);
+    const auto detailText=IText(Typography::label,appearance.muted,"Synth2UI",EAlign::Near);
     if(!display.detail.empty())
         fitted(detailText,display.detail,IRECT(mRECT.L+10,mRECT.T+26,mRECT.R-10,
             display.tags.empty() ? mRECT.B-2 : mRECT.T+42),true);
     float x=mRECT.L+10;
     const float y=display.detail.empty() ? mRECT.T+26 : mRECT.T+42;
     for(const auto& tag:display.tags) {
-        const auto style=detailText.WithFGColor(tag.automatic ? muted : ink);
+        const auto style=detailText.WithFGColor(tag.automatic ? appearance.muted : appearance.text);
         IRECT measured;g.MeasureText(style,tag.text.c_str(),measured);
         const float width=measured.W()+10;
         if(x+width>mRECT.R-10) {
@@ -66,7 +67,18 @@ void PresetDisplayControl::Draw(IGraphics& g)
     }
 }
 
-BackgroundControl::BackgroundControl(const IRECT& bounds) : IPanelControl(bounds,background) {}
+void PaletteTextControl::Draw(IGraphics& g) {
+    const auto appearance=controlAppearance(*this,group);
+    mText=mText.WithFGColor(role==PaletteRole::muted ? appearance.muted : appearance.text);
+    ITextControl::Draw(g);
+}
+
+BackgroundControl::BackgroundControl(const IRECT& bounds) : IPanelControl(bounds,COLOR_BLACK) {}
+
+void BackgroundControl::Draw(IGraphics& g) {
+    auto surface=controlAppearance(*this).background;surface.A=255;
+    g.FillRect(surface,mRECT);
+}
 
 void BackgroundControl::OnResize() {
     if(auto* graphics=GetUI())mRECT=mTargetRECT=graphics->GetBounds();
@@ -76,35 +88,34 @@ void BackgroundControl::OnResize() {
 HeaderControl::HeaderControl() : IControl(IRECT(0,0,1280,118)) { mIgnoreMouse=true; }
 
 void HeaderControl::Draw(IGraphics& g) {
-    g.FillRect(color(appearance.header),mRECT);
-    g.FillRect(color(appearance.headerEdge),IRECT(0,0,1280,4));
-    g.DrawLine(color(appearance.headerEdge),0,117,1280,117);
+    const auto appearance=controlAppearance(*this);
+    g.FillRect(appearance.header,mRECT);
+    g.FillRect(appearance.headerEdge,IRECT(0,0,1280,4));
+    g.DrawLine(appearance.headerEdge,0,117,1280,117);
 }
 
 SectionControl::SectionControl(const synth2::editor::EditorPanel& section)
     : IControl(rect(section.bounds)), section(section) { mIgnoreMouse=true; }
 
 void SectionControl::Draw(IGraphics& g) {
-    const auto surface=std::string(section.title)=="FILTER" ? color(appearance.filterPanel) : panel;
+    const auto appearance=controlAppearance(*this,section.title);
+    const auto surface=appearance.panel;
     g.FillRoundRect(surface,mRECT,3.f);
-    g.DrawRoundRect(color(appearance.border),mRECT,3.f,nullptr,0.5f);
+    g.DrawRoundRect(appearance.border,mRECT,3.f,nullptr,0.5f);
     const auto heading=IRECT(mRECT.L+12,mRECT.T+8,mRECT.R-10,mRECT.T+26);
-    g.DrawText(IText(Typography::heading,color(section.accent),"Synth2UIBold",EAlign::Near),section.title,heading);
-    g.DrawLine(color(appearance.border),heading.L,mRECT.T+30,heading.R,mRECT.T+30,nullptr,0.5f);
+    g.DrawText(IText(Typography::heading,appearance.heading,"Synth2UIBold",EAlign::Near),section.title,heading);
+    g.DrawLine(appearance.border,heading.L,mRECT.T+30,heading.R,mRECT.T+30,nullptr,0.5f);
     for(const auto& group:synth2::editor::editorPanelGroups(section)) {
-        g.FillRoundRect(color(appearance.groupPanel),rect(group),3.f);
-        g.DrawRoundRect(color(appearance.border),rect(group),3.f,nullptr,0.5f);
+        g.FillRoundRect(appearance.groupPanel,rect(group),3.f);
+        g.DrawRoundRect(appearance.border,rect(group),3.f,nullptr,0.5f);
     }
     for(const auto& divider:synth2::editor::editorPanelDividers(section))
-        g.FillRect(color(appearance.border),rect(divider));
+        g.FillRect(appearance.border,rect(divider));
 }
 
 PanelKnobControl::PanelKnobControl(const IRECT& bounds,int parameter,const char* label,const IVStyle& style)
-    : IVKnobControl(bounds,parameter,label,(synth2::editor::editorOscillatorGrouped(parameter)
-        ? style.WithColor(kBG,color(appearance.groupPanel)) : style)
-        .WithLabelText((synth2::editor::editorGroupHeading(parameter)
-            ? style.labelText.WithFont("Synth2UIBold").WithFGColor(color(appearance.groupText)) : style.labelText)
-            .WithSize(Typography::label))
+    : IVKnobControl(bounds,parameter,label,style.WithColor(kBG,COLOR_TRANSPARENT)
+        .WithLabelText(style.labelText.WithSize(Typography::label))
         .WithValueText(style.valueText.WithSize(Typography::value)),true,false) {
     mTrackToHandleDistance=2.5f;
     SetTooltip("Drag to adjust. Click value to edit the original source number.");
@@ -127,18 +138,21 @@ void PanelKnobControl::DrawValue(IGraphics& g,bool mouseOver) {
 }
 
 void PanelKnobControl::DrawHandle(IGraphics& g,const IRECT& bounds) {
-    g.FillCircle(color(appearance.control),bounds.MW(),bounds.MH(),bounds.W()/2);
-    g.DrawCircle(color(appearance.controlEdge),bounds.MW(),bounds.MH(),bounds.W()/2,nullptr,1.f);
-    g.DrawCircle(IColor(255,40,39,41),bounds.MW(),bounds.MH(),std::max(1.f,bounds.W()/2-2),nullptr,0.5f);
+    const auto appearance=controlAppearance(*this);
+    g.FillCircle(appearance.control,bounds.MW(),bounds.MH(),bounds.W()/2);
+    g.DrawCircle(appearance.controlEdge,bounds.MW(),bounds.MH(),bounds.W()/2,nullptr,1.f);
+    g.DrawCircle(appearance.controlEdge,bounds.MW(),bounds.MH(),std::max(1.f,bounds.W()/2-2),nullptr,0.5f);
 }
 
 void PanelKnobControl::DrawPointer(IGraphics& g,float angle,float cx,float cy,float radius) {
-    g.DrawRadialLine(color(appearance.pointer),cx,cy,angle,radius*0.56f,radius*0.96f,nullptr,1.8f);
+    const auto appearance=controlAppearance(*this);
+    g.DrawRadialLine(appearance.pointer,cx,cy,angle,radius*0.56f,radius*0.96f,nullptr,1.8f);
 }
 
 void PanelKnobControl::DrawIndicatorTrack(IGraphics& g,float angle,float cx,float cy,float radius) {
-    g.DrawArc(color(appearance.track),cx,cy,radius,-135.f,135.f,nullptr,1.f);
-    g.DrawArc(GetParamIdx()==19 ? accent : color(appearance.pointer),cx,cy,radius,-135.f,angle,nullptr,1.25f);
+    const auto appearance=controlAppearance(*this);
+    g.DrawArc(appearance.track,cx,cy,radius,-135.f,135.f,nullptr,1.f);
+    g.DrawArc(GetParamIdx()==19 ? appearance.accent : appearance.pointer,cx,cy,radius,-135.f,angle,nullptr,1.25f);
 }
 
 SourceChoiceControl::SourceChoiceControl(const IRECT& bounds,int parameter,const char* label,std::function<double()> sourceValue,std::function<void(int)> submitSource)
@@ -146,17 +160,18 @@ SourceChoiceControl::SourceChoiceControl(const IRECT& bounds,int parameter,const
       choices(synth2::editor::editorChoices(parameter)) {}
 
 void SourceChoiceControl::Draw(IGraphics& g) {
+    const auto appearance=controlAppearance(*this);
     const auto raw=sourceValue();
     const auto value=synth2::editor::editorChoiceDisplay(toggle,raw,choices);
     const bool heading=synth2::editor::editorGroupHeading(GetParamIdx());
-    g.DrawText(IText(Typography::label,heading ? color(appearance.groupText) : muted,heading ? "Synth2UIBold" : "Synth2UI"),label,
+    g.DrawText(IText(Typography::label,heading ? appearance.groupText : appearance.muted,heading ? "Synth2UIBold" : "Synth2UI"),label,
                IRECT(mRECT.L,mRECT.T,mRECT.R,mRECT.T+16));
     const auto box=IRECT(mRECT.L+4,mRECT.T+20,mRECT.R-4,std::min(mRECT.B-4,mRECT.T+48));
-    g.FillRoundRect(color(appearance.control),box,3.f);
-    g.DrawRoundRect(color(appearance.controlEdge),box,3.f,nullptr,0.5f);
-    const auto textColor=ink;
+    g.FillRoundRect(appearance.control,box,3.f);
+    g.DrawRoundRect(appearance.controlEdge,box,3.f,nullptr,0.5f);
+    const auto textColor=appearance.text;
     if (toggle)
-        g.FillCircle(raw!=0 ? accent : color(appearance.track),box.L+8,box.MH(),2.f);
+        g.FillCircle(raw!=0 ? appearance.accent : appearance.track,box.L+8,box.MH(),2.f);
     const auto choiceText=IText(Typography::button,textColor,"Synth2UI");
     const auto measure=[&](std::string_view text) {
         IRECT bounds;const std::string copy(text);g.MeasureText(choiceText,copy.c_str(),bounds);return bounds.W();
@@ -167,7 +182,7 @@ void SourceChoiceControl::Draw(IGraphics& g) {
     auto valueBounds=IRECT(box.L+3.f,box.T,box.R-3.f,box.B);
     if(midiChoice) {
         valueBounds.R-=20.f;
-        g.FillTriangle(muted,box.R-15,box.MH()-2,box.R-7,box.MH()-2,box.R-11,box.MH()+3);
+        g.FillTriangle(appearance.muted,box.R-15,box.MH()-2,box.R-7,box.MH()-2,box.R-11,box.MH()+3);
     }
     g.DrawText(choiceText,fitted.c_str(),valueBounds);
     auto tooltip=std::string(label)+": "+value;
@@ -246,9 +261,10 @@ void CatalogListControl::setResults(std::vector<std::size_t> results,double star
 }
 
 std::vector<EditorLibraryTag> CatalogListControl::rowTags(const host::CatalogPatch& item) const {
+    const auto appearance=controlAppearance(*this);
     return synth2::editor::editorLibraryTags(item.tags,item.visibleAutomaticTags(),mRECT.W(),[&](std::string_view value) {
         IRECT measured;const std::string text(value);
-        GetUI()->MeasureText(IText(Typography::label,ink,"Synth2UI",EAlign::Near),text.c_str(),measured);
+        GetUI()->MeasureText(IText(Typography::label,appearance.text,"Synth2UI",EAlign::Near),text.c_str(),measured);
         return measured.W();
     });
 }
@@ -287,11 +303,12 @@ void CatalogListControl::setEmptyMessage(const std::string& title,const std::str
 }
 
 void CatalogListControl::Draw(IGraphics& g) {
-    g.FillRect(panel,mRECT);
+    const auto appearance=controlAppearance(*this);
+    g.FillRect(appearance.panel,mRECT);
     if(matches.empty()) {
-        g.DrawText(IText(Typography::body,ink,"Synth2UI"),emptyTitle.c_str(),
+        g.DrawText(IText(Typography::body,appearance.text,"Synth2UI"),emptyTitle.c_str(),
             IRECT(mRECT.L+12,mRECT.MH()-25,mRECT.R-12,mRECT.MH()));
-        g.DrawText(IText(Typography::label,muted,"Synth2UI"),emptyDetail.c_str(),
+        g.DrawText(IText(Typography::label,appearance.muted,"Synth2UI"),emptyDetail.c_str(),
             IRECT(mRECT.L+12,mRECT.MH()+3,mRECT.R-12,mRECT.MH()+28));
         return;
     }
@@ -304,21 +321,21 @@ void CatalogListControl::Draw(IGraphics& g) {
         const IRECT bounds(mRECT.L,y,mRECT.R-18,y+libraryRowHeight);
         const bool isSelected=item.id==selected;
         if(isSelected) {
-            g.FillRect(color(appearance.selectedRow),bounds);
-            g.FillRect(accent,IRECT(mRECT.L,y,mRECT.L+4,y+libraryRowHeight));
+            g.FillRect(appearance.selectedRow,bounds);
+            g.FillRect(appearance.accent,IRECT(mRECT.L,y,mRECT.L+4,y+libraryRowHeight));
         }
-        else if(row%2==1)g.FillRect(background,bounds);
+        else if(row%2==1)g.FillRect(appearance.background,bounds);
         if(item.id==keyboardSelection && !isSelected)
-            g.DrawRect(accent,IRECT(bounds.L+1,bounds.T+1,bounds.R-1,bounds.B-1),nullptr,1.f);
-        const IText text(Typography::body,ink,"Synth2UI",EAlign::Near);
-        g.DrawText(IText(16.f,item.favorite ? accent : muted,"Synth2UI"),item.favorite ? "+" : "-",IRECT(mRECT.L,y,mRECT.L+32,y+libraryRowHeight));
+            g.DrawRect(appearance.accent,IRECT(bounds.L+1,bounds.T+1,bounds.R-1,bounds.B-1),nullptr,1.f);
+        const IText text(Typography::body,appearance.text,"Synth2UI",EAlign::Near);
+        g.DrawText(IText(16.f,item.favorite ? appearance.accent : appearance.muted,"Synth2UI"),item.favorite ? "+" : "-",IRECT(mRECT.L,y,mRECT.L+32,y+libraryRowHeight));
         if(item.patch.color) {
             const auto rgb=*item.patch.color;
             g.FillRect(IColor(255,(rgb>>16)&255,(rgb>>8)&255,rgb&255),
                        IRECT(mRECT.L+34,y+libraryRowHeight/2-5,mRECT.L+42,y+libraryRowHeight/2+5));
         }
         const auto label=item.patch.name+(item.error.empty() ? "" : " [Cannot load]");
-        const auto titleText=isSelected ? text.WithFont("Synth2UIBold").WithFGColor(color(appearance.displayText)) : text;
+        const auto titleText=isSelected ? text.WithFont("Synth2UIBold").WithFGColor(appearance.displayText) : text;
         using Columns=synth2::editor::EditorLibraryColumns;
         const auto tags=rowTags(item);
         const auto hovered=hoverY>=y && hoverY<y+libraryRowHeight
@@ -329,22 +346,22 @@ void CatalogListControl::Draw(IGraphics& g) {
             };
             const auto fitted=synth2::editor::editorFitText(value,cell.W(),measure,keepEnd);
             g.DrawText(style,fitted.c_str(),cell);
-            if(underline)g.DrawLine(accent,cell.L,cell.MH()+8,cell.L+measure(fitted),cell.MH()+8,nullptr,1.f);
+            if(underline)g.DrawLine(appearance.accent,cell.L,cell.MH()+8,cell.L+measure(fitted),cell.MH()+8,nullptr,1.f);
         };
         drawFitted(titleText,label,IRECT(mRECT.L+Columns::nameLeft,y,mRECT.L+Columns::nameRight,y+libraryRowHeight));
         const bool bankHover=hovered.action==LibraryRowAction::bank && !item.bankId.empty();
-        drawFitted(text.WithSize(Typography::label).WithFGColor(bankHover ? accent : muted),item.bankName,
+        drawFitted(text.WithSize(Typography::label).WithFGColor(bankHover ? appearance.accent : appearance.muted),item.bankName,
                    IRECT(mRECT.L+Columns::bankLeft,y,mRECT.L+Columns::bankRight,y+libraryRowHeight),true,bankHover);
         for(const auto& tag:tags) {
             const bool tagHover=hovered.action==LibraryRowAction::tag && hovered.tag==tag.text;
-            const auto style=text.WithSize(Typography::label).WithFGColor(tagHover ? accent : tag.automatic ? muted : ink);
+            const auto style=text.WithSize(Typography::label).WithFGColor(tagHover ? appearance.accent : tag.automatic ? appearance.muted : appearance.text);
             const IRECT cell(mRECT.L+tag.left,y,mRECT.L+tag.left+tag.width,y+libraryRowHeight);
             drawFitted(style,tag.text,cell,false,tagHover);
         }
     }
     g.PathClipRegion(IRECT());
-    g.FillRoundRect(background,scrollTrack(),4.f);
-    if(matches.size()>visibleRows)g.FillRoundRect(draggingScroll ? accent : muted,scrollThumb(),4.f);
+    g.FillRoundRect(appearance.background,scrollTrack(),4.f);
+    if(matches.size()>visibleRows)g.FillRoundRect(draggingScroll ? appearance.accent : appearance.muted,scrollThumb(),4.f);
 }
 
 void CatalogListControl::OnMouseDown(float x,float y,const IMouseMod&) {
@@ -426,39 +443,41 @@ void LibraryFiltersControl::setFilters(std::vector<EditorLibraryFilter> value)
 
 std::vector<EditorLibraryFilterChip> LibraryFiltersControl::chips() const
 {
+    const auto appearance=controlAppearance(*this);
     return editorLibraryFilterChips(filters,mRECT.W(),[&](const std::string& label) {
-        IRECT bounds;GetUI()->MeasureText(IText(Typography::button,ink,"Synth2UI"),label.c_str(),bounds);
+        IRECT bounds;GetUI()->MeasureText(IText(Typography::button,appearance.text,"Synth2UI"),label.c_str(),bounds);
         return bounds.W();
     });
 }
 
 void LibraryFiltersControl::Draw(IGraphics& g)
 {
+    const auto appearance=controlAppearance(*this);
     if(filters.empty()) {
-        g.DrawText(IText(Typography::auxiliary,muted,"Synth2UI",EAlign::Far),
+        g.DrawText(IText(Typography::auxiliary,appearance.muted,"Synth2UI",EAlign::Far),
             "Ctrl/Cmd+F: Search   /   Up/Down: Browse   /   Enter: Load",mRECT);
         return;
     }
-    const auto text=IText(Typography::button,ink,"Synth2UI",EAlign::Near);
+    const auto text=IText(Typography::button,appearance.text,"Synth2UI",EAlign::Near);
     const auto measure=[&](std::string_view value) {
         IRECT bounds;const std::string copy(value);g.MeasureText(text,copy.c_str(),bounds);return bounds.W();
     };
     for(const auto& chip:chips()) {
         const auto bounds=IRECT(mRECT.L+chip.left,mRECT.T,mRECT.L+chip.left+chip.width,mRECT.B);
         const bool hover=hoverX>=chip.left && hoverX<chip.left+chip.width;
-        g.FillRoundRect(hover ? color(appearance.selectedRow) : panel,bounds,3.f);
-        g.DrawRoundRect(hover ? accent : color(appearance.border),bounds,3.f,nullptr,.5f);
+        g.FillRoundRect(hover ? appearance.selectedRow : appearance.panel,bounds,3.f);
+        g.DrawRoundRect(hover ? appearance.accent : appearance.border,bounds,3.f,nullptr,.5f);
         const auto label=chip.remaining ? editorLibraryMoreFilters(chip.remaining) : filters[chip.index].label;
         const float labelWidth=bounds.W()-(chip.remaining ? 16.f : 30.f);
         const auto fitted=!chip.remaining && filters[chip.index].kind==LibraryFilterKind::bank
             ? "Bank: "+editorFitText(std::string_view(label).substr(6),labelWidth-measure("Bank: "),measure,true)
             : editorFitText(label,labelWidth,measure);
-        g.DrawText(text.WithFGColor(hover ? accent : ink),fitted.c_str(),
+        g.DrawText(text.WithFGColor(hover ? appearance.accent : appearance.text),fitted.c_str(),
             IRECT(bounds.L+8,bounds.T,bounds.R-(chip.remaining ? 8.f : 22.f),bounds.B));
         if(!chip.remaining) {
             const float x=bounds.R-11,y=bounds.MH();
-            g.DrawLine(hover ? accent : muted,x-3,y-3,x+3,y+3,nullptr,1.f);
-            g.DrawLine(hover ? accent : muted,x-3,y+3,x+3,y-3,nullptr,1.f);
+            g.DrawLine(hover ? appearance.accent : appearance.muted,x-3,y-3,x+3,y+3,nullptr,1.f);
+            g.DrawLine(hover ? appearance.accent : appearance.muted,x-3,y+3,x+3,y-3,nullptr,1.f);
         }
     }
 }
@@ -495,12 +514,15 @@ void LibraryFiltersControl::OnMouseOut()
 
 SearchControl::SearchControl(const IRECT& bounds, const char* text, const IText& style,
               std::function<void(const char*)> change,const char* placeholder)
-    : IEditableTextControl(bounds,text,style,panel), onChange(std::move(change)),placeholder(placeholder) {}
+    : IEditableTextControl(bounds,text,style,COLOR_TRANSPARENT), onChange(std::move(change)),placeholder(placeholder) {}
 
 void SearchControl::Draw(IGraphics& g) {
+    const auto appearance=controlAppearance(*this);
+    mBGColor=appearance.panel;
+    mText=mText.WithFGColor(appearance.text);
     IEditableTextControl::Draw(g);
     if(!*GetStr() && !placeholder.empty())
-        g.DrawText(GetText().WithFGColor(muted),placeholder.c_str(),mRECT.GetPadded(-10.f));
+        g.DrawText(GetText().WithFGColor(appearance.muted),placeholder.c_str(),mRECT.GetPadded(-10.f));
 }
 
 void SearchControl::OnTextEntryCompletion(const char* text, int value) {
@@ -510,16 +532,16 @@ void SearchControl::OnTextEntryCompletion(const char* text, int value) {
 
 namespace {
 void drawChoiceField(IGraphics& g,const IRECT& bounds,const char* title,float labelWidth,const char* value,
-                     const IColor& labelColor=muted)
+                     const NativeAppearance& appearance,const IColor& labelColor)
 {
     const IText label{Typography::auxiliary,labelColor,"Synth2UI"};
     g.DrawText(label,title,IRECT(bounds.L,bounds.T,bounds.L+labelWidth-2,bounds.B));
     const auto box=IRECT(bounds.L+labelWidth,bounds.T,bounds.R,bounds.B);
-    g.FillRoundRect(panel,box,3.f);
-    g.DrawRoundRect(color(appearance.controlEdge),box,3.f,nullptr,.5f);
-    g.DrawText(label.WithFGColor(ink),value,IRECT(box.L,box.T,box.R-22,box.B));
+    g.FillRoundRect(appearance.panel,box,3.f);
+    g.DrawRoundRect(appearance.controlEdge,box,3.f,nullptr,.5f);
+    g.DrawText(label.WithFGColor(appearance.text),value,IRECT(box.L,box.T,box.R-22,box.B));
     const float x=bounds.R-11,y=bounds.MH();
-    g.FillTriangle(muted,x-4,y-2,x+4,y-2,x,y+3);
+    g.FillTriangle(appearance.muted,x-4,y-2,x+4,y-2,x,y+3);
 }
 }
 
@@ -528,7 +550,8 @@ FooterChoiceControl::FooterChoiceControl(const IRECT& bounds,const char* title,f
     : IControl(bounds),label(title),text(value),labelWidth(width),action(std::move(callback)) {}
 
 void FooterChoiceControl::Draw(IGraphics& g) {
-    drawChoiceField(g,mRECT,label.c_str(),labelWidth,text.c_str());
+    const auto appearance=controlAppearance(*this);
+    drawChoiceField(g,mRECT,label.c_str(),labelWidth,text.c_str(),appearance,appearance.muted);
 }
 
 void FooterChoiceControl::OnMouseDown(float,float,const IMouseMod&) {
@@ -559,12 +582,14 @@ void DisplayScaleControl::setScale(float next) {
 }
 
 void DisplayScaleControl::Draw(IGraphics& g) {
-    drawChoiceField(g,mRECT,"Scale",42,text.c_str(),ink);
+    const auto appearance=controlAppearance(*this);
+    drawChoiceField(g,mRECT,"Scale",42,text.c_str(),appearance,appearance.text);
 }
 
 void DisplayScaleControl::OnMouseDown(float x,float,const IMouseMod&) {
+    const auto appearance=controlAppearance(*this);
     if(x>=valueBounds().L && x<valueBounds().R)
-        GetUI()->CreateTextEntry(*this,IText(Typography::auxiliary,ink,"Synth2UI"),valueBounds(),text.c_str());
+        GetUI()->CreateTextEntry(*this,IText(Typography::auxiliary,appearance.text,"Synth2UI"),valueBounds(),text.c_str());
     else {
         menu.Clear();
         for(const int percent:synth2::editor::editorScaleChoices)

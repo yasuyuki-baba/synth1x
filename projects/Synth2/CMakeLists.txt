@@ -40,6 +40,10 @@ set(synth2_editor_sources
     Synth2Editor.cpp
     editor/EditorKeyboardFocus.cpp
     editor/EditorWindowBounds.cpp
+    editor/EditorStyle.cpp
+    editor/EditorPaletteShell.cpp
+    editor/EditorPaletteWindow.cpp
+    editor/Synth2PaletteEditor.cpp
     editor/EditorControls.cpp
     editor/Synth2LibraryEditor.cpp)
 if(APPLE)
@@ -48,6 +52,7 @@ if(APPLE)
     set(CMAKE_OBJCXX_STANDARD_REQUIRED ON)
     set_source_files_properties(editor/EditorKeyboardFocus.cpp PROPERTIES LANGUAGE OBJCXX)
     set_source_files_properties(editor/EditorWindowBounds.cpp PROPERTIES LANGUAGE OBJCXX)
+    set_source_files_properties(editor/EditorPaletteShell.cpp PROPERTIES LANGUAGE OBJCXX)
 endif()
 include(${CMAKE_CURRENT_LIST_DIR}/EditorFonts.cmake)
 if(MINGW AND SYNTH2_IPLUG2_FORMATS STREQUAL "APP")

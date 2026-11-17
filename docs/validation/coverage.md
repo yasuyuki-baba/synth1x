@@ -264,3 +264,20 @@ Note Off and pedal-up, for Mono and Legato modes.
 compares span configuration against repeated sample configuration bit for bit,
 including changing modes, resonance and saturation, bypass/resume and retained
 filter memory at integral and fractional sample rates.
+
+## Editor palettes
+
+`EditorColorTest`, `EditorPaletteModel` and `EditorPaletteTest` cover strict RGB/
+RGBA decoding and formatting, independent instances, alpha retention with an
+opaque canvas, global/group inheritance and override removal, the default Filter
+colors, preview cancellation/application, preference replacement/round trips,
+missing/deleted preferences restoring defaults and transactional rejection of malformed, oversized, duplicate or
+unsupported preferences. Failed writes report errors without changing the
+in-memory palette. These portable tests do not establish native window or DAW
+interaction. See the GUI contract and manual platform guide.
+
+`EditorPaletteModel.UnsavedChangesTrackValuesAlphaAndInheritanceInsteadOfEditHistory`
+checks that discard confirmation is needed for changed color/alpha values or
+inheritance overrides, and stops being needed after exact restoration, cancellation
+or application. Native Cancel/title-bar interactions and confirmation rendering
+are covered by the manual palette-window procedure.

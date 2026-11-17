@@ -149,3 +149,40 @@ For non-gating DSP profiling, build `Synth2RenderProfile` and run:
 
 The CSV records thread CPU/wall means and a final-block hash. These offline
 measurements do not certify device latency or a hard real-time deadline.
+
+## Palette window
+
+From Synth, MIDI and Library, open **Palette...** in the footer. Verify that a
+second click raises the same modeless window and that the main editor remains
+usable. Verify all General colors are visible together, with the selected cell outlined;
+switch between cells and confirm the adjacent inspector follows the selection.
+Verify the left/right pairs match the palette order in the GUI contract.
+Switch between General and groups: all cells must retain their positions.
+Cells restricted to General must be dimmed and unselectable in groups. Only explicitly
+set group colors show Custom; inherited and unavailable cells have no extra
+labels. Swatches, HEX values and Custom badges must update immediately after
+editing, Use General and Reset group.
+Change General panel/text/control colors with the picker, HEX and sliders,
+including 0%, 50% and 100% opacity. Check the Synth controls, MIDI, Library,
+popup menus and software keyboard. Repeated redraws must not accumulate opacity.
+
+Override one group's panel/text/heading/knob colors; other groups must retain
+General. Verify **Use General**, **Reset group** and the default Filter overrides.
+Make text transparent and confirm Palette's fixed entry button, edit window and
+discard confirmation remain readable. Change a color, then Cancel or close the
+palette window: Keep editing must retain both the window and preview; Discard
+changes must restore the opening palette and close. Escape/Return in the
+confirmation must keep editing, and repeated close requests must not stack
+prompts. Verify the title-bar close does not hide the palette before confirmation
+on each platform. Unchanged colors, selection-only actions and edits restored to
+their opening values close without a prompt. Verify an uncommitted valid HEX or
+opacity entry is included when closing through the title bar. Closing the main
+editor must close its child and restore the opening palette directly. Apply a
+change, reopen the editor and open a second instance; verify the
+saved preference loads, while already-open instances retain their appearance.
+Switch sounds/A/B and recall DAW state without changing the active palette.
+
+Check the palette window at OS DPI scales used on the platform, including closing
+the parent editor while the window or native picker is open. A failure to write
+preferences must show an error and leave editing/cancellation available. Use a
+temporary user-data directory for destructive preference-file experiments.

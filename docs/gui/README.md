@@ -224,3 +224,75 @@ Delay Time uses host-synchronized note choices while preserving source values on
 patch/state recall. The Delay panel displays the playback tempo and current left
 and right tap times in milliseconds, including Spread, buffer limits and tempo
 glides. The readout is audio-thread telemetry; before processing it is unavailable.
+
+## Palette editing
+
+The footer's **Palette...** button opens one modeless native window per editor.
+The main surface stays available for preview and sound design. The palette window
+and its entry button use fixed, opaque colors so a transparent or low-contrast
+palette cannot hide the recovery controls. Reopening the palette window raises
+the existing window without replacing its cancellation baseline.
+
+All palette roles stay visible in a fixed two-column color grid while editing.
+Related colors appear as left/right pairs, with small gaps between surfaces,
+text, controls/state and the display/keyboard colors:
+
+| Left | Right |
+| --- | --- |
+| Background | Border |
+| Header | Header edge |
+| Panel | Inner panel |
+| Text | Secondary text |
+| Group heading | Inner heading |
+| Control | Control edge |
+| Track | Pointer |
+| Accent | Selection |
+| Display | Display text |
+| White keys | |
+
+General and group scopes use exactly the same cell order and positions. In group
+scopes, roles restricted to General keep their slots but appear dimmed and cannot be
+selected or edited. Each cell shows its role, a checkerboard-backed color swatch
+and RGBA value. Only explicit group overrides carry a **Custom** badge; inherited
+and unavailable roles have no extra cell labels or legend. Clicking a
+cell selects it for the adjacent color picker/HEX/RGBA editor without hiding the
+other colors or changing their values.
+
+**General** sets shared colors. Each Synth group and the MIDI group can override
+its panel, inner panel, headings, text, borders, accents and control colors
+independently. Unset group colors inherit General; **Use General** clears the
+selected override and **Reset group** clears all overrides in that group.
+The built-in appearance remains the only supplied palette. Its Filter panel and
+heading are ordinary default overrides, not special rendering branches.
+
+Colors accept `#RRGGBB` or `#RRGGBBAA`, a native color picker, RGB sliders/values
+and opacity from 0–100%. The bottom canvas is always opaque. Transparent layers
+compose above it; window/desktop transparency and background images are not part
+of this feature. Group palettes also apply to their labels, selectors and knobs;
+General applies to the header, library, popup menus and software keyboard.
+
+Edits preview only in the owning instance. **Apply** atomically saves the palette
+in `palette.xml` in the Synth2 user settings directory. Other instances read the
+saved preference when their editors are next opened. Missing preferences restore
+the built-in appearance, including when the file was deleted while an editor was closed. Sound changes, A/B and DAW
+state recall do not change the palette or publish host parameter changes.
+**Cancel** and the palette window close button ask **Discard palette changes?**
+when the current colors or inheritance overrides differ from the opening palette.
+**Keep editing** dismisses the fixed-color confirmation and retains the preview;
+**Discard changes** closes the palette window and restores its opening palette.
+Escape or Return in the confirmation keeps editing. Selection-only actions and
+edits reverted to the opening values close without confirmation. A valid text
+entry still in progress is committed to the preview before checking for changes.
+Closing the main editor or unloading the plugin still restores the opening
+palette directly, since host-driven teardown cannot be vetoed by a child editor.
+**Default colors** previews the built-in appearance;
+it is saved only by Apply. A failed save keeps the window open with an error and
+preserves the cancellation baseline. Invalid saved preferences leave the current
+palette intact and report the error in the editor status.
+
+Palette preferences use a versioned XML document with stable role/group keys and
+explicit RGBA values. They are UI-only data, separate from sound/session state.
+See `EditorPaletteTest.cpp` for color parsing, inheritance, instance isolation,
+transaction rollback and preference persistence/rejection checks. Native window
+focus, color picker and host-specific window behavior belong to manual platform
+validation.
