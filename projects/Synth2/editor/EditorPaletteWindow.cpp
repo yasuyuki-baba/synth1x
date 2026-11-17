@@ -119,7 +119,7 @@ public:
         g.DrawText(normal.WithSize(12).WithFGColor(muted),"Background image (all groups)",IRECT(524,532,876,552));
         g.DrawText(normal.WithSize(12),draft.backgroundImage ? draft.backgroundImage->name.c_str() : "None",IRECT(524,552,876,574));
         box(imageBounds(),"Choose image...");box(removeImageBounds(),"Remove image");
-        g.DrawText(normal.WithSize(12).WithFGColor(muted),"PNG / JPEG. Fills the screen; panels can be transparent.",IRECT(524,614,876,636));
+        g.DrawText(normal.WithSize(12).WithFGColor(muted),"Below the header; panels can be transparent.",IRECT(524,614,876,636));
         box(defaultBounds(),"Default colors");box(importBounds(),"Import...");box(exportBounds(),"Export...");
         box(cancelBounds(),"Cancel");box(applyBounds(),"Apply");
         if(!error.empty())g.DrawMultiLineText(normal.WithSize(12).WithFGColor(IColor(255,255,176,166)),error.c_str(),IRECT(524,642,876,686));

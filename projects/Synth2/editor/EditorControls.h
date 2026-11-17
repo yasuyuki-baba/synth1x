@@ -63,6 +63,7 @@ private:
 class HeaderControl final : public IControl
 {
 public:
+    static constexpr float height=118.f;
     HeaderControl();
     void Draw(IGraphics& graphics) override;
 };
