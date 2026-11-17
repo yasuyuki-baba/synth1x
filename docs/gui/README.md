@@ -270,9 +270,10 @@ and opacity from 0–100%. The bottom canvas is always opaque. Transparent layer
 compose above it; window/desktop transparency is not supported. Group palettes also apply to their labels, selectors and knobs;
 General applies to the header, library, popup menus and software keyboard.
 
-**Choose image...** selects an 8-bit PNG or JPEG background for the whole main surface,
-including Synth, MIDI and Library. The image is centered and scaled to cover the
-current canvas while retaining its aspect ratio; edges may be cropped. It sits
+**Choose image...** selects an 8-bit PNG or JPEG background for the main surface below
+the header, including Synth, MIDI and Library. The header never displays the image,
+even when its colors are transparent. The image is centered and scaled to cover the
+area below the header while retaining its aspect ratio; edges may be cropped. It sits
 above the opaque Background color and below all panels and controls, so panel
 opacity determines how much shows through. **Remove image** previews its removal.
 Selection/removal share the color edit's Apply, Cancel and discard confirmation.

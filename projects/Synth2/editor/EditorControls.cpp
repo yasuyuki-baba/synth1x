@@ -92,10 +92,11 @@ void BackgroundControl::Draw(IGraphics& g) {
         }
     }
     if(bitmap.IsValid() && bitmap.W()>0 && bitmap.H()>0) {
-        const auto scale=std::max(mRECT.W()/bitmap.W(),mRECT.H()/bitmap.H());
+        const IRECT imageBounds(mRECT.L,HeaderControl::height,mRECT.R,mRECT.B);
+        const auto scale=std::max(imageBounds.W()/bitmap.W(),imageBounds.H()/bitmap.H());
         const auto w=bitmap.W()*scale,h=bitmap.H()*scale;
-        g.PathClipRegion(mRECT);
-        g.DrawFittedBitmap(bitmap,IRECT(mRECT.MW()-w/2,mRECT.MH()-h/2,mRECT.MW()+w/2,mRECT.MH()+h/2));
+        g.PathClipRegion(imageBounds);
+        g.DrawFittedBitmap(bitmap,IRECT(imageBounds.MW()-w/2,imageBounds.MH()-h/2,imageBounds.MW()+w/2,imageBounds.MH()+h/2));
         g.PathClipRegion();
     }
 }
@@ -105,13 +106,13 @@ void BackgroundControl::OnResize() {
     IPanelControl::OnResize();
 }
 
-HeaderControl::HeaderControl() : IControl(IRECT(0,0,1280,118)) { mIgnoreMouse=true; }
+HeaderControl::HeaderControl() : IControl(IRECT(0,0,1280,height)) { mIgnoreMouse=true; }
 
 void HeaderControl::Draw(IGraphics& g) {
     const auto appearance=controlAppearance(*this);
     g.FillRect(appearance.header,mRECT);
     g.FillRect(appearance.headerEdge,IRECT(0,0,1280,4));
-    g.DrawLine(appearance.headerEdge,0,117,1280,117);
+    g.DrawLine(appearance.headerEdge,0,height-1,1280,height-1);
 }
 
 SectionControl::SectionControl(const synth2::editor::EditorPanel& section)

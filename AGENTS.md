@@ -70,7 +70,7 @@
   group overrides with Default colors unless the palette is already default.
   Import/export the complete XML palette from that editor; import previews until
   Apply, and export retains unsaved edits and the cancellation baseline.
-  Support a single embedded PNG/JPEG background below the main controls, with
+  Support a single embedded PNG/JPEG background below the header and behind the main controls, with
   aspect-preserving cover, live preview and shared Apply/Cancel. Keep the palette
   window fixed-color; Default colors preserves the image.
   Do not add bundled palette variants. See the palette section in the GUI contract.

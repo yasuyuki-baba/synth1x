@@ -217,8 +217,9 @@ In the palette editor, choose PNG and JPEG images, including a Unicode filename.
 Verify immediate main-surface preview, fixed-color palette/recovery controls and
 centered cover without stretching at different window scales and with Keyboard
 shown/hidden. Make General Panel/Header and Filter Panel half-transparent and
-fully transparent; the image must show through without opacity accumulating on
-redraw. Switch Synth/MIDI/Library and verify the background remains available.
+fully transparent; the image must show through panels without opacity accumulating
+on redraw. A transparent header must reveal only the Background color; the image
+must begin at the header's bottom edge. Switch Synth/MIDI/Library and verify the background remains available.
 
 Cancel the chooser and reject a corrupt/unsupported or oversized image: preserve
 the current preview. Check the 8 MiB, 8192-pixel-side and 16-megapixel limits.
