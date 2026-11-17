@@ -84,6 +84,8 @@ void Synth2::refreshEditorScale()
 void Synth2::layoutEditor(IGraphics* graphics)
 {
     if (graphics->NControls()) return;
+    loadPalettePreferences();
+    const auto appearance=nativeAppearance(editorPalette);
     const auto regular=synth2::editor::editorRegularFont();
     const auto bold=synth2::editor::editorBoldFont();
     const auto mono=synth2::editor::editorMonoFont();
@@ -97,14 +99,14 @@ void Synth2::layoutEditor(IGraphics* graphics)
     graphics->SetScaleConstraints(synth2::editor::editorMinimumScale,synth2::editor::editorMaximumScale);
     graphics->AttachCornerResizer(EUIResizerMode::Scale, false);
     graphics->AttachTextEntryControl();
-    const IText text {Typography::input,ink,"Synth2UI"};
+    const IText text {Typography::input,appearance.text,"Synth2UI"};
     graphics->AttachPopupMenuControl(text);
-    const auto style = DEFAULT_STYLE.WithColor(kBG,panel).WithColor(kFG,color(appearance.control))
-        .WithColor(kPR,accent).WithColor(kFR,panel).WithColor(kHL,accent)
+    const auto style = DEFAULT_STYLE.WithColor(kBG,appearance.panel).WithColor(kFG,appearance.control)
+        .WithColor(kPR,appearance.accent).WithColor(kFR,appearance.panel).WithColor(kHL,appearance.accent)
         .WithDrawShadows(false).WithLabelText(text.WithSize(Typography::button))
         .WithValueText(text.WithSize(Typography::value).WithVAlign(EVAlign::Bottom)).WithRoundness(0.1f);
-    graphics->AttachControl(new ITextControl(IRECT(20,16,214,65),"SYNTH2",text.WithFont("Synth2UIBold").WithSize(29.f).WithAlign(EAlign::Near)));
-    graphics->AttachControl(new ITextControl(IRECT(20,62,214,78),"VIRTUAL ANALOG SYNTHESIZER",text.WithSize(11.f).WithAlign(EAlign::Near)));
+    graphics->AttachControl(new PaletteTextControl(IRECT(20,16,214,65),"SYNTH2",text.WithFont("Synth2UIBold").WithSize(29.f).WithAlign(EAlign::Near)));
+    graphics->AttachControl(new PaletteTextControl(IRECT(20,62,214,78),"VIRTUAL ANALOG SYNTHESIZER",text.WithSize(11.f).WithAlign(EAlign::Near)));
     const auto& volume=synth2::editor::editorMasterVolumeControl;
     auto* volumeControl=new PanelKnobControl(rect(synth2::editor::editorMasterVolumeBounds),volume.parameter,volume.label,style);
     volumeControl->SetTooltip("Master volume. Click the value to enter a gain from 0 to 1.");
@@ -116,16 +118,16 @@ void Synth2::layoutEditor(IGraphics* graphics)
     graphics->AttachControl(new DisplayScaleControl(rect(synth2::editor::editorDisplayScaleBounds),
         [this](float scale){requestEditorScale(scale);}),displayScaleTag);
     refreshEditorScale();
-    graphics->AttachControl(new ITextControl(rect(synth2::editor::editorLibrarySummaryBounds),"",text.WithSize(Typography::label).WithAlign(EAlign::Near)),bankTag);
+    graphics->AttachControl(new PaletteTextControl(rect(synth2::editor::editorLibrarySummaryBounds),"",text.WithSize(Typography::label).WithAlign(EAlign::Near)),bankTag);
     graphics->AttachControl(new ActionButtonControl(IRECT(756,82,820,112),[this](IControl* caller) { showImportMenu(caller); },"Add...",style));
     graphics->AttachControl(new ActionButtonControl(IRECT(826,82,878,112),[this](IControl* caller){showSaveMenu(caller);},"Save",style));
     graphics->AttachControl(new PresetDisplayControl(rect(synth2::editor::editorPresetDisplayBounds),[this](IControl* caller) {
         showPresetMenu(caller);
-    },"",style.WithColor(kBG,color(appearance.display)).WithColor(kFG,color(appearance.display))
-        .WithLabelText(text.WithFont("Synth2Mono").WithSize(Typography::patchTitle).WithFGColor(color(appearance.displayText)))),presetTag);
-    const auto comparisonStyle=style.WithColor(kPR,color(appearance.selectedRow))
+    },"",style.WithColor(kBG,appearance.display).WithColor(kFG,appearance.display)
+        .WithLabelText(text.WithFont("Synth2Mono").WithSize(Typography::patchTitle).WithFGColor(appearance.displayText))),presetTag);
+    const auto comparisonStyle=style.WithColor(kPR,appearance.selectedRow)
         .WithValueText(text.WithSize(Typography::label).WithVAlign(EVAlign::Middle))
-        .WithLabelText(text.WithSize(Typography::label).WithFGColor(muted));
+        .WithLabelText(text.WithSize(Typography::label).WithFGColor(appearance.muted));
     graphics->AttachControl(new IVTabSwitchControl(rect(synth2::editor::editorComparisonBounds),[this](IControl* control) {
         selectComparison(control->As<IVTabSwitchControl>()->GetSelectedIdx());refreshBrowser();
     },std::vector<const char*>{"A","B"},"",comparisonStyle),comparisonTag);
@@ -153,7 +155,7 @@ void Synth2::layoutEditor(IGraphics* graphics)
         {
             const auto& item=section.controls[cell];
             const auto bounds=rect(synth2::editor::editorControlBounds(section,cell));
-            const auto tint=color(section.accent);
+            const auto tint=nativeAppearance(editorPalette,synth2::editor::paletteGroup(section.title)).heading;
             IControl* control=nullptr;
             if (synth2::editor::editorToggle(item.parameter) || !synth2::editor::editorChoices(item.parameter).empty())
                 control=new SourceChoiceControl(bounds,item.parameter,item.label,[this,index=item.parameter] {
@@ -171,9 +173,9 @@ void Synth2::layoutEditor(IGraphics* graphics)
     const auto timingBounds=synth2::editor::editorDelayTimingBounds;
     for(int line=0;line<3;++line)
     {
-        auto* timing=new ITextControl(IRECT(timingBounds.x,timingBounds.y+line*17,
+        auto* timing=new PaletteTextControl(IRECT(timingBounds.x,timingBounds.y+line*17,
             timingBounds.x+timingBounds.width,timingBounds.y+(line+1)*17),"",
-            text.WithFGColor(muted).WithSize(Typography::auxiliary).WithAlign(EAlign::Center));
+            text.WithFGColor(appearance.muted).WithSize(Typography::auxiliary).WithAlign(EAlign::Center),synth2::editor::PaletteRole::muted,"DELAY");
         timing->SetTooltip("Playback tempo and current left/right delay times, including Spread. Invalid host tempo uses 120 BPM.");
         graphics->AttachControl(timing,delayTimingTag+line);
     }
@@ -205,16 +207,22 @@ void Synth2::layoutEditor(IGraphics* graphics)
             graphics->AttachControl(control,parameterTag+item.parameter);
         }
     }
-    graphics->AttachControl(new ITextControl(IRECT(20,802,530,826),"",text.WithFGColor(muted).WithSize(Typography::auxiliary).WithAlign(EAlign::Near)),statusTag);
-    graphics->AttachControl(new ITextControl(rect(synth2::editor::editorVersionBounds),"v" PLUG_VERSION_STR,
-        text.WithFGColor(muted).WithSize(Typography::auxiliary).WithAlign(EAlign::Far)));
+    graphics->AttachControl(new PaletteTextControl(IRECT(20,802,530,826),"",text.WithFGColor(appearance.muted).WithSize(Typography::auxiliary).WithAlign(EAlign::Near),synth2::editor::PaletteRole::muted),statusTag);
+    graphics->AttachControl(new PaletteTextControl(rect(synth2::editor::editorVersionBounds),"v" PLUG_VERSION_STR,
+        text.WithFGColor(appearance.muted).WithSize(Typography::auxiliary).WithAlign(EAlign::Far),synth2::editor::PaletteRole::muted));
+    const auto paletteStyle=DEFAULT_STYLE.WithColor(kBG,IColor(255,35,34,38)).WithColor(kFG,IColor(255,24,25,28))
+        .WithColor(kFR,IColor(255,82,73,74)).WithColor(kPR,IColor(255,237,139,136))
+        .WithDrawShadows(false).WithLabelText(IText(12,IColor(255,240,235,226),"Synth2UI"));
+    graphics->AttachControl(new ActionButtonControl(IRECT(548,802,676,830),[this](IControl*) {
+        showPaletteEditor();
+    },"Palette...",paletteStyle),paletteTag);
     auto* quality=new FooterChoiceControl(rect(synth2::editor::editorOversamplingBounds),"Oversampling",90,
         (std::to_string(processor.oversamplingFactor())+"x").c_str(),
         [this](IControl* caller){showOversamplingMenu(caller);});
     quality->SetTooltip("Click to choose oversampling. Higher factors reduce aliasing and use more CPU. Saved with the project.");
     graphics->AttachControl(quality,oversamplingTag);
     auto* keyboard=new IVKeyboardControl(IRECT(20,844,1260,924),36,84,true,
-        IColor(255,218,215,205),color(appearance.control),accent,color(appearance.border),ink);
+        appearance.keyboardWhite,appearance.control,appearance.accent,appearance.border,appearance.text);
     keyboard->SetText(text);
     graphics->AttachControl(keyboard,keyboardTag)->Hide(!keyboardVisible);
     graphics->AttachControl(new IVToggleControl(rect(synth2::editor::editorKeyboardToggleBounds),[this](IControl* control) {
@@ -251,21 +259,22 @@ void Synth2::layoutEditor(IGraphics* graphics)
         [this](IControl* caller,const std::vector<synth2::editor::EditorLibraryFilter>& filters,const IRECT& bounds) {
             showFilterMenu(caller,filters,bounds);
         }),libraryFiltersTag);
-    graphics->AttachControl(new ITextControl(IRECT(20,180,226,200),"",text.WithSize(Typography::auxiliary).WithFGColor(muted).WithAlign(EAlign::Near)),libraryMatchesTag);
+    graphics->AttachControl(new PaletteTextControl(IRECT(20,180,226,200),"",text.WithSize(Typography::auxiliary).WithFGColor(appearance.muted).WithAlign(EAlign::Near),synth2::editor::PaletteRole::muted),libraryMatchesTag);
     // The SDK owns the animation loop; the future owns whether work is active.
     graphics->AttachControl(new ILambdaControl(IRECT(20,200,226,202),[this](IControl* control,IGraphics& g,IRECT& bounds) {
-        g.FillRect(background,bounds);
+        const auto appearance=nativeAppearance(editorPalette);
+        g.FillRect(appearance.background,bounds);
         if(!libraryJob.valid())return;
-        g.FillRect(color(appearance.border),bounds);
+        g.FillRect(appearance.border,bounds);
         const auto progress=std::clamp(control->GetAnimationProgress(),0.,1.);
         const auto phase=progress<.5 ? progress*2 : 2.-progress*2;
         const auto left=bounds.L+static_cast<float>(phase)*(bounds.W()-44.f);
-        g.FillRect(accent,IRECT(left,bounds.T,left+44.f,bounds.B));
+        g.FillRect(appearance.accent,IRECT(left,bounds.T,left+44.f,bounds.B));
     },1100,true,false,kNoParameter,true),libraryActivityTag);
     using Columns=synth2::editor::EditorLibraryColumns;
-    graphics->AttachControl(new ITextControl(IRECT(20+Columns::nameLeft,204,20+Columns::nameRight,226),"SOUND",text.WithSize(Typography::auxiliary).WithFGColor(muted).WithAlign(EAlign::Near)),4011);
-    graphics->AttachControl(new ITextControl(IRECT(20+Columns::bankLeft,204,20+Columns::bankRight,226),"BANK",text.WithSize(Typography::auxiliary).WithFGColor(muted).WithAlign(EAlign::Near)),4012);
-    graphics->AttachControl(new ITextControl(IRECT(20+Columns::tagsLeft,204,1252,226),"TAGS",text.WithSize(Typography::auxiliary).WithFGColor(muted).WithAlign(EAlign::Near)),4013);
+    graphics->AttachControl(new PaletteTextControl(IRECT(20+Columns::nameLeft,204,20+Columns::nameRight,226),"SOUND",text.WithSize(Typography::auxiliary).WithFGColor(appearance.muted).WithAlign(EAlign::Near),synth2::editor::PaletteRole::muted),4011);
+    graphics->AttachControl(new PaletteTextControl(IRECT(20+Columns::bankLeft,204,20+Columns::bankRight,226),"BANK",text.WithSize(Typography::auxiliary).WithFGColor(appearance.muted).WithAlign(EAlign::Near),synth2::editor::PaletteRole::muted),4012);
+    graphics->AttachControl(new PaletteTextControl(IRECT(20+Columns::tagsLeft,204,1252,226),"TAGS",text.WithSize(Typography::auxiliary).WithFGColor(appearance.muted).WithAlign(EAlign::Near),synth2::editor::PaletteRole::muted),4013);
     graphics->AttachControl(new CatalogListControl(IRECT(20,228,1260,738),catalog,selectedPatchId,keyboardPatchId,
         [this](std::size_t index) { loadLibraryPatch(index); },
         [this](const std::string& id,bool favorite) {
@@ -277,7 +286,7 @@ void Synth2::layoutEditor(IGraphics* graphics)
         [this](double offset) {
             resultOffset=offset;refreshBrowser();
         },[this](const char* path) { importBank(path); }),libraryListTag);
-    graphics->AttachControl(new ITextControl(IRECT(20,754,112,782),"Manual tags",text.WithSize(Typography::auxiliary).WithFGColor(muted).WithAlign(EAlign::Near)),selectedNameTag);
+    graphics->AttachControl(new PaletteTextControl(IRECT(20,754,112,782),"Manual tags",text.WithSize(Typography::auxiliary).WithFGColor(appearance.muted).WithAlign(EAlign::Near),synth2::editor::PaletteRole::muted),selectedNameTag);
     graphics->AttachControl(new SearchControl(IRECT(116,754,1128,782),"",text.WithSize(Typography::button).WithAlign(EAlign::Near),[this](const char* tags) {
         std::string error;
         if(!selectedPatchId.empty() && !catalog.setTags(selectedPatchId,tags,error))browserStatus=error;
@@ -286,9 +295,10 @@ void Synth2::layoutEditor(IGraphics* graphics)
     }),tagsEditTag);
     graphics->AttachControl(new ActionButtonControl(IRECT(1140,754,1260,782),[this](IControl* caller) {
         showAutomaticTagMenu(caller);
-    },"Auto tags...",style.WithColor(kFG,background).WithColor(kFR,background)
-        .WithLabelText(text.WithSize(Typography::auxiliary).WithFGColor(muted))),4016);
+    },"Auto tags...",style.WithColor(kFG,appearance.background).WithColor(kFR,appearance.background)
+        .WithLabelText(text.WithSize(Typography::auxiliary).WithFGColor(appearance.muted))),4016);
     if(!catalogLoaded)reloadCatalog();
+    refreshPalette(*graphics,editorPalette);
     showPage(page);
     refreshBrowser();
 }
@@ -367,6 +377,7 @@ void Synth2::showOversamplingMenu(IControl* caller)
 }
 void Synth2::OnIdle()
 {
+    updatePaletteEditor();
     const bool requested=reconcileEditorScale;
     bool checkParentSize=requested;
 #if defined(__APPLE__) && defined(AU_API)
@@ -494,6 +505,7 @@ void Synth2::OnUIOpen()
 }
 void Synth2::OnUIClose()
 {
+    closePaletteEditor();
     refreshEditorScale();
     reconcileEditorScale=false;
     releaseKeyboardNotes();

@@ -46,6 +46,7 @@ add_executable(Synth2PatchTests
     tests/PresetFilesTest.cpp
     tests/PatchLibraryTest.cpp
     tests/ArchiveBankTest.cpp
+    tests/EditorPaletteTest.cpp
     tests/EditorLayoutTest.cpp
     tests/ArpeggiatorBehaviorTest.cpp
     tests/FilterEnvelopePrecisionTest.cpp

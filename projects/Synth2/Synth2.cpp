@@ -1,6 +1,9 @@
 #include "Synth2.h"
 #include "IPlug_include_in_plug_src.h"
 #include "ParameterSetup.h"
+#if IPLUG_EDITOR
+#include "editor/EditorPaletteWindow.h"
+#endif
 #include <cstdint>
 #include <algorithm>
 #include <cmath>
@@ -111,6 +114,9 @@ void Synth2::restoreBrowser()
 }
 Synth2::~Synth2()
 {
+#if IPLUG_EDITOR
+    closePaletteEditor();
+#endif
     if(importPrompt){{std::lock_guard lock(importPrompt->mutex);importPrompt->alive=false;}importPrompt->changed.notify_all();}
 #if defined(APP_API)
     try {std::string error;synth2::host::PresetFiles::saveStandaloneState(synth2::host::savePresetSession(processor,captureBrowser(),&comparison),error);}catch(const std::exception&){}
@@ -155,3 +161,13 @@ bool Synth2::copyComparison(int source)
     keyboardPatchId.clear();browserStatus.clear();browserGeneration.fetch_add(1);
     notifyHostOfPatch();return true;
 }
+
+#if IPLUG_EDITOR
+namespace synth2::editor::native
+{
+iplug::igraphics::IGraphics* makePaletteGraphics(iplug::igraphics::IGEditorDelegate& delegate)
+{
+    return iplug::igraphics::MakeGraphics(delegate,EditorPaletteWindow::width,EditorPaletteWindow::height,PLUG_FPS,1.f);
+}
+}
+#endif

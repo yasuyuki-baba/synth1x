@@ -58,6 +58,16 @@
   features merely to match a reference panel. Bundle the editor fonts rather than
   depending on installed system font families; see the
   [editor contract](docs/gui/README.md).
+- Keep palette preferences UI-only and instance-local during preview. Use a
+  fixed-color modeless editor that keeps the complete selected palette visible
+  while editing, with identical role positions across scopes, RGBA colors,
+  shared defaults and explicit per-group overrides. Keep cells restricted to
+  General dimmed and unselectable in groups; retain Apply/Cancel and an opaque
+  recovery entry button.
+  Label only custom group overrides; omit inherited/global-only cell badges.
+  Confirm discarding unsaved palette differences on Cancel/title-bar close,
+  preserving the preview when editing continues.
+  Do not add bundled palette variants. See the palette section in the GUI contract.
 - Use iPlug2's standard keyboard control and MIDI delivery for software-keyboard
   audition. Keep mouse hit testing, drag/velocity behavior and MIDI queueing in
   the framework; do not add source-specific note ownership to ProcessorBridge.

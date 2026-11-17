@@ -3,6 +3,7 @@
 #include "editor/EditorLibraryFilters.h"
 #include "IControls.h"
 #include "editor/EditorLayout.h"
+#include "editor/EditorPalette.h"
 #include "editor/EditorPresetDisplay.h"
 #include "host/PatchCatalog.h"
 #include <cstddef>
@@ -34,12 +35,26 @@ private:
     synth2::editor::EditorPresetDisplay display;
 };
 
+// Preserve text roles even when two palette colors happen to be identical.
+class PaletteTextControl final : public ITextControl
+{
+public:
+    PaletteTextControl(const IRECT& bounds,const char* label,const IText& text,
+                       PaletteRole role=PaletteRole::text,const char* group=nullptr)
+        : ITextControl(bounds,label,text),role(role),group(group) {}
+    void Draw(IGraphics& graphics) override;
+private:
+    PaletteRole role;
+    const char* group;
+};
+
 // Covers the complete editor after the optional keyboard changes its height.
 class BackgroundControl final : public IPanelControl
 {
 public:
     explicit BackgroundControl(const IRECT& bounds);
     void OnResize() override;
+    void Draw(IGraphics& graphics) override;
 };
 
 class HeaderControl final : public IControl

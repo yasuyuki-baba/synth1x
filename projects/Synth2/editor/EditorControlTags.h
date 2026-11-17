@@ -3,6 +3,7 @@
 
 namespace synth2::editor::native
 {
+inline constexpr int paletteTag=1043;
 inline constexpr int oversamplingTag=1013;
 inline constexpr int displayScaleTag=1014;
 inline constexpr int delayTimingTag=1030;
