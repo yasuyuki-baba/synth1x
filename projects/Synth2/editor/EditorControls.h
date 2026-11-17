@@ -55,6 +55,9 @@ public:
     explicit BackgroundControl(const IRECT& bounds);
     void OnResize() override;
     void Draw(IGraphics& graphics) override;
+private:
+    std::shared_ptr<const EditorBackgroundImage> image;
+    IBitmap bitmap;
 };
 
 class HeaderControl final : public IControl

@@ -1,6 +1,7 @@
 #include "../Synth2.h"
 #include "EditorPaletteWindow.h"
 #include "EditorStyle.h"
+#include "EditorBackgroundImage.h"
 #include "host/EditorPaletteStore.h"
 #include "host/PresetFiles.h"
 
@@ -10,8 +11,10 @@ void Synth2::loadPalettePreferences()
 {
     try {
         palettePreferenceError.clear();
-        if(!synth2::host::EditorPaletteStore::load(synth2::host::PresetFiles::settingsDirectory()/"palette.xml",editorPalette,palettePreferenceError))
-            browserStatus=palettePreferenceError;
+        auto next=editorPalette;
+        if(synth2::host::EditorPaletteStore::load(synth2::host::PresetFiles::settingsDirectory()/"palette.xml",next,palettePreferenceError) && validateBackgroundImage(next,palettePreferenceError))
+            editorPalette=std::move(next);
+        else browserStatus=palettePreferenceError;
     } catch(const std::exception& exception){palettePreferenceError=exception.what();browserStatus=palettePreferenceError;}
 }
 void Synth2::showPaletteEditor()

@@ -78,6 +78,26 @@ BackgroundControl::BackgroundControl(const IRECT& bounds) : IPanelControl(bounds
 void BackgroundControl::Draw(IGraphics& g) {
     auto surface=controlAppearance(*this).background;surface.A=255;
     g.FillRect(surface,mRECT);
+    const auto* owner=dynamic_cast<PaletteOwner*>(GetDelegate());
+    const auto next=owner ? owner->currentPalette().backgroundImage : nullptr;
+    if(next!=image) {
+        image=next;bitmap=IBitmap{};
+        if(image) {
+            // Content-based names let the SDK reuse a bitmap after Cancel/reselect.
+            std::uint64_t hash=14695981039346656037ull;
+            for(auto byte:image->bytes){hash^=byte;hash*=1099511628211ull;}
+            const auto name="synth2-background-"+std::to_string(hash)+"-"+std::to_string(image->bytes.size())+
+                (image->bytes[0]==137 ? ".png" : ".jpg");
+            bitmap=g.LoadBitmap(name.c_str(),image->bytes.data(),static_cast<int>(image->bytes.size()),1,false,1);
+        }
+    }
+    if(bitmap.IsValid() && bitmap.W()>0 && bitmap.H()>0) {
+        const auto scale=std::max(mRECT.W()/bitmap.W(),mRECT.H()/bitmap.H());
+        const auto w=bitmap.W()*scale,h=bitmap.H()*scale;
+        g.PathClipRegion(mRECT);
+        g.DrawFittedBitmap(bitmap,IRECT(mRECT.MW()-w/2,mRECT.MH()-h/2,mRECT.MW()+w/2,mRECT.MH()+h/2));
+        g.PathClipRegion();
+    }
 }
 
 void BackgroundControl::OnResize() {

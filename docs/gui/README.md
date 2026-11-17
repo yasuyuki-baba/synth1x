@@ -267,12 +267,29 @@ heading are ordinary default overrides, not special rendering branches.
 
 Colors accept `#RRGGBB` or `#RRGGBBAA`, a native color picker, RGB sliders/values
 and opacity from 0–100%. The bottom canvas is always opaque. Transparent layers
-compose above it; window/desktop transparency and background images are not part
-of this feature. Group palettes also apply to their labels, selectors and knobs;
+compose above it; window/desktop transparency is not supported. Group palettes also apply to their labels, selectors and knobs;
 General applies to the header, library, popup menus and software keyboard.
 
+**Choose image...** selects an 8-bit PNG or JPEG background for the whole main surface,
+including Synth, MIDI and Library. The image is centered and scaled to cover the
+current canvas while retaining its aspect ratio; edges may be cropped. It sits
+above the opaque Background color and below all panels and controls, so panel
+opacity determines how much shows through. **Remove image** previews its removal.
+Selection/removal share the color edit's Apply, Cancel and discard confirmation.
+The palette window and recovery button retain their fixed appearance. Default
+colors resets only colors and group overrides, keeping the chosen image.
+
+Images are limited to 8 MiB, 8192 pixels per side and 16 megapixels. Selection and
+native palette loading/import fully decode images before replacing the preview;
+an unreadable or invalid image reports an error and preserves the current palette.
+Encoded image bytes are embedded in preferences and exports, so moving or deleting
+the original image does not break the saved appearance. No external path is needed.
+Color-only files retain version 1; files with embedded images use version 2.
+
 **Import...** and **Export...** in the palette window exchange the complete
-palette as XML: General colors, every group's explicit overrides and alpha values.
+palette as XML: General colors, every group's explicit overrides, alpha values
+and the optional embedded background image. Importing a color-only palette clears
+the current background image.
 The exchange format is the same versioned format as `palette.xml` preferences.
 Import validates the selected file before replacing the preview; Apply is still
 needed to activate it as the saved user preference. Missing, malformed, oversized

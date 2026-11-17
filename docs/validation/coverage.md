@@ -289,3 +289,13 @@ cancellation baseline. `MissingOrInvalidImportsPreserveTheCurrentPreviewAndDisca
 checks that explicit import rejects missing, malformed, unsupported and oversized
 files atomically; missing preference files still load defaults. Native chooser,
 replacement confirmation and preview/apply behavior use the manual exchange guide.
+
+
+`EditorPaletteModel.BackgroundEditsParticipateInDiscardAndColorResetKeepsTheImage`
+and the image exchange cases in `EditorPaletteTest` cover image dirty state,
+color-only reset, content equality, embedded binary round trips with all Base64
+padding lengths, Unicode filenames, source-file removal, color-only imports
+clearing images and transactional rejection of malformed/duplicate image entries.
+Portable checks validate the container and supported signatures, not image decoding.
+The native renderer's decoder, size limits, aspect-preserving cover, panel alpha,
+chooser cancellation and image preview/Apply/discard use the manual platform guide.
