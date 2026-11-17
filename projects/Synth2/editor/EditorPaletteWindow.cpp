@@ -1,6 +1,7 @@
 #include "EditorPaletteWindow.h"
 #include "EditorPaletteShell.h"
 #include "editor/EditorFonts.h"
+#include "host/EditorPaletteStore.h"
 #include "IGraphics.h"
 #include "IControls.h"
 #include "ITextEntryControl.h"
@@ -46,7 +47,7 @@ public:
     PaletteEditorControl(EditorPaletteWindow& owner,const EditorPalette& palette)
         : IControl(IRECT(0,0,width,height)),owner(owner),draft(palette) {editing.begin(palette);}
     void requestCancel() {
-        if(confirmDiscard)return;
+        if(confirming() || fileDialogOpen)return;
         // Include valid text that is still being edited when the frame closes.
         if(auto* entry=GetUI()->GetTextEntryControl();entry && entry->EditInProgress())entry->CommitEdit();
         if(auto* popup=GetUI()->GetPopupMenuControl();popup && popup->GetExpanded())popup->OnMouseDown(-1.f,-1.f,IMouseMod{});
@@ -55,12 +56,12 @@ public:
         else owner.submit(EditorPaletteWindow::Action::cancel,draft);
     }
     bool handleKey(const IKeyPress& key,bool up) {
-        if(!confirmDiscard)return false;
+        if(!confirming())return fileDialogOpen;
         // Escape and Return both keep editing; discarding needs an explicit click.
-        if(!up && (key.VK==27 || key.VK==13)){confirmDiscard=false;SetDirty(false);}
+        if(!up && (key.VK==27 || key.VK==13)){confirmDiscard=false;exportReplacement.reset();SetDirty(false);}
         return true;
     }
-    void setError(std::string value){error=std::move(value);SetDirty(false);}
+    void setError(std::string value){error=std::move(value);notice.clear();SetDirty(false);}
     void Draw(IGraphics& g) override
     {
         const IText normal(14,text,"Synth2UI",EAlign::Near);
@@ -114,26 +115,36 @@ public:
             g.DrawText(normal.WithSize(12).WithFGColor(muted),inherited ? "This color inherits from General." : "This color overrides General.",IRECT(524,446,876,470));
             box(inheritBounds(),"Use General");box(inheritGroupBounds(),"Reset group");
         } else g.DrawText(normal.WithSize(12).WithFGColor(muted),role==PaletteRole::background ? "Background is always opaque." : "Groups inherit these colors unless overridden.",IRECT(524,446,876,470));
-        box(defaultBounds(),"Default colors");box(cancelBounds(),"Cancel");box(applyBounds(),"Apply");
+        box(defaultBounds(),"Default colors");box(importBounds(),"Import...");box(exportBounds(),"Export...");
+        box(cancelBounds(),"Cancel");box(applyBounds(),"Apply");
         if(!error.empty())g.DrawMultiLineText(normal.WithSize(12).WithFGColor(IColor(255,255,176,166)),error.c_str(),IRECT(524,536,876,586));
-        if(confirmDiscard) {
+        else if(!notice.empty())g.DrawMultiLineText(normal.WithSize(12).WithFGColor(muted),notice.c_str(),IRECT(524,536,876,586));
+        if(confirming()) {
+            const bool exporting=exportReplacement.has_value();
             g.FillRect(IColor(190,0,0,0),mRECT);
             const IRECT dialog(200,224,700,436);
             g.FillRoundRect(canvas,dialog,6);g.DrawRoundRect(line,dialog,6,nullptr,1.f);
-            g.DrawText(normal.WithSize(20).WithFont("Synth2UIBold"),"Discard palette changes?",IRECT(224,242,676,276));
-            g.DrawMultiLineText(normal,"Your changes have not been saved.\nDiscard them and restore the previous colors?",IRECT(224,286,676,354));
-            box(keepEditingBounds(),"Keep editing");box(discardBounds(),"Discard changes");
+            g.DrawText(normal.WithSize(20).WithFont("Synth2UIBold"),exporting ? "Replace exported palette?" : "Discard palette changes?",IRECT(224,242,676,276));
+            g.DrawMultiLineText(normal,exporting ? "A file with this name already exists.\nReplace it with the exported palette?" : "Your changes have not been saved.\nDiscard them and restore the previous colors?",IRECT(224,286,676,354));
+            box(keepEditingBounds(),exporting ? "Cancel export" : "Keep editing");
+            box(discardBounds(),exporting ? "Replace file" : "Discard changes");
             g.DrawRoundRect(text,keepEditingBounds(),4,nullptr,1.f);
         }
     }
     void OnMouseDown(float x,float y,const IMouseMod&) override
     {
-        if(confirmDiscard) {
-            if(keepEditingBounds().Contains(x,y))confirmDiscard=false;
-            else if(discardBounds().Contains(x,y))owner.submit(EditorPaletteWindow::Action::cancel,draft);
+        if(fileDialogOpen)return;
+        if(confirming()) {
+            if(keepEditingBounds().Contains(x,y)){confirmDiscard=false;exportReplacement.reset();}
+            else if(discardBounds().Contains(x,y)) {
+                if(exportReplacement) {
+                    const auto replacement=std::move(*exportReplacement);exportReplacement.reset();
+                    writeExport(replacement.path,replacement.palette);
+                } else owner.submit(EditorPaletteWindow::Action::cancel,draft);
+            }
             SetDirty(false);return;
         }
-        error.clear();drag=-1;
+        error.clear();notice.clear();drag=-1;
         if(scopeBounds().Contains(x,y)) {
             menu.Clear();menu.AddItem("General")->SetChecked(group<0);
             for(std::size_t i=0;i<paletteGroupLabels.size();++i)menu.AddItem(paletteGroupLabels[i])->SetChecked(group==static_cast<int>(i));
@@ -154,6 +165,8 @@ public:
                 draft.set(selectedRole,value,selectedGroup);changed();
             });
         } else if(defaultBounds().Contains(x,y)){draft=EditorPalette{};changed();}
+        else if(importBounds().Contains(x,y))promptForPalette(false);
+        else if(exportBounds().Contains(x,y))promptForPalette(true);
         else if(cancelBounds().Contains(x,y))requestCancel();
         else if(applyBounds().Contains(x,y))owner.submit(EditorPaletteWindow::Action::apply,draft);
         else if(group>=0 && inheritBounds().Contains(x,y)){draft.groups[group][static_cast<std::size_t>(role)].reset();changed();}
@@ -168,7 +181,7 @@ public:
         }
         SetDirty(false);
     }
-    void OnMouseDrag(float x,float,float,float,const IMouseMod&) override {if(!confirmDiscard && drag>=0)slide(x);}
+    void OnMouseDrag(float x,float,float,float,const IMouseMod&) override {if(!confirming() && !fileDialogOpen && drag>=0)slide(x);}
     void OnMouseUp(float,float,const IMouseMod&) override {drag=-1;}
     void OnTextEntryCompletion(const char* input,int index) override
     {
@@ -220,13 +233,60 @@ private:
     IRECT inheritBounds() const{return {524,486,690,520};}
     IRECT inheritGroupBounds() const{return {704,486,876,520};}
     IRECT defaultBounds() const{return {24,600,180,636};}
+    IRECT importBounds() const{return {196,600,308,636};}
+    IRECT exportBounds() const{return {320,600,432,636};}
     IRECT cancelBounds() const{return {640,600,752,636};}
     IRECT applyBounds() const{return {764,600,876,636};}
+    bool confirming() const {return confirmDiscard || exportReplacement.has_value();}
+    void writeExport(const std::filesystem::path& path,const EditorPalette& palette) {
+        if(host::EditorPaletteStore::save(path,palette,error))notice="Palette exported.";
+        SetDirty(false);
+    }
+    void promptForPalette(bool exporting) {
+        if(auto* entry=GetUI()->GetTextEntryControl();entry && entry->EditInProgress())entry->CommitEdit();
+        WDL_String file(exporting ? "Synth2-palette.xml" : ""),directory(lastDirectory.c_str());
+        const std::weak_ptr<int> weak=lifetime;
+        fileDialogOpen=true;
+        GetUI()->PromptForFile(file,directory,exporting ? EFileAction::Save : EFileAction::Open,"xml",
+            [this,weak,exporting,snapshot=draft](const WDL_String& chosen,const WDL_String& folder) {
+                if(weak.expired())return;
+                fileDialogOpen=false;
+                if(!chosen.GetLength()){SetDirty(false);return;}
+                lastDirectory=folder.Get();
+                try {
+                    auto destination=std::filesystem::u8path(chosen.Get(),chosen.Get()+chosen.GetLength());
+                    if(exporting) {
+                        const bool extensionAdded=destination.extension().empty();
+                        if(extensionAdded)destination+=".xml";
+#ifdef OS_LINUX
+                        // The pinned GTK save dialog does not confirm replacements.
+                        const bool confirmReplacement=true;
+#else
+                        // Native save dialogs confirm the selected name, but not
+                        // a different target produced by adding an extension here.
+                        const bool confirmReplacement=extensionAdded;
+#endif
+                        if(confirmReplacement && std::filesystem::exists(destination))
+                            exportReplacement=ExportReplacement{destination,snapshot};
+                        else writeExport(destination,snapshot);
+                    } else {
+                        auto next=draft;
+                        if(host::EditorPaletteStore::importFile(destination,next,error)) {
+                            draft=std::move(next);changed();notice="Palette imported. Apply to save.";
+                        }
+                    }
+                } catch(const std::exception&) {
+                    error=exporting ? "Could not export the palette. Check the file and folder permissions."
+                                    : "Could not import the palette. Check the selected file and permissions.";
+                }
+                SetDirty(false);
+            });
+    }
     void beginEntry(const IRECT& bounds,const char* value,int index) {
         entryRole=role;entryGroup=group;
         GetUI()->CreateTextEntry(*this,IText(14,text,"Synth2UI"),bounds,value,index);
     }
-    void changed(){error.clear();owner.submit(EditorPaletteWindow::Action::preview,draft);SetDirty(false);}
+    void changed(){error.clear();notice.clear();owner.submit(EditorPaletteWindow::Action::preview,draft);SetDirty(false);}
     void setChannel(int channel,int number,PaletteRole selectedRole,int selectedGroup) {
         auto value=draft.resolve(selectedRole,selectedGroup);
         if(channel==0)value.red=number;if(channel==1)value.green=number;if(channel==2)value.blue=number;if(channel==3)value.alpha=number;
@@ -240,13 +300,15 @@ private:
     EditorPaletteWindow& owner;
     EditorPalette draft;
     EditorPaletteEdit editing;
-    bool confirmDiscard=false;
+    bool confirmDiscard=false,fileDialogOpen=false;
+    struct ExportReplacement {std::filesystem::path path;EditorPalette palette;};
+    std::optional<ExportReplacement> exportReplacement;
     int group=-1,drag=-1;
     PaletteRole role=PaletteRole::panel;
     PaletteRole entryRole=PaletteRole::panel;
     int entryGroup=-1;
     IPopupMenu menu;
-    std::string error;
+    std::string error,notice,lastDirectory;
     IColor picked;
     std::shared_ptr<int> lifetime=std::make_shared<int>(0);
 };

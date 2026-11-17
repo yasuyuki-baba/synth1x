@@ -132,3 +132,44 @@ TEST_F(EditorPaletteTest,DeletingPreferencesRestoresDefaultsWhenTheSameEditorRel
     ASSERT_TRUE(EditorPaletteStore::load(path,palette,error))<<error;
     EXPECT_EQ(palette,EditorPalette{});
 }
+
+TEST_F(EditorPaletteTest,ExportedDraftImportsAllScopesAndAlphaWithoutApplyingTheEdit)
+{
+    EditorPalette draft;EditorPaletteEdit edit;edit.begin(draft);
+    for(std::size_t r=0;r<paletteRoleCount;++r)
+        draft.set(static_cast<PaletteRole>(r),{static_cast<std::uint8_t>(r*11),42,180,128});
+    for(std::size_t g=0;g<paletteGroupKeys.size();++g)
+        draft.set(PaletteRole::accent,{10,static_cast<std::uint8_t>(g*17),90,static_cast<std::uint8_t>(g*19)},static_cast<int>(g));
+    draft.set(PaletteRole::text,{240,230,220,0},paletteGroup("DELAY"));
+    draft.inherit(paletteGroup("FILTER"));
+    const auto file=directory/std::filesystem::path(u8"palette-\u65e5\u672c.xml");
+    std::string error;ASSERT_TRUE(EditorPaletteStore::save(file,draft,error))<<error;
+    EXPECT_TRUE(edit.modified(draft)); // Export does not Apply the preview.
+    EXPECT_FALSE(std::filesystem::exists(directory/"palette.xml"));
+    EditorPalette imported;
+    ASSERT_TRUE(EditorPaletteStore::importFile(file,imported,error))<<error;
+    EXPECT_EQ(imported,draft);
+    EditorPalette fromPreferences;
+    ASSERT_TRUE(EditorPaletteStore::load(file,fromPreferences,error))<<error;
+    EXPECT_EQ(fromPreferences,draft); // Exchange and preferences share the format.
+    edit.cancel(draft);EXPECT_EQ(draft,EditorPalette{});
+}
+
+TEST_F(EditorPaletteTest,MissingOrInvalidImportsPreserveTheCurrentPreviewAndDiscardBaseline)
+{
+    EditorPalette draft;EditorPaletteEdit edit;edit.begin(draft);
+    draft.set(PaletteRole::accent,{20,40,60,80});const auto before=draft;
+    std::string error;
+    EXPECT_FALSE(EditorPaletteStore::importFile(directory/"missing.xml",draft,error));
+    EXPECT_FALSE(error.empty());EXPECT_EQ(draft,before);EXPECT_TRUE(edit.modified(draft));
+    for(const auto* invalid:{"<Synth2Palette version='2'/>",
+        "<Synth2Palette version='1'><Color role='text' rgba='#123456'/><Color role='unknown' rgba='#abcdef'/></Synth2Palette>",
+        "<Synth2Palette version='1'><Color role='panel' group='missing' rgba='#123456'/></Synth2Palette>"}) {
+        write(invalid);error.clear();
+        EXPECT_FALSE(EditorPaletteStore::importFile(directory/"palette.xml",draft,error));
+        EXPECT_FALSE(error.empty());EXPECT_EQ(draft,before);EXPECT_TRUE(edit.modified(draft));
+    }
+    write(std::string(65537,'x'));
+    EXPECT_FALSE(EditorPaletteStore::importFile(directory/"palette.xml",draft,error));EXPECT_EQ(draft,before);
+    edit.cancel(draft);EXPECT_EQ(draft,EditorPalette{});
+}

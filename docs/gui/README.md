@@ -271,6 +271,20 @@ compose above it; window/desktop transparency and background images are not part
 of this feature. Group palettes also apply to their labels, selectors and knobs;
 General applies to the header, library, popup menus and software keyboard.
 
+**Import...** and **Export...** in the palette window exchange the complete
+palette as XML: General colors, every group's explicit overrides and alpha values.
+The exchange format is the same versioned format as `palette.xml` preferences.
+Import validates the selected file before replacing the preview; Apply is still
+needed to activate it as the saved user preference. Missing, malformed, oversized
+or unsupported imports report an error without changing the current preview or
+its cancellation baseline. Cancelling the file chooser changes nothing.
+
+Export writes the current draft, including valid pending text edits and unsaved
+changes, to the chosen file. It does not Apply the palette or clear unsaved-change
+confirmation. The default export name is `Synth2-palette.xml`; an omitted extension
+gets `.xml`. Replacing an existing file requires confirmation. An export failure
+keeps editing available and reports the error in the fixed-color window.
+
 Edits preview only in the owning instance. **Apply** atomically saves the palette
 in `palette.xml` in the Synth2 user settings directory. Other instances read the
 saved preference when their editors are next opened. Missing preferences restore

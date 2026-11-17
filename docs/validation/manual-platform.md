@@ -186,3 +186,21 @@ Check the palette window at OS DPI scales used on the platform, including closin
 the parent editor while the window or native picker is open. A failure to write
 preferences must show an error and leave editing/cancellation available. Use a
 temporary user-data directory for destructive preference-file experiments.
+
+
+## Palette import/export
+
+From the palette window, export a draft with transparent General colors, several
+group overrides and inherited colors. Include a valid HEX/RGBA value still being
+typed when clicking Export. Verify the chosen file contains the complete draft,
+while the active preference file remains unchanged when exporting elsewhere.
+Export must leave the edit unsaved; Cancel/title-bar close still asks before
+discarding it. Cancelling either file chooser must leave the preview unchanged.
+
+Import the exported file in another editor, verify all colors, alpha values and
+Custom badges, then Cancel/discard: restore the opening palette. Repeat with
+Apply and reopen to verify activation. Import malformed, oversized and unsupported
+XML files and verify the preview remains intact with an error message. Test paths
+with non-ASCII characters. Export with and without an extension; verify `.xml`
+when omitted. Export to an existing file and test both cancelling and confirming
+replacement. A failed export must preserve editing and the current preference.
