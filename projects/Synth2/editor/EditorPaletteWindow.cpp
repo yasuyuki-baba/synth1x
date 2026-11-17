@@ -57,8 +57,8 @@ public:
     }
     bool handleKey(const IKeyPress& key,bool up) {
         if(!confirming())return fileDialogOpen;
-        // Escape and Return both keep editing; discarding needs an explicit click.
-        if(!up && (key.VK==27 || key.VK==13)){confirmDiscard=false;exportReplacement.reset();SetDirty(false);}
+        // Escape and Return dismiss confirmations without changing colors or files.
+        if(!up && (key.VK==27 || key.VK==13)){confirmDiscard=false;confirmDefaults=false;exportReplacement.reset();SetDirty(false);}
         return true;
     }
     void setError(std::string value){error=std::move(value);notice.clear();SetDirty(false);}
@@ -121,13 +121,14 @@ public:
         else if(!notice.empty())g.DrawMultiLineText(normal.WithSize(12).WithFGColor(muted),notice.c_str(),IRECT(524,536,876,586));
         if(confirming()) {
             const bool exporting=exportReplacement.has_value();
+            const bool resetting=confirmDefaults;
             g.FillRect(IColor(190,0,0,0),mRECT);
             const IRECT dialog(200,224,700,436);
             g.FillRoundRect(canvas,dialog,6);g.DrawRoundRect(line,dialog,6,nullptr,1.f);
-            g.DrawText(normal.WithSize(20).WithFont("Synth2UIBold"),exporting ? "Replace exported palette?" : "Discard palette changes?",IRECT(224,242,676,276));
-            g.DrawMultiLineText(normal,exporting ? "A file with this name already exists.\nReplace it with the exported palette?" : "Your changes have not been saved.\nDiscard them and restore the previous colors?",IRECT(224,286,676,354));
-            box(keepEditingBounds(),exporting ? "Cancel export" : "Keep editing");
-            box(discardBounds(),exporting ? "Replace file" : "Discard changes");
+            g.DrawText(normal.WithSize(20).WithFont("Synth2UIBold"),exporting ? "Replace exported palette?" : resetting ? "Restore default colors?" : "Discard palette changes?",IRECT(224,242,676,276));
+            g.DrawMultiLineText(normal,exporting ? "A file with this name already exists.\nReplace it with the exported palette?" : resetting ? "Reset all General colors and group overrides?\nThis replaces your current palette edits." : "Your changes have not been saved.\nDiscard them and restore the previous colors?",IRECT(224,286,676,354));
+            box(keepEditingBounds(),exporting ? "Cancel export" : resetting ? "Cancel" : "Keep editing");
+            box(discardBounds(),exporting ? "Replace file" : resetting ? "Restore defaults" : "Discard changes");
             g.DrawRoundRect(text,keepEditingBounds(),4,nullptr,1.f);
         }
     }
@@ -135,11 +136,13 @@ public:
     {
         if(fileDialogOpen)return;
         if(confirming()) {
-            if(keepEditingBounds().Contains(x,y)){confirmDiscard=false;exportReplacement.reset();}
+            if(keepEditingBounds().Contains(x,y)){confirmDiscard=false;confirmDefaults=false;exportReplacement.reset();}
             else if(discardBounds().Contains(x,y)) {
                 if(exportReplacement) {
                     const auto replacement=std::move(*exportReplacement);exportReplacement.reset();
                     writeExport(replacement.path,replacement.palette);
+                } else if(confirmDefaults) {
+                    confirmDefaults=false;draft=EditorPalette{};changed();
                 } else owner.submit(EditorPaletteWindow::Action::cancel,draft);
             }
             SetDirty(false);return;
@@ -164,7 +167,7 @@ public:
                 value.red=chosen.R;value.green=chosen.G;value.blue=chosen.B;value.alpha=chosen.A;
                 draft.set(selectedRole,value,selectedGroup);changed();
             });
-        } else if(defaultBounds().Contains(x,y)){draft=EditorPalette{};changed();}
+        } else if(defaultBounds().Contains(x,y)){confirmDefaults=draft!=EditorPalette{};}
         else if(importBounds().Contains(x,y))promptForPalette(false);
         else if(exportBounds().Contains(x,y))promptForPalette(true);
         else if(cancelBounds().Contains(x,y))requestCancel();
@@ -237,7 +240,7 @@ private:
     IRECT exportBounds() const{return {320,600,432,636};}
     IRECT cancelBounds() const{return {640,600,752,636};}
     IRECT applyBounds() const{return {764,600,876,636};}
-    bool confirming() const {return confirmDiscard || exportReplacement.has_value();}
+    bool confirming() const {return confirmDiscard || confirmDefaults || exportReplacement.has_value();}
     void writeExport(const std::filesystem::path& path,const EditorPalette& palette) {
         if(host::EditorPaletteStore::save(path,palette,error))notice="Palette exported.";
         SetDirty(false);
@@ -300,7 +303,7 @@ private:
     EditorPaletteWindow& owner;
     EditorPalette draft;
     EditorPaletteEdit editing;
-    bool confirmDiscard=false,fileDialogOpen=false;
+    bool confirmDiscard=false,confirmDefaults=false,fileDialogOpen=false;
     struct ExportReplacement {std::filesystem::path path;EditorPalette palette;};
     std::optional<ExportReplacement> exportReplacement;
     int group=-1,drag=-1;

@@ -168,6 +168,11 @@ popup menus and software keyboard. Repeated redraws must not accumulate opacity.
 
 Override one group's panel/text/heading/knob colors; other groups must retain
 General. Verify **Use General**, **Reset group** and the default Filter overrides.
+With both General edits and group overrides, click **Default colors**: Cancel,
+Escape and Return must preserve the preview. **Restore defaults** must reset all
+scopes immediately, without saving until Apply. Cancel/discard after resetting
+must still restore the opening palette. An already-default palette must not show
+a reset confirmation.
 Make text transparent and confirm Palette's fixed entry button, edit window and
 discard confirmation remain readable. Change a color, then Cancel or close the
 palette window: Keep editing must retain both the window and preview; Discard

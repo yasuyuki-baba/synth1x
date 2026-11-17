@@ -66,7 +66,8 @@
   recovery entry button.
   Label only custom group overrides; omit inherited/global-only cell badges.
   Confirm discarding unsaved palette differences on Cancel/title-bar close,
-  preserving the preview when editing continues.
+  preserving the preview when editing continues. Confirm resetting all colors and
+  group overrides with Default colors unless the palette is already default.
   Import/export the complete XML palette from that editor; import previews until
   Apply, and export retains unsaved edits and the cancellation baseline.
   Do not add bundled palette variants. See the palette section in the GUI contract.
