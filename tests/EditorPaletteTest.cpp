@@ -173,3 +173,58 @@ TEST_F(EditorPaletteTest,MissingOrInvalidImportsPreserveTheCurrentPreviewAndDisc
     EXPECT_FALSE(EditorPaletteStore::importFile(directory/"palette.xml",draft,error));EXPECT_EQ(draft,before);
     edit.cancel(draft);EXPECT_EQ(draft,EditorPalette{});
 }
+
+TEST(EditorPaletteModel,BackgroundEditsParticipateInDiscardAndColorResetKeepsTheImage)
+{
+    EditorPalette palette;EditorPaletteEdit edit;edit.begin(palette);
+    auto image=std::make_shared<EditorBackgroundImage>();image->name="test.png";
+    image->bytes={137,80,78,71,13,10,26,10};palette.backgroundImage=image;
+    EXPECT_TRUE(edit.modified(palette));EXPECT_TRUE(palette.hasDefaultColors());
+    palette.set(PaletteRole::text,{1,2,3,4});palette.resetColors();
+    EXPECT_TRUE(palette.hasDefaultColors());EXPECT_EQ(palette.backgroundImage,image);
+    auto copy=std::make_shared<EditorBackgroundImage>(*image);palette.backgroundImage=copy;
+    EditorPalette same=palette;same.backgroundImage=image;EXPECT_EQ(same,palette);
+    edit.cancel(palette);EXPECT_FALSE(palette.backgroundImage);EXPECT_EQ(palette,EditorPalette{});
+}
+TEST_F(EditorPaletteTest,EmbeddedImagesRoundTripWithoutTheOriginalFileAndLegacyImportClearsThem)
+{
+    // PNG signature plus opaque bytes exercise all three Base64 padding lengths.
+    for(int suffix=0;suffix<3;++suffix) {
+        const auto source=directory/std::filesystem::path(u8"image-\u65e5\u672c.png");
+        const std::vector<unsigned char> bytes{137,80,78,71,13,10,26,10,0,255,128};
+        std::ofstream out(source,std::ios::binary);out.write(reinterpret_cast<const char*>(bytes.data()),bytes.size()-suffix);out.close();
+        EditorPalette draft;std::string error;
+        ASSERT_TRUE(EditorPaletteStore::readImage(source,draft,error))<<error;
+        EditorPaletteEdit edit;edit.begin(EditorPalette{});EXPECT_TRUE(edit.modified(draft));
+        ASSERT_TRUE(EditorPaletteStore::save(directory/"palette.xml",draft,error))<<error;
+        ASSERT_TRUE(std::filesystem::remove(source));
+        EditorPalette loaded;ASSERT_TRUE(EditorPaletteStore::importFile(directory/"palette.xml",loaded,error))<<error;
+        EXPECT_EQ(loaded,draft);EXPECT_EQ(loaded.backgroundImage->bytes.size(),bytes.size()-suffix);
+        EXPECT_TRUE(edit.modified(draft));
+        write("<Synth2Palette version='1'/>");
+        ASSERT_TRUE(EditorPaletteStore::importFile(directory/"palette.xml",loaded,error))<<error;
+        EXPECT_FALSE(loaded.backgroundImage);
+    }
+}
+TEST_F(EditorPaletteTest,InvalidImageFilesAndEmbeddedDataPreserveTheDraft)
+{
+    EditorPalette draft;draft.set(PaletteRole::accent,{1,2,3,4});const auto before=draft;
+    std::string error;std::ofstream(directory/"invalid.png")<<"not an image";
+    EXPECT_FALSE(EditorPaletteStore::readImage(directory/"invalid.png",draft,error));EXPECT_EQ(draft,before);
+    EXPECT_FALSE(EditorPaletteStore::readImage(directory/"missing.png",draft,error));EXPECT_EQ(draft,before);
+    for(const auto* xml:{
+        "<Synth2Palette version='2'><BackgroundImage encoding='base64'>!!!!</BackgroundImage></Synth2Palette>",
+        "<Synth2Palette version='2'><BackgroundImage encoding='base64'>iVBORw0KGgp=</BackgroundImage></Synth2Palette>",
+        "<Synth2Palette version='2'><BackgroundImage encoding='path'>file.png</BackgroundImage></Synth2Palette>",
+        "<Synth2Palette version='2'><BackgroundImage encoding='base64'>iVBORw0KGgo=</BackgroundImage><BackgroundImage encoding='base64'>iVBORw0KGgo=</BackgroundImage></Synth2Palette>",
+        "<Synth2Palette version='1'><BackgroundImage encoding='base64'>iVBORw0KGgo=</BackgroundImage></Synth2Palette>"}) {
+        write(xml);EXPECT_FALSE(EditorPaletteStore::importFile(directory/"palette.xml",draft,error))<<xml;
+        EXPECT_EQ(draft,before);EXPECT_FALSE(error.empty());
+    }
+    auto image=std::make_shared<EditorBackgroundImage>();image->bytes.resize(EditorBackgroundImage::maximumBytes+1,0);
+    const std::array<std::uint8_t,8> signature{137,80,78,71,13,10,26,10};
+    std::copy(signature.begin(),signature.end(),image->bytes.begin());
+    draft.backgroundImage=image;
+    EXPECT_FALSE(EditorPaletteStore::save(directory/"oversized.xml",draft,error));
+    EXPECT_FALSE(std::filesystem::exists(directory/"oversized.xml"));
+}

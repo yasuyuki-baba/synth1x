@@ -3,6 +3,8 @@
 #include <array>
 #include <cstdint>
 #include <optional>
+#include <memory>
+#include <vector>
 #include <string>
 #include <string_view>
 
@@ -62,10 +64,27 @@ inline bool paletteGroupRole(PaletteRole role)
         role==PaletteRole::control || role==PaletteRole::controlEdge || role==PaletteRole::track ||
         role==PaletteRole::pointer || role==PaletteRole::heading;
 }
+// Encoded source bytes travel with preferences and palette exports. Sharing keeps
+// live color edits cheap and avoids depending on the selected file after import.
+struct EditorBackgroundImage
+{
+    static constexpr std::size_t maximumBytes=8*1024*1024;
+    std::string name;
+    std::vector<std::uint8_t> bytes;
+    bool operator==(const EditorBackgroundImage&) const = default;
+    bool supported() const
+    {
+        if(bytes.size()<8 || bytes.size()>maximumBytes)return false;
+        return (bytes[0]==137 && bytes[1]==80 && bytes[2]==78 && bytes[3]==71 &&
+                bytes[4]==13 && bytes[5]==10 && bytes[6]==26 && bytes[7]==10) ||
+               (bytes[0]==255 && bytes[1]==216 && bytes[2]==255);
+    }
+};
 struct EditorPalette
 {
     using Colors=std::array<EditorColor,paletteRoleCount>;
     Colors global;
+    std::shared_ptr<const EditorBackgroundImage> backgroundImage;
     std::array<std::array<std::optional<EditorColor>,paletteRoleCount>,paletteGroupKeys.size()> groups{};
     EditorPalette()
     {
@@ -98,7 +117,13 @@ struct EditorPalette
         return true;
     }
     void inherit(int group) {if(group>=0 && group<static_cast<int>(groups.size()))groups[group]={};}
-    bool operator==(const EditorPalette&) const = default;
+    void resetColors() {const EditorPalette defaults;global=defaults.global;groups=defaults.groups;}
+    bool hasDefaultColors() const {const EditorPalette defaults;return global==defaults.global && groups==defaults.groups;}
+    bool operator==(const EditorPalette& other) const
+    {
+        return global==other.global && groups==other.groups &&
+            (backgroundImage==other.backgroundImage || (backgroundImage && other.backgroundImage && *backgroundImage==*other.backgroundImage));
+    }
 };
 class PaletteOwner
 {

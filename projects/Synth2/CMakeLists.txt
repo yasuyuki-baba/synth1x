@@ -40,6 +40,7 @@ set(synth2_editor_sources
     Synth2Editor.cpp
     editor/EditorKeyboardFocus.cpp
     editor/EditorWindowBounds.cpp
+    editor/EditorBackgroundImage.cpp
     editor/EditorStyle.cpp
     editor/EditorPaletteShell.cpp
     editor/EditorPaletteWindow.cpp

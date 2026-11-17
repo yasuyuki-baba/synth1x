@@ -12,7 +12,7 @@ iplug::igraphics::IGraphics* makePaletteGraphics(iplug::igraphics::IGEditorDeleg
 class EditorPaletteWindow final : public iplug::igraphics::IGEditorDelegate
 {
 public:
-    static constexpr int width=900,height=660;
+    static constexpr int width=900,height=756;
     enum class Action {preview,apply,cancel};
     struct Update {Action action;EditorPalette palette;};
     explicit EditorPaletteWindow(const EditorPalette& palette);

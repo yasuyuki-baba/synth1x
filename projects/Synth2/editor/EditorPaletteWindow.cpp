@@ -1,5 +1,6 @@
 #include "EditorPaletteWindow.h"
 #include "EditorPaletteShell.h"
+#include "EditorBackgroundImage.h"
 #include "editor/EditorFonts.h"
 #include "host/EditorPaletteStore.h"
 #include "IGraphics.h"
@@ -115,10 +116,14 @@ public:
             g.DrawText(normal.WithSize(12).WithFGColor(muted),inherited ? "This color inherits from General." : "This color overrides General.",IRECT(524,446,876,470));
             box(inheritBounds(),"Use General");box(inheritGroupBounds(),"Reset group");
         } else g.DrawText(normal.WithSize(12).WithFGColor(muted),role==PaletteRole::background ? "Background is always opaque." : "Groups inherit these colors unless overridden.",IRECT(524,446,876,470));
+        g.DrawText(normal.WithSize(12).WithFGColor(muted),"Background image (all groups)",IRECT(524,532,876,552));
+        g.DrawText(normal.WithSize(12),draft.backgroundImage ? draft.backgroundImage->name.c_str() : "None",IRECT(524,552,876,574));
+        box(imageBounds(),"Choose image...");box(removeImageBounds(),"Remove image");
+        g.DrawText(normal.WithSize(12).WithFGColor(muted),"PNG / JPEG. Fills the screen; panels can be transparent.",IRECT(524,614,876,636));
         box(defaultBounds(),"Default colors");box(importBounds(),"Import...");box(exportBounds(),"Export...");
         box(cancelBounds(),"Cancel");box(applyBounds(),"Apply");
-        if(!error.empty())g.DrawMultiLineText(normal.WithSize(12).WithFGColor(IColor(255,255,176,166)),error.c_str(),IRECT(524,536,876,586));
-        else if(!notice.empty())g.DrawMultiLineText(normal.WithSize(12).WithFGColor(muted),notice.c_str(),IRECT(524,536,876,586));
+        if(!error.empty())g.DrawMultiLineText(normal.WithSize(12).WithFGColor(IColor(255,255,176,166)),error.c_str(),IRECT(524,642,876,686));
+        else if(!notice.empty())g.DrawMultiLineText(normal.WithSize(12).WithFGColor(muted),notice.c_str(),IRECT(524,642,876,686));
         if(confirming()) {
             const bool exporting=exportReplacement.has_value();
             const bool resetting=confirmDefaults;
@@ -142,7 +147,7 @@ public:
                     const auto replacement=std::move(*exportReplacement);exportReplacement.reset();
                     writeExport(replacement.path,replacement.palette);
                 } else if(confirmDefaults) {
-                    confirmDefaults=false;draft=EditorPalette{};changed();
+                    confirmDefaults=false;draft.resetColors();changed();
                 } else owner.submit(EditorPaletteWindow::Action::cancel,draft);
             }
             SetDirty(false);return;
@@ -167,7 +172,9 @@ public:
                 value.red=chosen.R;value.green=chosen.G;value.blue=chosen.B;value.alpha=chosen.A;
                 draft.set(selectedRole,value,selectedGroup);changed();
             });
-        } else if(defaultBounds().Contains(x,y)){confirmDefaults=draft!=EditorPalette{};}
+        } else if(defaultBounds().Contains(x,y)){confirmDefaults=!draft.hasDefaultColors();}
+        else if(imageBounds().Contains(x,y))promptForImage();
+        else if(removeImageBounds().Contains(x,y)){if(draft.backgroundImage){draft.backgroundImage.reset();changed();}}
         else if(importBounds().Contains(x,y))promptForPalette(false);
         else if(exportBounds().Contains(x,y))promptForPalette(true);
         else if(cancelBounds().Contains(x,y))requestCancel();
@@ -235,11 +242,13 @@ private:
     IRECT numberBounds(int channel) const{return {812.f,300.f+channel*36,876.f,330.f+channel*36};}
     IRECT inheritBounds() const{return {524,486,690,520};}
     IRECT inheritGroupBounds() const{return {704,486,876,520};}
-    IRECT defaultBounds() const{return {24,600,180,636};}
-    IRECT importBounds() const{return {196,600,308,636};}
-    IRECT exportBounds() const{return {320,600,432,636};}
-    IRECT cancelBounds() const{return {640,600,752,636};}
-    IRECT applyBounds() const{return {764,600,876,636};}
+    IRECT defaultBounds() const{return {24,696,180,732};}
+    IRECT importBounds() const{return {196,696,308,732};}
+    IRECT exportBounds() const{return {320,696,432,732};}
+    IRECT cancelBounds() const{return {640,696,752,732};}
+    IRECT applyBounds() const{return {764,696,876,732};}
+    IRECT imageBounds() const{return {524,578,706,610};}
+    IRECT removeImageBounds() const{return {718,578,876,610};}
     bool confirming() const {return confirmDiscard || confirmDefaults || exportReplacement.has_value();}
     void writeExport(const std::filesystem::path& path,const EditorPalette& palette) {
         if(host::EditorPaletteStore::save(path,palette,error))notice="Palette exported.";
@@ -274,7 +283,7 @@ private:
                         else writeExport(destination,snapshot);
                     } else {
                         auto next=draft;
-                        if(host::EditorPaletteStore::importFile(destination,next,error)) {
+                        if(host::EditorPaletteStore::importFile(destination,next,error) && validateBackgroundImage(next,error)) {
                             draft=std::move(next);changed();notice="Palette imported. Apply to save.";
                         }
                     }
@@ -282,6 +291,23 @@ private:
                     error=exporting ? "Could not export the palette. Check the file and folder permissions."
                                     : "Could not import the palette. Check the selected file and permissions.";
                 }
+                SetDirty(false);
+            });
+    }
+    void promptForImage() {
+        WDL_String file,directory(lastDirectory.c_str());
+        const std::weak_ptr<int> weak=lifetime;fileDialogOpen=true;
+        GetUI()->PromptForFile(file,directory,EFileAction::Open,"png jpg jpeg",
+            [this,weak](const WDL_String& chosen,const WDL_String& folder) {
+                if(weak.expired())return;
+                fileDialogOpen=false;
+                if(!chosen.GetLength()){SetDirty(false);return;}
+                lastDirectory=folder.Get();
+                try {
+                    auto next=draft;
+                    if(host::EditorPaletteStore::readImage(std::filesystem::u8path(chosen.Get(),chosen.Get()+chosen.GetLength()),next,error) &&
+                       validateBackgroundImage(next,error)){draft=std::move(next);changed();}
+                } catch(const std::exception&){error="Could not open the background image.";}
                 SetDirty(false);
             });
     }

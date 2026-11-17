@@ -209,3 +209,24 @@ XML files and verify the preview remains intact with an error message. Test path
 with non-ASCII characters. Export with and without an extension; verify `.xml`
 when omitted. Export to an existing file and test both cancelling and confirming
 replacement. A failed export must preserve editing and the current preference.
+
+
+## Background images
+
+In the palette editor, choose PNG and JPEG images, including a Unicode filename.
+Verify immediate main-surface preview, fixed-color palette/recovery controls and
+centered cover without stretching at different window scales and with Keyboard
+shown/hidden. Make General Panel/Header and Filter Panel half-transparent and
+fully transparent; the image must show through without opacity accumulating on
+redraw. Switch Synth/MIDI/Library and verify the background remains available.
+
+Cancel the chooser and reject a corrupt/unsupported or oversized image: preserve
+the current preview. Check the 8 MiB, 8192-pixel-side and 16-megapixel limits.
+Remove image, then Cancel/discard and verify restoration. Default colors must
+reset colors while retaining the image; an image alone must not trigger the color
+reset confirmation. Image selection/removal must participate in close confirmation.
+Apply an image, delete the original source and reopen: the saved background must
+still appear. Export/import on another settings directory must retain the image;
+import a color-only palette and verify removal. Cancel/discard an import must
+restore the opening image. Malformed embedded image data must preserve the current
+appearance and show an error. Use temporary settings directories for these checks.
