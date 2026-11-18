@@ -16,7 +16,7 @@
 			<key>sandboxSafe</key>
 			<true/>
 			<key>subtype</key>
-			<string>Syn2</string>
+			<string>Sy1X</string>
 			<key>type</key>
 			<string>aumu</string>
 			<key>version</key>
@@ -42,7 +42,7 @@
 	<key>CFBundleShortVersionString</key>
 	<string>@SYNTH2_NUMERIC_VERSION@</string>
 	<key>CFBundleSignature</key>
-	<string>Syn2</string>
+	<string>Sy1X</string>
 	<key>CFBundleVersion</key>
 	<string>@SYNTH2_NUMERIC_VERSION@</string>
 	<key>CSResourcesFileMapped</key>

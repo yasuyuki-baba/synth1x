@@ -4,14 +4,22 @@
 #include "BuildVersion.h"
 #define PLUG_VERSION_HEX SYNTH2_VERSION_HEX
 #define PLUG_VERSION_STR SYNTH2_VERSION_STR
-// Keep the existing plugin and bundle identifiers when changing the display name.
+#if defined(AU_API)
+#define PLUG_UNIQUE_ID 'Sy1X'
+#else
+// VST3 derives its class ID from this value and PLUG_MFR_ID.
 #define PLUG_UNIQUE_ID 'Syn2'
+#endif
 #define PLUG_MFR_ID 'BABA'
 #define PLUG_URL_STR ""
 #define PLUG_EMAIL_STR ""
 #define PLUG_COPYRIGHT_STR "Copyright 2026 Synth1X contributors"
 #define PLUG_CLASS_NAME Synth2
+#if defined(CLAP_API)
+#define BUNDLE_NAME "Synth1X"
+#else
 #define BUNDLE_NAME "Synth2"
+#endif
 #define BUNDLE_MFR "yasuyuki-baba"
 #define BUNDLE_DOMAIN "io.github"
 #define SHARED_RESOURCES_SUBPATH "Synth2"

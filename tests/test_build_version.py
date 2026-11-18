@@ -45,7 +45,8 @@ class BuildVersion(unittest.TestCase):
         for format, identifier in bundle_formats.items():
             data = plistlib.loads((output / f'Synth2-{format}-Info.plist').read_bytes())
             self.assertEqual(data['CFBundleExecutable'], 'Synth1X')
-            self.assertEqual(data['CFBundleIdentifier'], f'io.github.yasuyuki-baba.{identifier}.Synth2')
+            bundle_name = 'Synth1X' if format == 'CLAP' else 'Synth2'
+            self.assertEqual(data['CFBundleIdentifier'], f'io.github.yasuyuki-baba.{identifier}.{bundle_name}')
             self.assertEqual(data['CFBundleVersion'], numeric)
             self.assertEqual(data['CFBundleShortVersionString'], numeric)
             self.assertIn(display, data['CFBundleGetInfoString'])
@@ -53,7 +54,8 @@ class BuildVersion(unittest.TestCase):
                 component = data['AudioComponents'][0]
                 self.assertEqual(component['version'], packed)
                 self.assertEqual(component['manufacturer'], 'BABA')
-                self.assertEqual(component['subtype'], 'Syn2')
+                self.assertEqual(component['subtype'], 'Sy1X')
+                self.assertEqual(data['CFBundleSignature'], component['subtype'])
             if format == 'macOS':
                 self.assertEqual(data['NSMainNibFile'], 'Synth1X-macOS-MainMenu')
 

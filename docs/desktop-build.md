@@ -179,16 +179,14 @@ and are not tracked as missing automated tests.
 The plugin, editor and standalone window display `Synth1X`. Native filenames,
 product data paths and standalone audio and MIDI device preferences use
 `Synth1X`. The Linux standalone also uses `Synth1X` as its X11 window class.
-The four-character plugin ID is `Syn2`. The displayed manufacturer name is
-`babab` and the four-character manufacturer ID
-is `BABA`. Apple reserves all-lowercase Audio Unit manufacturer codes. This
-shared ID also applies to formats that derive their identity from `PLUG_MFR_ID`.
-Bundle components are domain `io.github`, namespace owner `yasuyuki-baba` and name
-`Synth2`, with the
-format component (`vst3`, `clap`, `audiounit` or `app`) between manufacturer and
-name (for example, `io.github.yasuyuki-baba.vst3.Synth2`). The bundle namespace
-is independent of the displayed manufacturer and four-character manufacturer ID.
-The CLAP descriptor ID is `io.github.yasuyuki-baba.Synth2`.
+The displayed manufacturer name is `babab`, and the four-character manufacturer
+ID is `BABA`. The VST3 class ID retains the `Syn2` code. The AUv2 component uses
+type `aumu`, subtype `Sy1X` and manufacturer `BABA`. The CLAP descriptor ID is
+`io.github.yasuyuki-baba.Synth1X`.
+
+The macOS CLAP bundle ID is `io.github.yasuyuki-baba.clap.Synth1X`. The VST3,
+AUv2 and standalone macOS bundle IDs use the `Synth2` suffix with the `vst3`,
+`audiounit` and `app` components, respectively.
 The macOS standalone advertises its virtual MIDI input as `To Synth1X` and
 output as `From Synth1X`.
 Native target names are `Synth1X-vst3`, `Synth1X-clap`, `Synth1X-au` and
