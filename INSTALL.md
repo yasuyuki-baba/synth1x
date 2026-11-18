@@ -21,8 +21,8 @@ Keep the package's license and notice files with your downloaded distribution.
 
 ## Upgrading from Synth2
 
-Use the [Synth2 to Synth1X migration guide](MIGRATION.md) to move your library,
-settings and DAW projects.
+Upgrading from Synth2 0.1.x to Synth1X 0.2.x or later requires manual migration.
+Follow the [migration guide](MIGRATION.md) before replacing your Synth2 installation.
 
 ## Linux
 

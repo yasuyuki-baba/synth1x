@@ -1,4 +1,13 @@
-# Upgrading from Synth2
+# Upgrading from Synth2 0.1.x to Synth1X 0.2.x or later
+
+This upgrade requires manual migration. Starting with 0.2.x, the plugin and
+standalone filenames change from `Synth2` to `Synth1X`, and user data and
+standalone settings use new directories. Copy your existing library and settings
+to the new locations.
+
+The AUv2 subtype and CLAP plugin ID also change. Replace existing AUv2 and CLAP
+instances in your DAW projects after exporting their patches. The VST3 class ID
+stays the same.
 
 ## Prepare your projects
 

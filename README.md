@@ -29,7 +29,8 @@ See [INSTALL.md](INSTALL.md) for Linux/Windows/macOS product locations, unsigned
 prompts and plugin rescanning. Source archives require building; native candidate
 packages are available from successful Actions runs.
 
-If you already use Synth2, see the [migration guide](MIGRATION.md).
+Upgrading from Synth2 0.1.x to Synth1X 0.2.x or later requires manual migration.
+See the [migration guide](MIGRATION.md) before upgrading.
 
 ## Build and test
 
