@@ -45,7 +45,7 @@ class BuildVersion(unittest.TestCase):
         for format, identifier in bundle_formats.items():
             data = plistlib.loads((output / f'Synth2-{format}-Info.plist').read_bytes())
             self.assertEqual(data['CFBundleExecutable'], 'Synth1X')
-            bundle_name = 'Synth1X' if format == 'CLAP' else 'Synth2'
+            bundle_name = 'Synth1X' if format in ('CLAP', 'macOS') else 'Synth2'
             self.assertEqual(data['CFBundleIdentifier'], f'io.github.yasuyuki-baba.{identifier}.{bundle_name}')
             self.assertEqual(data['CFBundleVersion'], numeric)
             self.assertEqual(data['CFBundleShortVersionString'], numeric)

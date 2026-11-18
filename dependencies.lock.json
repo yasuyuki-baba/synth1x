@@ -6,7 +6,7 @@
   "iplug2": {
     "repository": "https://github.com/yasuyuki-baba/iPlug2",
     "branch": "integration",
-    "revision": "48e185f358b2af7e2d01c362cbc26e8a20eea455"
+    "revision": "bdc81eda8ce31487064fea6358ec425f74b6073e"
   },
   "tinyxml2": {
     "repository": "https://github.com/leethomason/tinyxml2",

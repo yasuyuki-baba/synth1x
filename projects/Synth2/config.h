@@ -15,7 +15,7 @@
 #define PLUG_EMAIL_STR ""
 #define PLUG_COPYRIGHT_STR "Copyright 2026 Synth1X contributors"
 #define PLUG_CLASS_NAME Synth2
-#if defined(CLAP_API)
+#if defined(APP_API) || defined(CLAP_API)
 #define BUNDLE_NAME "Synth1X"
 #else
 #define BUNDLE_NAME "Synth2"
@@ -53,6 +53,3 @@
 #define APP_MULT 1
 #define APP_COPY_AUV3 0
 #define APP_SIGNAL_VECTOR_SIZE 64
-#define APP_SETTINGS_SUBPATH PLUG_NAME
-#define APP_WINDOW_NAME PLUG_NAME
-#define APP_VIRTUAL_MIDI_PORT_NAME PLUG_NAME
