@@ -4,7 +4,7 @@ Choose the native package for your operating system:
 `Synth1X-linux.tar.gz`, `Synth1X-windows.zip` or `Synth1X-macos.tar.gz`. GitHub's
 source archives contain the files for building Synth1X. The current workflow
 uploads candidates to GitHub Actions; if a version is published under
-[Releases](https://github.com/yasuyuki-baba/synth2/releases), use its native assets.
+[Releases](https://github.com/yasuyuki-baba/synth1x/releases), use its native assets.
 Downloading an Actions artifact may require signing in to GitHub. An Actions
 artifact ZIP wraps the native package: extract that outer ZIP first, then extract
 the native ZIP or tar.gz inside it.
@@ -48,7 +48,7 @@ Create missing folders. Keep any `Synth1X.clap.resources` directory beside
 Keep the VST3 bundle intact, including `Contents/x86_64-linux/Synth1X.so` and its
 resources. Run the standalone binary from its extracted folder; audio requires a
 working ALSA device or JACK server. Use the portable source build on platforms
-outside this binary baseline; see the [build guide](https://github.com/yasuyuki-baba/synth2/blob/main/docs/desktop-build.md).
+outside this binary baseline; see the [build guide](https://github.com/yasuyuki-baba/synth1x/blob/main/docs/desktop-build.md).
 
 ## macOS
 
@@ -143,7 +143,7 @@ For AUv2 discovery problems, logging out and back in can refresh Audio Unit
 registration before rescanning.
 
 A successful build is not a guarantee of host/device compatibility. See the
-[manual platform checks](https://github.com/yasuyuki-baba/synth2/blob/main/docs/validation/manual-platform.md) for verification scope.
+[manual platform checks](https://github.com/yasuyuki-baba/synth1x/blob/main/docs/validation/manual-platform.md) for verification scope.
 
 ## Uninstall
 

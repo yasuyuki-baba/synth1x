@@ -77,11 +77,11 @@ jobs:
           Copy your old Synth2 user data into the new Synth1X folder to bring over patches and settings.
           The standalone is a new app. Copy `settings.ini` to bring over audio and MIDI device settings,
           update shortcuts, and reselect the renamed virtual MIDI ports on macOS.
-          See the [migration steps and folder paths](https://github.com/yasuyuki-baba/synth2/blob/main/MIGRATION.md).
+          See the [migration steps and folder paths](https://github.com/yasuyuki-baba/synth1x/blob/main/MIGRATION.md).
           Each package includes the guide as `MIGRATION.md`.
 
           These builds are unsigned; macOS builds are not notarized.
-          See [installation instructions](https://github.com/yasuyuki-baba/synth2/blob/main/INSTALL.md)
+          See [installation instructions](https://github.com/yasuyuki-baba/synth1x/blob/main/INSTALL.md)
           for product locations and unsigned-build prompts. The same guide is included in each package.
 
           Extract the native package before installing. No preset banks are included;
