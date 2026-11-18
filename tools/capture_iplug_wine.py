@@ -38,7 +38,7 @@ def capture(args):
     elif not args.prefix:
         raise RuntimeError('Cannot locate wineserver for automatic cleanup; provide an explicit dedicated --prefix.')
     # Keep the capture server and prefix separate from other running sessions.
-    with tempfile.TemporaryDirectory(prefix='synth2-wine-capture-') as temporary:
+    with tempfile.TemporaryDirectory(prefix='iplug-wine-capture-') as temporary:
         env['WINEPREFIX'] = str(args.prefix.resolve()) if args.prefix else temporary+'/prefix'
         read_fd, write_fd = os.pipe()
         xserver = None
@@ -80,13 +80,14 @@ def capture(args):
                             while time.monotonic()<deadline and process.poll() is None:
                                 tree = subprocess.run(['xwininfo','-root','-tree'],env=env,
                                                       capture_output=True,text=True,timeout=5).stdout
-                                match = re.search(r'"Synth2"[^\n]*? (\d+x\d+[+-]\d+[+-]\d+)',tree)
+                                match = re.search(
+                                    r'"(?:Synth1X|Synth2)"[^\n]*? (\d+x\d+[+-]\d+[+-]\d+)', tree)
                                 if match:
                                     geometry = match.group(1)
                                     break
                                 time.sleep(.25)
                             if not geometry:
-                                raise RuntimeError('The native Synth2 window did not appear; check the .wine.log.')
+                                raise RuntimeError('The standalone window did not appear; check the .wine.log.')
                             time.sleep(3)
                             if process.poll() is not None:
                                 raise RuntimeError('The application exited before capture; check the .wine.log.')
