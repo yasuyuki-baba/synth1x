@@ -172,7 +172,7 @@ Only added or changed sounds are loaded and classified using an isolated bridge
 on the library worker. Removed sounds disappear from the cache. No audio is
 rendered and the sounding processor is not loaded.
 
-The disposable `.synth2-tags.cache` in the library root compares exact source bytes,
+The disposable `.tags.cache` in the library root compares exact source bytes,
 including archive-entry contents, so same-size/same-timestamp edits are detected. The
 cache has an explicit inference/loading revision; rule or loading changes must
 bump that revision. Cache publication is atomic. Missing, corrupt or incompatible
