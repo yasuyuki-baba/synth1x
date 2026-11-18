@@ -506,7 +506,7 @@ TEST(PatchCatalog, LegacyManualTagSidecarsRemainReadableAndCanBePromoted) {
     EXPECT_EQ(catalog.search({"","","Pad"}).size(),1u);
 }
 
-TEST(PatchCatalog, Synth2TagOverridesArePreservedWhenSavedAsSynth1X) {
+TEST(PatchCatalog, BrandedTagOverridesArePreservedWhenSavedWithNeutralHeader) {
     CatalogFiles files;
     PatchCatalog catalog(files.dir / "Library");
     PresetImportResult result;
@@ -522,21 +522,24 @@ TEST(PatchCatalog, Synth2TagOverridesArePreservedWhenSavedAsSynth1X) {
             sidecar = file.path();
     }
     ASSERT_FALSE(sidecar.empty());
-    std::ofstream(sidecar, std::ios::binary) << "Synth2 tag overrides v1\nCustom\nPad\n";
+    for (const auto* oldHeader : {"Synth2 tag overrides v1", "Synth1X tag overrides v1"}) {
+        SCOPED_TRACE(oldHeader);
+        std::ofstream(sidecar, std::ios::binary) << oldHeader << "\nCustom\nPad\n";
 
-    ASSERT_TRUE(catalog.reload(error)) << error;
-    EXPECT_EQ(catalog.patches().front().tags, (std::vector<std::string>{"Custom"}));
-    EXPECT_EQ(catalog.patches().front().hiddenTags, (std::vector<std::string>{"Pad"}));
-    ASSERT_TRUE(catalog.setTags(id, "Edited", error)) << error;
-    {
-        std::ifstream saved(sidecar, std::ios::binary);
-        std::string header;
-        ASSERT_TRUE(std::getline(saved, header));
-        EXPECT_EQ(header, "Synth1X tag overrides v1");
+        ASSERT_TRUE(catalog.reload(error)) << error;
+        EXPECT_EQ(catalog.patches().front().tags, (std::vector<std::string>{"Custom"}));
+        EXPECT_EQ(catalog.patches().front().hiddenTags, (std::vector<std::string>{"Pad"}));
+        ASSERT_TRUE(catalog.setTags(id, "Edited", error)) << error;
+        {
+            std::ifstream saved(sidecar, std::ios::binary);
+            std::string header;
+            ASSERT_TRUE(std::getline(saved, header));
+            EXPECT_EQ(header, "tag overrides v1");
+        }
+        ASSERT_TRUE(catalog.reload(error)) << error;
+        EXPECT_EQ(catalog.patches().front().tags, (std::vector<std::string>{"Edited"}));
+        EXPECT_EQ(catalog.patches().front().hiddenTags, (std::vector<std::string>{"Pad"}));
     }
-    ASSERT_TRUE(catalog.reload(error)) << error;
-    EXPECT_EQ(catalog.patches().front().tags, (std::vector<std::string>{"Edited"}));
-    EXPECT_EQ(catalog.patches().front().hiddenTags, (std::vector<std::string>{"Pad"}));
 }
 
 TEST(PatchCatalog, MultipleTagsMatchAllAcrossManualAndAutomaticTags) {
@@ -573,16 +576,18 @@ TEST(PatchCatalog, TagCacheReusesUnchangedSourcesAndTracksContentAdditionsAndDel
     EXPECT_EQ(reopened.tagCacheStats().rebuilt,1u);EXPECT_EQ(reopened.tagCacheStats().reused,2u);
     fs::remove(two);ASSERT_TRUE(reopened.reload(error));EXPECT_EQ(reopened.tagCacheStats().rebuilt,0u);
     EXPECT_EQ(reopened.tagCacheStats().reused,2u);
-    std::ifstream in(root/".synth2-tags.cache");const std::string cache{std::istreambuf_iterator<char>(in),{}};in.close();
+    const auto cachePath = root / ".tags.cache";
+    std::ifstream in(cachePath);const std::string cache{std::istreambuf_iterator<char>(in),{}};in.close();
+    EXPECT_TRUE(cache.starts_with("tag cache " + std::to_string(patchTagCacheVersion) + "\n"));
     EXPECT_EQ(cache.find("Soft Bass"),std::string::npos);
     const auto id=reopened.patches().front().id;ASSERT_TRUE(reopened.setTags(id,"Keep",error));
-    std::ofstream(root/".synth2-tags.cache")<<"corrupt cache";
+    std::ofstream(cachePath)<<"corrupt cache";
     ASSERT_TRUE(reopened.reload(error));EXPECT_EQ(reopened.tagCacheStats().rebuilt,2u);
     EXPECT_EQ(reopened.patches().front().tags,(std::vector<std::string>{"Keep"}));
-    std::ofstream(root/".synth2-tags.cache")<<"Synth2 tag cache "<<patchTagCacheVersion-1<<'\n'
+    std::ofstream(cachePath)<<"tag cache "<<patchTagCacheVersion-1<<'\n'
         <<cache.substr(cache.find('\n')+1);
     ASSERT_TRUE(reopened.reload(error));EXPECT_EQ(reopened.tagCacheStats().rebuilt,2u);
-    fs::remove(root/".synth2-tags.cache");fs::create_directory(root/".synth2-tags.cache");
+    fs::remove(cachePath);fs::create_directory(cachePath);
     ASSERT_TRUE(reopened.reload(error));EXPECT_EQ(reopened.tagCacheStats().rebuilt,2u);
     EXPECT_EQ(reopened.patches().front().tags,(std::vector<std::string>{"Keep"}));
 }

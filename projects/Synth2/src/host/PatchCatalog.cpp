@@ -72,15 +72,14 @@ fs::path metadataKey(const std::string& id) {
 fs::path favorites(const fs::path& root,const std::string& id) {auto path=root/"favorites"/metadataKey(id);path+=".fav";return path;}
 fs::path tagPath(const fs::path& root,const std::string& id) {auto path=root/"tags"/metadataKey(id);path+=".tags";return path;}
 struct TagOverrides {std::vector<std::string> manual,hidden;};
-constexpr char tagOverridesHeader[] = "Synth1X tag overrides v1\n";
-constexpr char legacyTagOverridesHeader[] = "Synth2 tag overrides v1\n";
+constexpr char tagOverridesHeader[] = "tag overrides v1\n";
 TagOverrides overridesAt(const fs::path& root,const std::string& id) {
     if(root.empty() || !fs::exists(tagPath(root,id)))return {};
     const auto text=read(tagPath(root,id),16384);
-    const std::string_view header = text.starts_with(legacyTagOverridesHeader)
-        ? legacyTagOverridesHeader : tagOverridesHeader;
-    if(!text.starts_with(header))return {PatchCatalog::splitTags(text),{}};
-    std::istringstream in(text.substr(header.size()));std::string manual,hidden,extra;
+    if(!text.starts_with(tagOverridesHeader) && !text.starts_with("Synth2 tag overrides v1\n") &&
+       !text.starts_with("Synth1X tag overrides v1\n"))
+        return {PatchCatalog::splitTags(text),{}};
+    std::istringstream in(text.substr(text.find('\n')+1));std::string manual,hidden,extra;
     if(!std::getline(in,manual) || !std::getline(in,hidden) || std::getline(in,extra))
         throw std::runtime_error("Invalid library tag overrides");
     return {PatchCatalog::splitTags(manual),PatchCatalog::splitTags(hidden)};
@@ -213,8 +212,8 @@ bool PatchCatalog::reload(std::string& error) {
         }
         // Cache exact source text to detect even same-size/same-timestamp edits.
         // The cache is bounded and disposable; user overrides live separately.
-        const auto cachePath=directory/".synth2-tags.cache";
-        const std::string cacheHeader="Synth2 tag cache "+std::to_string(patchTagCacheVersion)+"\n";
+        const auto cachePath=directory/".tags.cache";
+        const std::string cacheHeader="tag cache "+std::to_string(patchTagCacheVersion)+"\n";
         constexpr std::size_t cacheLimit=64*1024*1024;
         struct CachedTags {std::string source,error;std::vector<PatchTagSuggestion> tags;};
         std::map<std::string,CachedTags> cached;

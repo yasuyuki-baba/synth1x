@@ -26,6 +26,8 @@ TEST(PresetFiles, RecursiveScanFeedsCatalogSearchWithOriginalPathsAndErrors)
     write(d.path / "bad.sy1", "Bad\nver=999\n0,0\n");
     write(d.path / "broken.zip", "not zip");
     write(d.path / "ignored.md");
+    write(d.path / ".patch-write-1-0" / "Ignored.sy1");
+    write(d.path / ".synth2-write-1-0" / "Ignored.sy1");
     ASSERT_TRUE(testfiles::zip(d.path / "Bank.zip",
                                {{"日本語/Lead.sy1", "Bright lead\nver=113\n0,0\n"}, {"a  -  b.sy1", patch}}));
     PresetFiles library(d.path);

@@ -30,6 +30,8 @@ namespace synth2::host
 namespace fs = std::filesystem;
 namespace
 {
+constexpr char patchWritePrefix[] = ".patch-write-";
+
 std::string utf8(const fs::path &p)
 {
     auto s = p.generic_u8string();
@@ -68,7 +70,7 @@ bool writeFile(const fs::path &destination, const std::string &bytes, bool repla
         for (int attempt = 0; attempt < 100; ++attempt)
         {
             staging = destination.parent_path() /
-                      (".synth2-write-" +
+                      (patchWritePrefix +
                        std::to_string(std::chrono::steady_clock::now().time_since_epoch().count()) + "-" +
                        std::to_string(serial++));
             if (fs::create_directory(staging))
@@ -192,8 +194,9 @@ bool PresetFiles::scan(std::string &error, bool validateSources)
             if (item.is_symlink() || !item.is_regular_file() || libraryFileKind(item.path()) == LibraryFileKind::unsupported)
                 continue;
             const auto relative = utf8(item.path().lexically_relative(root));
-            const auto first = *item.path().lexically_relative(root).begin();
-            if (isManagedPatch(root, item.path()) || utf8(first).starts_with(".synth2-write-"))
+            const auto first = utf8(*item.path().lexically_relative(root).begin());
+            if (isManagedPatch(root, item.path()) || first.starts_with(patchWritePrefix) ||
+                first.starts_with(".synth2-write-"))
                 continue;
             PatchLibrary bank;
             std::string failure;

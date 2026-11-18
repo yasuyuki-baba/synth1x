@@ -62,8 +62,9 @@ Synth1X can open existing Synth2 palette files. Keep the original XML if you
 also use Synth2, which expects the original palette tag.
 
 Copy existing library tag settings as they are. Synth1X reads Synth2's `.tags`
-files and uses a new header when saving tag edits. If you return to Synth2,
-use the original tag files from your backup.
+files and writes `tag overrides v1` when saving tag edits. If you return to
+Synth2, use the original tag files from your backup. Synth1X rebuilds its
+automatic tag cache on the first scan if the new cache file is missing.
 
 ## Install and reopen
 
