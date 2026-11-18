@@ -12,6 +12,8 @@ The AUv2 subtype and CLAP plugin ID also change. Replace existing AUv2 and CLAP
 instances in your DAW projects after exporting their patches. The VST3 class ID
 stays the same.
 
+On macOS, the plugin and standalone bundle IDs now end in `.Synth1X`.
+
 ## Prepare your projects
 
 Keep a copy of your DAW projects, the old Synth2 binaries and the old user data

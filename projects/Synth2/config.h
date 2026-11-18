@@ -15,11 +15,7 @@
 #define PLUG_EMAIL_STR ""
 #define PLUG_COPYRIGHT_STR "Copyright 2026 Synth1X contributors"
 #define PLUG_CLASS_NAME Synth2
-#if defined(APP_API) || defined(CLAP_API)
 #define BUNDLE_NAME "Synth1X"
-#else
-#define BUNDLE_NAME "Synth2"
-#endif
 #define BUNDLE_MFR "yasuyuki-baba"
 #define BUNDLE_DOMAIN "io.github"
 #define SHARED_RESOURCES_SUBPATH "Synth2"
