@@ -1,8 +1,13 @@
-# Working on Synth2
+# Working on Synth1X
 
 ## Communication and project context
 
 - Write code, documentation and commit messages in English.
+- Name new branches with a prefix that reflects the primary purpose of the
+  change and a short lowercase, hyphenated topic. Use `feature/` for new
+  functionality, `fix/` for bug fixes, `docs/` for documentation changes, and
+  `chore/` for maintenance. Examples include `feature/migration-scripts`,
+  `fix/wine-capture`, `docs/upgrade-guide`, and `chore/rename-to-synth1x`.
 - Start with [capabilities and verification boundaries](docs/status.md) and the
   [product contracts](docs/README.md). Read the relevant contract and independent
   evidence before changing compatibility behavior.
