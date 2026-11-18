@@ -72,10 +72,13 @@ fs::path metadataKey(const std::string& id) {
 fs::path favorites(const fs::path& root,const std::string& id) {auto path=root/"favorites"/metadataKey(id);path+=".fav";return path;}
 fs::path tagPath(const fs::path& root,const std::string& id) {auto path=root/"tags"/metadataKey(id);path+=".tags";return path;}
 struct TagOverrides {std::vector<std::string> manual,hidden;};
+constexpr char tagOverridesHeader[] = "Synth1X tag overrides v1\n";
+constexpr char legacyTagOverridesHeader[] = "Synth2 tag overrides v1\n";
 TagOverrides overridesAt(const fs::path& root,const std::string& id) {
     if(root.empty() || !fs::exists(tagPath(root,id)))return {};
     const auto text=read(tagPath(root,id),16384);
-    const std::string header="Synth2 tag overrides v1\n";
+    const std::string_view header = text.starts_with(legacyTagOverridesHeader)
+        ? legacyTagOverridesHeader : tagOverridesHeader;
     if(!text.starts_with(header))return {PatchCatalog::splitTags(text),{}};
     std::istringstream in(text.substr(header.size()));std::string manual,hidden,extra;
     if(!std::getline(in,manual) || !std::getline(in,hidden) || std::getline(in,extra))
@@ -85,7 +88,7 @@ TagOverrides overridesAt(const fs::path& root,const std::string& id) {
 void storeOverrides(const fs::path& root,const std::string& id,const TagOverrides& tags) {
     fs::create_directories(tagPath(root,id).parent_path());
     if(tags.manual.empty() && tags.hidden.empty())fs::remove(tagPath(root,id));
-    else replaceText(tagPath(root,id),"Synth2 tag overrides v1\n"+PatchCatalog::tagText(tags.manual)+"\n"+PatchCatalog::tagText(tags.hidden)+"\n");
+    else replaceText(tagPath(root,id),tagOverridesHeader+PatchCatalog::tagText(tags.manual)+"\n"+PatchCatalog::tagText(tags.hidden)+"\n");
 }
 void requireRoot(const fs::path& root) {
     if(root.empty())throw std::runtime_error("The user library folder is unavailable.");

@@ -506,6 +506,39 @@ TEST(PatchCatalog, LegacyManualTagSidecarsRemainReadableAndCanBePromoted) {
     EXPECT_EQ(catalog.search({"","","Pad"}).size(),1u);
 }
 
+TEST(PatchCatalog, Synth2TagOverridesArePreservedWhenSavedAsSynth1X) {
+    CatalogFiles files;
+    PatchCatalog catalog(files.dir / "Library");
+    PresetImportResult result;
+    std::string error;
+    const auto source = files.bank("Owned.zip", {{"Owned.sy1", warm}});
+    ASSERT_TRUE(registerSource(catalog, source.string(), result, error)) << error;
+    const auto id = catalog.patches().front().id;
+    ASSERT_TRUE(catalog.setTags(id, "old", error)) << error;
+
+    fs::path sidecar;
+    for (const auto& file : fs::recursive_directory_iterator(catalog.root() / "tags")) {
+        if (file.is_regular_file() && file.path().extension() == ".tags")
+            sidecar = file.path();
+    }
+    ASSERT_FALSE(sidecar.empty());
+    std::ofstream(sidecar, std::ios::binary) << "Synth2 tag overrides v1\nCustom\nPad\n";
+
+    ASSERT_TRUE(catalog.reload(error)) << error;
+    EXPECT_EQ(catalog.patches().front().tags, (std::vector<std::string>{"Custom"}));
+    EXPECT_EQ(catalog.patches().front().hiddenTags, (std::vector<std::string>{"Pad"}));
+    ASSERT_TRUE(catalog.setTags(id, "Edited", error)) << error;
+    {
+        std::ifstream saved(sidecar, std::ios::binary);
+        std::string header;
+        ASSERT_TRUE(std::getline(saved, header));
+        EXPECT_EQ(header, "Synth1X tag overrides v1");
+    }
+    ASSERT_TRUE(catalog.reload(error)) << error;
+    EXPECT_EQ(catalog.patches().front().tags, (std::vector<std::string>{"Edited"}));
+    EXPECT_EQ(catalog.patches().front().hiddenTags, (std::vector<std::string>{"Pad"}));
+}
+
 TEST(PatchCatalog, MultipleTagsMatchAllAcrossManualAndAutomaticTags) {
     CatalogFiles files;const auto root=files.dir/"Library";fs::create_directories(root);
     ProcessorBridge processor;auto patch=synth2::parseContinuousPatch(processor.savePatch());
