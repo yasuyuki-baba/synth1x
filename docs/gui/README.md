@@ -186,7 +186,7 @@ focus helper checks the editor view on Windows/macOS; `ComputerKeyboard` owns th
 SDK-independent PC key map and release behavior. The standard iPlug2 keyboard
 owns mouse interaction; ProcessorBridge receives only MIDI messages. Shared
 native tags and appearance helpers keep layout and library updates consistent. Catalog, selection
-and dialog lifetime remain owned by Synth2; controls borrow them. Both native
+and dialog lifetime remain owned by the plugin wrapper. Controls borrow them. Both native
 build paths consume the same editor source list.
 
 ```sh
@@ -196,8 +196,8 @@ python3 tools/preview_editor.py --exporter build-oos-core/ExportEditorLayout
 python3 tools/render_editor_study.py --exporter build-oos-core/ExportEditorLayout
 ```
 
-These commands generate local studies at `build/editor/synth2-preview.html` and
-`build/editor/synth2-study.svg`; open those files to inspect the design. Generated
+These commands generate local studies at `build/editor/synth1x-preview.html` and
+`build/editor/synth1x-study.svg`; open those files to inspect the design. Generated
 studies are excluded from Git. On Windows, use
 `build-oos-core/ExportEditorLayout.exe` as the exporter path. Optional PNG output
 adds `--png` to the study command and requires discoverable librsvg, Cairo and

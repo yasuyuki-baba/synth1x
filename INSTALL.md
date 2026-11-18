@@ -39,8 +39,19 @@ Keep the package's license and notice files with your downloaded distribution.
 | macOS | `~/Library/Application Support/Synth2` | `~/Library/Application Support/Synth1X` |
 | Linux | `~/.local/share/Synth2` | `~/.local/share/Synth1X` |
 
-On Linux, use `$XDG_DATA_HOME` in place of `~/.local/share` if set. Standalone
-audio and MIDI device preferences use the SDK's existing `Synth2` settings path.
+On Linux, use `$XDG_DATA_HOME` in place of `~/.local/share` if set.
+
+To bring over standalone audio and MIDI device selections, copy `settings.ini`
+from the old folder to the new one before the first launch:
+
+| Platform | Old standalone settings folder | New standalone settings folder |
+| --- | --- | --- |
+| Windows | `%LOCALAPPDATA%/Synth2` | `%LOCALAPPDATA%/Synth1X` |
+| macOS | `~/Library/Application Support/Synth2` | `~/Library/Application Support/Synth1X` |
+| Linux | `~/.config/Synth2` | `~/.config/Synth1X` |
+
+On macOS, the user data copy above includes this file. On Linux, use an absolute
+`$XDG_CONFIG_HOME` in place of `~/.config` if set.
 On macOS, reselect `To Synth1X` or `From Synth1X` in any external app that used
 the standalone's previous virtual MIDI port names.
 Synth1X can open existing Synth2 palette files. Keep the original XML if you

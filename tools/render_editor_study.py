@@ -182,7 +182,7 @@ def png(svg, target):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--exporter",type=Path,default=ROOT/"build-oos-core/ExportEditorLayout")
-    parser.add_argument("--output",type=Path,default=ROOT/"build/editor/synth2-study.svg")
+    parser.add_argument("--output",type=Path,default=ROOT/"build/editor/synth1x-study.svg")
     parser.add_argument("--png",action="store_true")
     parser.add_argument("--view",choices=("synth","midi"),default="synth")
     args = parser.parse_args()
