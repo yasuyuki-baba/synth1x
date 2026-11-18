@@ -165,6 +165,9 @@ public:
             if (factory->getClassInfo(i, &info) == kResultOk &&
                 std::strcmp(info.category, kVstAudioEffectClass) == 0)
             {
+                // iPlug2 processor class UID with the BABA manufacturer and Sy1X product codes.
+                constexpr TUID expected = INLINE_UID(0xF2AEE70D, 0x00DE4F4E, 0x42414241, 0x53793158);
+                require(FUnknownPrivate::iidEqual(info.cid, expected), "Unexpected Synth1X VST3 class ID");
                 require(factory->createInstance(info.cid, INLINE_UID_OF(IComponent),
                     reinterpret_cast<void**>(&component)) == kResultOk, "VST3 createInstance failed");
                 break;
