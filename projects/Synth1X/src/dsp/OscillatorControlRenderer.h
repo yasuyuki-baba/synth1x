@@ -80,7 +80,7 @@ namespace synth1x::dsp
                 const int start=position;
                 state.render(FrequencyModulation::depth(static_cast<float>(fractionalDial(config.fmAmount)),control),
                     frames,static_cast<int>(config.sampleRate),
-                    [&](float value){depth[position++]=value;},coarse!=nullptr,!config.ringMod);
+                    [&](double value){depth[position++]=static_cast<float>(value);},coarse!=nullptr,!config.ringMod);
                 if(coarse!=nullptr)
                 {
                     std::fill(exponents->begin()+start,exponents->begin()+position,coarse->cached);

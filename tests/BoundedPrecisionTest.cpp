@@ -483,6 +483,26 @@ TEST(BoundedPrecision, FmKeepsFractionalDepthThroughDispatchAndSlew)
     EXPECT_LT(depth,FrequencyModulation::depth(65,1));
 }
 
+TEST(BoundedPrecision, FmKeepsPhaseWordResolutionUntilDepthOutput)
+{
+    using synth1x::dsp::FrequencyModulation;
+    EXPECT_DOUBLE_EQ(FrequencyModulation::depth(127.0,0.0),67108863.0);
+
+    FrequencyModulation state;
+    constexpr int sampleRate=44100;
+    state.render(0.0,64,sampleRate,[](double){});
+
+    // A 44-frame slew first updates at the 32-frame boundary, using weight 186.
+    std::array<float,44> depth{};
+    size_t frame=0;
+    state.render(50000000.0,44,sampleRate,[&](double value){
+        depth[frame++]=static_cast<float>(value);
+    });
+    ASSERT_EQ(frame,depth.size());
+    EXPECT_EQ(depth[12],0.0f);
+    EXPECT_EQ(depth[13],8839450.0f);
+}
+
 TEST(BoundedPrecision, FractionalFilterModulationReachesCoefficients)
 {
     using namespace synth1x::dsp;

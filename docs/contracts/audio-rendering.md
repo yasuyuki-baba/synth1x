@@ -185,10 +185,11 @@ and saturation interpolate compatible integer anchors. Fine tuning retains
 fractional cents outside its native neutral band. Native LFO/FM/envelope control
 stepping remains where removing it violates the audio comparison bound.
 
-Receiver signal buffers and FM/cutoff running values use Float32;
-segment lengths and sample counters remain integers. This distinction preserves
-fractional modulation as well as exact whole 27-bit FM phase units. Pitch, pulse
-width, FM, filter and amplitude consumers accept fractional receiver values.
+Receiver signal buffers and cutoff running values use Float32. The FM receiver
+keeps its target interpolation and slew in Float64 through the coefficient
+calculation, then writes Float32 depth samples for the oscillator. Segment lengths
+and sample counters remain integers. Pitch, pulse width, FM, filter and amplitude
+consumers accept fractional receiver values.
 Compatible transfer/slew curves retain their integer-coordinate response and
 interpolate between those knots without narrowing the running signal. Filter
 coefficient caches include the fractional cutoff coordinate. These changes do not
@@ -308,7 +309,7 @@ words preserve integer event/tap boundaries. Tuning uses Float32 table words and
 FMA compensation to avoid prematurely rounding the exponential ratio before its
 frequency product; control inputs and returned frequencies remain Float32. FM source/control integer
 knots resolve through calibrated integer phase words on the exact 1/512 source
-grid before Float32 control interpolation. Audio and FM/Sync use the same
+grid before Float64 FM depth interpolation. Audio and FM/Sync use the same
 Float32 oscillator read. Control interpolation retains representable fractions
 between compatible integer-dial knots; edits finer than Float32 resolution round
 at the input boundary. There is no sub-float input interpolation or promise that
@@ -381,7 +382,9 @@ native held-query spans remain waveform-specific. Preserve modulation compositio
 FM depth mapping and receiver timing; the phase correction adds no coefficient
 filter. Integer coefficient steps, turns and intentional jumps remain intact when
 their products are integral. The physical FM receiver owns coefficient slewing independently of the
-downstream phase correction.
+downstream phase correction. It multiplies the Float32-converted slew knot delta
+by a Float64 weight before truncating to whole phase units. Fractional deltas
+interpolate between those knots in Float64.
 
 OscillatorSection reads one Float32 audio sample for audio and FM/Sync from the
 same phase and table entries. Prepared tables retain their calibrated Float32

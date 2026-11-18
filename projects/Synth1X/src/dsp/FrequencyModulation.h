@@ -3,7 +3,6 @@
 #include <array>
 #include <cmath>
 #include <cstdint>
-#include "CompatibleControlCurve.h"
 #include "FmTables.h"
 namespace synth1x::dsp
 {
@@ -11,7 +10,8 @@ namespace synth1x::dsp
     // Preserve receiver calls even when consecutive envelope targets are equal.
     struct FrequencyModulation
     {
-        float current=0,target=-1,anchor=0;
+        // Keep phase-word resolution until the receiver writes Float32 samples.
+        double current=0,target=-1,anchor=0;
         int remaining=0,duration=0,elapsed=0;
         bool settle=true;
         // CVco note-on0x3db00 invalidates the target without settling a live slew.
@@ -28,14 +28,14 @@ namespace synth1x::dsp
             // grid. Retain their calibrated integer phase words in one table.
             return fmDepthWords[static_cast<size_t>(value*512.0f)];
         }
-        static float depth(float dial,float control) noexcept
+        static double depth(double dial,double control) noexcept
         {
-            dial=std::clamp(dial,0.0f,127.0f);control=std::clamp(control,-512.0f,512.0f);
-            return compatibleControlCurve(dial,[&](int source){
-                return compatibleControlCurve(control,[&](int modulation){return depth(source,modulation);});
+            dial=std::clamp(dial,0.0,127.0);control=std::clamp(control,-512.0,512.0);
+            return interpolateDepth(dial,[&](int source){
+                return interpolateDepth(control,[&](int modulation){return depth(source,modulation);});
             });
         }
-        template<class Segment> int render(float desired,int frames,int rate,Segment&& segment,bool oneRegion=false,bool advanceSlew=true) noexcept
+        template<class Segment> int render(double desired,int frames,int rate,Segment&& segment,bool oneRegion=false,bool advanceSlew=true) noexcept
         {
             const int requested=frames;
             while(frames>0)
@@ -63,11 +63,11 @@ namespace synth1x::dsp
                         if((remaining&31)==0)
                         {
                             const int index=(remaining<<8)/duration;
-                            const float weight=slewTable()[static_cast<size_t>(index)];
-                            // Keep the measured slew knots at whole phase-unit deltas.
-                            // Interpolate fractional deltas without narrowing the state.
-                            current=anchor+compatibleControlCurve(target-anchor,[&](int delta){
-                                return std::trunc(static_cast<float>(delta)*weight);
+                            const double weight=slewTable()[static_cast<size_t>(index)];
+                            // At each knot, apply the Float32 delta conversion before
+                            // multiplying in double and truncating to whole phase units.
+                            current=anchor+interpolateDepth(target-anchor,[&](int delta){
+                                return std::trunc(static_cast<double>(static_cast<float>(delta))*weight);
                             });
                         }
                         --remaining;
@@ -80,14 +80,22 @@ namespace synth1x::dsp
             return requested-frames;
         }
     private:
-        static const std::array<float,257>& slewTable() noexcept
+        template<class Mapping>
+        static double interpolateDepth(double coordinate,Mapping mapping) noexcept
+        {
+            const int low=static_cast<int>(std::floor(coordinate));
+            const double first=mapping(low);
+            if(coordinate==low)return first;
+            return first+(static_cast<double>(mapping(low+1))-first)*(coordinate-low);
+        }
+        static const std::array<double,257>& slewTable() noexcept
         {
             // Native init0x3d8c4 fills256 entries with divisor257. The kernel
             // can also read the following zero word at index256.
             static const auto values=[] {
-                std::array<float,257> result{};
+                std::array<double,257> result{};
                 for(int i=0;i<256;++i)
-                    result[static_cast<size_t>(i)]=(std::cos((static_cast<float>(i)*3.141592653589793f)*(1.0f/257.0f))+1.0f)*0.5f;
+                    result[static_cast<size_t>(i)]=(std::cos((static_cast<double>(i)*3.141592653589793)*(1.0/257.0))+1.0)*0.5;
                 return result;
             }();
             return values;
