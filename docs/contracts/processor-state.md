@@ -8,7 +8,7 @@ fractional host values; selectors and switches use discrete source values.
 Version 3 processor states render continuous controls without the Synth1 integer
 patch conversion. Versions 1 and 2 retain the legacy integer mapping. Validate saved values
 by stable parameter ID rather than XML child order or numeric text spelling.
-States for Synth2 version 200 patches retain `patchFormat="200"` and use the
+States for Synth1X version 200 patches retain `patchFormat="200"` and use the
 direct fractional mapping mode. Patch format 200 and processor state version 3
 are separate schemas; the legacy p126 host range is unchanged.
 

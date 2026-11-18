@@ -41,6 +41,8 @@ Keep the package's license and notice files with your downloaded distribution.
 
 On Linux, use `$XDG_DATA_HOME` in place of `~/.local/share` if set. Standalone
 audio and MIDI device preferences use the SDK's existing `Synth2` settings path.
+Synth1X can open existing Synth2 palette files. Keep the original XML if you
+also use Synth2, which expects the original palette tag.
 
 ## Linux
 

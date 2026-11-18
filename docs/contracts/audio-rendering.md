@@ -134,7 +134,7 @@ with and without oscillator stacking.
 
 ## Fractional output controls
 
-Synth2 continuous-control states and version 200 patches retain fractional EQ,
+Synth1X continuous-control states and version 200 patches retain fractional EQ,
 Delay and Chorus dials through the output adapters. Legacy integer-state mapping
 remains unchanged: legacy source/state adapters resolve integer output controls
 before publishing real values to DSP. Output settings carry no precision-mode

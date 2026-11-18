@@ -1,13 +1,13 @@
 # Product capabilities and verification boundaries
 
 Start with the [product contracts](README.md) and [test guide](../tests/README.md).
-Synth2 builds and runs its portable suite without an original Synth1 DLL, Wine,
+Synth1X builds and runs its portable suite without an original Synth1 DLL, Wine,
 JUCE or another repository. Native wrappers require their platform SDKs.
 
 | Area | Required behavior / boundary |
 | --- | --- |
 | Product source | iPlug2 wrapper/editor and SDK-independent core under projects/Synth2 |
-| Patch loading | Synth2 version 200 preserves fractional dials; accepts legacy 1–113 and named unversioned sources; native evidence for 100/104–113; transactional failure; original source values retained |
+| Patch loading | Synth1X version 200 preserves fractional dials; accepts legacy 1–113 and named unversioned sources; native evidence for 100/104–113; transactional failure; original source values retained |
 | Library archives | ZIP, RAR and 7z banks remain intact; RAR4 stored/compressed, RAR5 solid/compressed, and 7z stored/LZMA/LZMA2/PPMd reads; encrypted banks, RAR4 solid and other 7z codecs unsupported |
 | State/parameters | Stable host metadata; readable legacy state chunks; both A/B sounds and source-aware recall without the external bank |
 | Rendering | Control-driven policy, preserved numerical/event ordering, retained physical histories and effect tails |

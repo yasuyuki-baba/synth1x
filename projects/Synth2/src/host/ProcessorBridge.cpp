@@ -456,7 +456,7 @@ double ProcessorBridge::normalizedValue(int index)const{return impl->normalized(
 void ProcessorBridge::setNormalizedValue(int index,double value){impl->setNormalized(index,value);}
 void ProcessorBridge::prepare(double rate,int frames)
 {
-    if(!std::isfinite(rate) || rate<=0 || !std::isfinite(static_cast<float>(rate)) || static_cast<float>(rate)<=0 || frames<=0)throw std::invalid_argument("Invalid Synth2 playback configuration");
+    if(!std::isfinite(rate) || rate<=0 || !std::isfinite(static_cast<float>(rate)) || static_cast<float>(rate)<=0 || frames<=0)throw std::invalid_argument("Invalid Synth1X playback configuration");
     impl->scratch.setSize(2,frames);impl->eventCount=0;impl->overflow=false;impl->midi.clear();
     impl->flushNativeLfoHistory();if(rate!=44100. || frames!=64)impl->engine.invalidateNativeRandomHistory();
     impl->engine.prepareToPlay(static_cast<float>(rate),frames);impl->engine.setOversamplingFactor(impl->requestedOversampling.load());
