@@ -68,8 +68,10 @@ jobs:
           cat > release-notes.md <<'NOTES'
           Synth1X native packages for Linux (x86_64, Ubuntu 24.04 or compatible), Windows (x64) and macOS (Apple Silicon, arm64).
 
-          **Upgrading from Synth2:** Export your patches from existing AUv2 and CLAP projects before
-          replacing Synth2. Then close your DAW and standalone app, replace the old plugin files and rescan.
+          **Upgrading from Synth2 0.1.x to Synth1X 0.2.x or later** requires manual migration.
+          Plugin and standalone filenames and user data folders change from Synth2 to Synth1X.
+          Export your patches from existing AUv2 and CLAP instances before replacing Synth2.
+          Then close your DAW and standalone app, replace the old plugin files and rescan.
           AUv2 and CLAP use new IDs, so replace their instances in existing projects and load the exported
           patches. The VST3 class ID stays the same.
           Copy your old Synth2 user data into the new Synth1X folder to bring over patches and settings.
