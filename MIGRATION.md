@@ -33,6 +33,33 @@ to migrate:
 
 ## Copy your library and settings
 
+Each native package includes a migration script beside this guide. After closing
+your DAW and both standalone apps, open a terminal in the extracted `Synth1X`
+folder and run the preview first. The second command applies the copy. In a source
+checkout, the scripts are in `tools/`.
+
+Windows (PowerShell):
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\migrate-synth2.ps1
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\migrate-synth2.ps1 -Apply
+```
+
+macOS and Linux (Bash):
+
+```sh
+bash ./migrate-synth2.sh
+bash ./migrate-synth2.sh --apply
+```
+
+The scripts copy files from the paths below and keep any files already present
+in Synth1X. Review the reported skips if you have already used Synth1X. The
+scripts skip links, disposable caches and temporary write files. If you use a
+custom library, [copy it separately](#custom-library). Continue with the plugin
+installation and DAW steps after copying.
+
+### Manual copy and folder locations
+
 Before opening or scanning Synth1X, copy the contents of the old user data
 folder into the new one. This brings over the default library, tags, favorites,
 palette and standalone patch state. If both folders already contain data,
@@ -58,10 +85,12 @@ from the old folder to the new one before the first launch:
 On macOS, the user data copy above includes this file. On Linux, use an absolute
 `$XDG_CONFIG_HOME` in place of `~/.config` if set.
 
-If you picked a custom library location, the copied settings retain its saved
-absolute path. To keep the Synth2 library available for rollback, copy the
-custom folder and select the copy in Synth1X with **Add... → Choose library
-folder...** before editing or saving any library data.
+### Custom library
+
+A manual copy of the user data can retain the absolute path to your old custom
+library. The scripts skip that saved path. To keep the Synth2 library available
+for rollback, copy the custom folder and select the copy in Synth1X with
+**Add... → Choose library folder...** before editing or saving any library data.
 
 Synth1X can open existing Synth2 palette files. Keep the original XML if you
 also use Synth2, which expects the original palette tag.
