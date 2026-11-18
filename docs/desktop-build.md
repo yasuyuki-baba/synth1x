@@ -184,17 +184,18 @@ ID is `BABA`. The VST3 class ID retains the `Syn2` code. The AUv2 component uses
 type `aumu`, subtype `Sy1X` and manufacturer `BABA`. The CLAP descriptor ID is
 `io.github.yasuyuki-baba.Synth1X`.
 
-The macOS CLAP bundle ID is `io.github.yasuyuki-baba.clap.Synth1X`. The VST3,
-AUv2 and standalone macOS bundle IDs use the `Synth2` suffix with the `vst3`,
-`audiounit` and `app` components, respectively.
+The macOS standalone bundle ID is `io.github.yasuyuki-baba.app.Synth1X`, and
+the CLAP bundle ID is `io.github.yasuyuki-baba.clap.Synth1X`. The macOS VST3
+and AUv2 bundle IDs retain the `Synth2` suffix with the `vst3` and `audiounit`
+components, respectively.
 The macOS standalone advertises its virtual MIDI input as `To Synth1X` and
 output as `From Synth1X`.
 Native target names are `Synth1X-vst3`, `Synth1X-clap`, `Synth1X-au` and
 `Synth1X-app` as applicable. Keep config.h, native resource metadata and build
 presets consistent. Internal class names do not define parameter identities.
 
-On Windows, a second launch requests foreground activation of the existing
-standalone window. The single-instance mutex retains the bundle identity.
+On Windows, the standalone SDK uses the app bundle name for its single-instance
+mutex and window lookup. Synth1X uses its own mutex.
 
 DAW plugin-identity compatibility is not established by readable state chunks.
 Parameter IDs, ordering, ranges and processor state encoding remain independent
