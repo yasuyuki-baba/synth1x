@@ -40,7 +40,7 @@ Synth1PatchDocument parsePatchDocument(std::string_view text)
     {
         line=trimPatchLine(line);
         if(line.empty())continue;
-        if(cleaned.empty() && !named)cleaned="Synth2 preset\n";
+        if(cleaned.empty() && !named)cleaned="Synth1X preset\n";
         cleaned+=line+'\n';
     }
     return parseSynth1PatchText(cleaned,true);

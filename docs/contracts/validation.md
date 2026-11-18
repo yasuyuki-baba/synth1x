@@ -62,7 +62,7 @@ owner decision. Unmeasured combinations are not certified by this scope decision
 
 ## Test inputs
 
-Synth2 keeps self-authored product tests and necessary product assets. State round
+Synth1X keeps self-authored product tests and necessary product assets. State round
 trips, API rejection, signal properties, MIDI scheduling, library and layout tests
 use generated inputs and explicit product requirements. Temporary WAV/ZIP/state
 data and bank fixtures are created by the tests. No external patch bank,
@@ -83,7 +83,7 @@ A portable test does not establish a DAW build, a particular audio device, concu
 host safety or a hard real-time deadline. Record exactly what ran and which source,
 binary, loading history, sample rate and comparison conditions were used.
 
-Publishing Synth2 must not introduce an external checkout, credential or
+Publishing Synth1X must not introduce an external checkout, credential or
 original-recording requirement into its build or portable tests. Project-owned
 source follows the [GPL-3.0-or-later grant](../../README.md#license); see
 [distribution requirements](../publication/README.md) for asset and license scope.

@@ -144,6 +144,10 @@ TEST_F(EditorPaletteTest,ExportedDraftImportsAllScopesAndAlphaWithoutApplyingThe
     draft.inherit(paletteGroup("FILTER"));
     const auto file=directory/std::filesystem::path(u8"palette-\u65e5\u672c.xml");
     std::string error;ASSERT_TRUE(EditorPaletteStore::save(file,draft,error))<<error;
+    std::ifstream exported(file);
+    std::string firstLine;
+    ASSERT_TRUE(static_cast<bool>(std::getline(exported,firstLine)));
+    EXPECT_EQ(firstLine,"<Palette version=\"1\">");
     EXPECT_TRUE(edit.modified(draft)); // Export does not Apply the preview.
     EXPECT_FALSE(std::filesystem::exists(directory/"palette.xml"));
     EditorPalette imported;
@@ -197,9 +201,18 @@ TEST_F(EditorPaletteTest,EmbeddedImagesRoundTripWithoutTheOriginalFileAndLegacyI
         ASSERT_TRUE(EditorPaletteStore::readImage(source,draft,error))<<error;
         EditorPaletteEdit edit;edit.begin(EditorPalette{});EXPECT_TRUE(edit.modified(draft));
         ASSERT_TRUE(EditorPaletteStore::save(directory/"palette.xml",draft,error))<<error;
+        std::ifstream exported(directory/"palette.xml");
+        std::string xml((std::istreambuf_iterator<char>(exported)),{});
+        exported.close();
+        ASSERT_TRUE(xml.starts_with("<Palette version=\"2\">"));
         ASSERT_TRUE(std::filesystem::remove(source));
         EditorPalette loaded;ASSERT_TRUE(EditorPaletteStore::importFile(directory/"palette.xml",loaded,error))<<error;
         EXPECT_EQ(loaded,draft);EXPECT_EQ(loaded.backgroundImage->bytes.size(),bytes.size()-suffix);
+        xml.replace(xml.rfind("</Palette>"),10,"</Synth2Palette>");
+        xml.replace(1,7,"Synth2Palette");
+        write(xml);
+        ASSERT_TRUE(EditorPaletteStore::importFile(directory/"palette.xml",loaded,error))<<error;
+        EXPECT_EQ(loaded,draft);
         EXPECT_TRUE(edit.modified(draft));
         write("<Synth2Palette version='1'/>");
         ASSERT_TRUE(EditorPaletteStore::importFile(directory/"palette.xml",loaded,error))<<error;

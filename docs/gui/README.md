@@ -292,6 +292,8 @@ palette as XML: General colors, every group's explicit overrides, alpha values
 and the optional embedded background image. Importing a color-only palette clears
 the current background image.
 The exchange format is the same versioned format as `palette.xml` preferences.
+New files use the `<Palette>` root. Synth1X also reads older `<Synth2Palette>`
+files. Apps from before the rename require the old root to import a palette.
 Import validates the selected file before replacing the preview; Apply is still
 needed to activate it as the saved user preference. Missing, malformed, oversized
 or unsupported imports report an error without changing the current preview or

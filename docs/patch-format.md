@@ -1,6 +1,6 @@
-# Synth2 patch format
+# Synth1X patch format
 
-New Synth2 patch exports use `ver=200` in a UTF-8 `.sy1` file. This is a Synth2
+New Synth1X patch exports use `ver=200` in a UTF-8 `.sy1` file. This is a Synth1X
 format; Synth1 integer files remain importable with their original version rules.
 The explicit Synth1 semantic export API still writes version 113.
 
@@ -43,7 +43,7 @@ with matching preparation and MIDI histories. Host state retains original source
 and loading metadata separately from a newly exported patch.
 
 `ProcessorBridge::savePatch()` returns the complete text outside the audio
-callback. `loadPatch()`/`loadProgram()` accept both Synth2 and legacy files; bank
+callback. `loadPatch()`/`loadProgram()` accept both Synth1X and legacy files; bank
 and library import use that same validation boundary.
 
 ## Opaque headers

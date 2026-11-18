@@ -85,7 +85,7 @@ SDKs can be selected using `--iplug2 /path/to/iPlug2`. Pin and review dependency
 updates in the lock file; upstream download-script defaults are moving branches.
 APP and AUv2 do not require VST3/CLAP SDKs just to build those formats.
 
-Synth2 does not enable the SDK WebView extra; its dependency downloads and unused
+Synth1X leaves the SDK WebView extra disabled; its dependency downloads and unused
 object library are excluded from native configuration/builds.
 CI uses the vendored NanoVG backend: GL2 on Windows and Metal on macOS. Other
 backends may need extra libraries; see `iPlug2/Dependencies/README.md` and
@@ -94,7 +94,7 @@ archive formats are described in [continuous integration](ci.md).
 
 ## Native presets
 
-Return to the Synth2 root and select the preset for the desired format:
+Return to the repository root and select the preset for the desired format:
 
 | Platform | Configure/build preset | Build directory | Formats |
 | --- | --- | --- | --- |

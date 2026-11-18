@@ -9,7 +9,7 @@
 #define PLUG_MFR_ID 'BABA'
 #define PLUG_URL_STR ""
 #define PLUG_EMAIL_STR ""
-#define PLUG_COPYRIGHT_STR "Copyright 2026 Synth2 contributors"
+#define PLUG_COPYRIGHT_STR "Copyright 2026 Synth1X contributors"
 #define PLUG_CLASS_NAME Synth2
 #define BUNDLE_NAME "Synth2"
 #define BUNDLE_MFR "yasuyuki-baba"

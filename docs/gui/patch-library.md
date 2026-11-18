@@ -151,7 +151,7 @@ editor with dialog lifetime guards.
 **Save → Save** writes to the loaded loose library `.sy1`. Archive sources, Init and
 sources no longer in the library use Save as. **Save → Save as...** chooses a name
 and a destination within the configured directory, including its subfolders.
-Existing destinations require confirmation. Saving uses the existing Synth2
+Existing destinations require confirmation. Saving uses the existing Synth1X
 `ver=200` patch API, preserving fractional controls, reserved values and master
 volume. An archive itself is never modified. Complete writes are staged before file
 publication; failures retain the sounding state and its edit baseline.

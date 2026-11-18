@@ -15,6 +15,7 @@
 namespace synth2::host
 {
 namespace {
+constexpr char paletteTag[]="Palette";
 constexpr std::string_view base64Alphabet="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 std::string encodeImage(const std::vector<std::uint8_t>& bytes)
 {
@@ -72,9 +73,10 @@ bool readPalette(const std::filesystem::path& path,editor::EditorPalette& palett
         tinyxml2::XMLDocument doc;
         if(doc.Parse(text.data(),text.size())!=tinyxml2::XML_SUCCESS)throw std::runtime_error("Invalid palette file.");
         const auto* root=doc.RootElement();
-        if(!root || std::string_view(root->Name())!="Synth2Palette" || (root->IntAttribute("version")!=1 && root->IntAttribute("version")!=2))
+        const std::string_view tag=root ? root->Name() : "";
+        const int version=root ? root->IntAttribute("version") : 0;
+        if((tag!=paletteTag && tag!="Synth2Palette") || (version!=1 && version!=2))
             throw std::runtime_error("Unsupported palette file version.");
-        const int version=root->IntAttribute("version");
         if(version==1 && text.size()>65536)throw std::runtime_error("Palette file is too large.");
         editor::EditorPalette next;
         // Stored files contain explicit overrides only, including the default Filter overrides.
@@ -137,7 +139,7 @@ bool EditorPaletteStore::save(const std::filesystem::path& path,const editor::Ed
     error.clear();std::filesystem::path temporary;
     try {
         if(path.empty())throw std::runtime_error("Palette preferences folder is unavailable.");
-        tinyxml2::XMLDocument doc;auto* root=doc.NewElement("Synth2Palette");root->SetAttribute("version",palette.backgroundImage ? 2 : 1);doc.InsertEndChild(root);
+        tinyxml2::XMLDocument doc;auto* root=doc.NewElement(paletteTag);root->SetAttribute("version",palette.backgroundImage ? 2 : 1);doc.InsertEndChild(root);
         const auto add=[&](std::size_t role,editor::EditorColor color,int group) {
             auto* item=doc.NewElement("Color");item->SetAttribute("role",std::string(editor::paletteRoleKeys[role]).c_str());
             item->SetAttribute("rgba",color.hex().c_str());

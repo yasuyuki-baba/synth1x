@@ -91,16 +91,16 @@ ContinuousPatch parseContinuousPatch(std::string_view text)
         }
         if(header && line.find('=')!=std::string::npos)continue;
         const auto comma=line.find(',');
-        if(!header || comma==std::string::npos)throw std::runtime_error("Malformed Synth2 patch entry");
+        if(!header || comma==std::string::npos)throw std::runtime_error("Malformed Synth1X patch entry");
         const int index=number<int>(trimPatchLine(line.substr(0,comma)));
         const float value=number<float>(trimPatchLine(line.substr(comma+1)));
         validate(index,value);
         if(seen[index])throw std::runtime_error("Duplicate patch parameter");
         patch.values[index]=value;seen[index]=true;
     }
-    if(!header)throw std::runtime_error("Missing Synth2 patch version");
+    if(!header)throw std::runtime_error("Missing Synth1X patch version");
     // Complete snapshots avoid defaults changing the sound in future releases.
-    for(int i=0;i<129;++i)if(i!=126 && !seen[i])throw std::runtime_error("Incomplete Synth2 patch");
+    for(int i=0;i<129;++i)if(i!=126 && !seen[i])throw std::runtime_error("Incomplete Synth1X patch");
     patch.values[126]=113;
     if(patch.name.empty())patch.name="Untitled";
     return patch;

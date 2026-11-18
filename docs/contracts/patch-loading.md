@@ -2,7 +2,7 @@
 
 ## Required behavior
 
-Save Synth2 patches as version 200. Accept explicit legacy source versions 1–113
+Save Synth1X patches as version 200. Accept explicit legacy source versions 1–113
 and supported named unversioned files, in addition to version 200.
 This includes 99 and 101–103 through the legacy conversion path. The independently
 observed native conversion paths cover 100 and 104–113, including 112; that

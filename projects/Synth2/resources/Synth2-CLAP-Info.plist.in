@@ -7,7 +7,7 @@
 	<key>CFBundleExecutable</key>
 	<string>Synth1X</string>
 	<key>CFBundleGetInfoString</key>
-	<string>Synth1X v@SYNTH2_BUILD_VERSION@ Copyright 2026 Synth2 contributors</string>
+	<string>Synth1X v@SYNTH2_BUILD_VERSION@ Copyright 2026 Synth1X contributors</string>
 	<key>CFBundleIdentifier</key>
 	<string>io.github.yasuyuki-baba.clap.Synth2</string>
 	<key>CFBundleInfoDictionaryVersion</key>

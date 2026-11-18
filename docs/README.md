@@ -1,4 +1,4 @@
-# Synth2 product documentation
+# Synth1X product documentation
 
 Use this index to find the authoritative document for each topic. Directory
 READMEs introduce their local contents and link to these detailed contracts

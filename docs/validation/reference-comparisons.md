@@ -7,7 +7,7 @@ or run the portable suite.
 
 ## Before/after regression procedure
 
-Run these examples from the Synth2 root in a shell with Python 3 available.
+Run these examples from the repository root in a shell with Python 3 available.
 The portable tools work on macOS, Windows and Linux; the Python helpers locate
 both ordinary and `.exe` binaries. No original instrument or external patch bank
 is involved.
