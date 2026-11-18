@@ -256,7 +256,7 @@ private:
     }
     void promptForPalette(bool exporting) {
         if(auto* entry=GetUI()->GetTextEntryControl();entry && entry->EditInProgress())entry->CommitEdit();
-        WDL_String file(exporting ? "Synth2-palette.xml" : ""),directory(lastDirectory.c_str());
+        WDL_String file(exporting ? "Synth1X-palette.xml" : ""),directory(lastDirectory.c_str());
         const std::weak_ptr<int> weak=lifetime;
         fileDialogOpen=true;
         GetUI()->PromptForFile(file,directory,exporting ? EFileAction::Save : EFileAction::Open,"xml",

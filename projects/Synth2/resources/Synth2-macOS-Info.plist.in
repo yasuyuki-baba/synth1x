@@ -7,13 +7,15 @@
 	<key>CFBundleExecutable</key>
 	<string>Synth2</string>
 	<key>CFBundleGetInfoString</key>
-	<string>Synth2 v@SYNTH2_BUILD_VERSION@ Copyright 2026 Synth2 contributors</string>
+	<string>Synth1X v@SYNTH2_BUILD_VERSION@ Copyright 2026 Synth2 contributors</string>
 	<key>CFBundleIdentifier</key>
 	<string>io.github.yasuyuki-baba.app.Synth2</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
+	<key>CFBundleDisplayName</key>
+	<string>Synth1X</string>
 	<key>CFBundleName</key>
-	<string>Synth2</string>
+	<string>Synth1X</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
@@ -33,6 +35,6 @@
 	<key>NSPrincipalClass</key>
 	<string>SWELLApplication</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>Audio input is optional; Synth2 produces sound from MIDI input.</string>
+	<string>Audio input is optional; Synth1X produces sound from MIDI input.</string>
 </dict>
 </plist>

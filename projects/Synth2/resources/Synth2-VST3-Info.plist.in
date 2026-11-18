@@ -7,13 +7,13 @@
 	<key>CFBundleExecutable</key>
 	<string>Synth2</string>
 	<key>CFBundleGetInfoString</key>
-	<string>Synth2 v@SYNTH2_BUILD_VERSION@ Copyright 2026 Synth2 contributors</string>
+	<string>Synth1X v@SYNTH2_BUILD_VERSION@ Copyright 2026 Synth2 contributors</string>
 	<key>CFBundleIdentifier</key>
 	<string>io.github.yasuyuki-baba.vst3.Synth2</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>Synth2</string>
+	<string>Synth1X</string>
 	<key>CFBundlePackageType</key>
 	<string>BNDL</string>
 	<key>CFBundleShortVersionString</key>

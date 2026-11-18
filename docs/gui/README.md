@@ -147,7 +147,7 @@ the same pitch: ordinary MIDI note-on/off ordering applies. Keyboard input is
 transient and never enters patch/session sound state.
 
 Use restrained red accents, warm-white legends and black controls, with subtle
-Nord Lead 2 influence and Synth2's own identity. Prioritize high-use controls,
+Nord Lead 2 influence and Synth1X's own identity. Prioritize high-use controls,
 especially cutoff; do not invent unsupported instrument features to match a panel.
 Bundle editor fonts so installed font families cannot change the layout.
 
@@ -299,12 +299,12 @@ its cancellation baseline. Cancelling the file chooser changes nothing.
 
 Export writes the current draft, including valid pending text edits and unsaved
 changes, to the chosen file. It does not Apply the palette or clear unsaved-change
-confirmation. The default export name is `Synth2-palette.xml`; an omitted extension
+confirmation. The default export name is `Synth1X-palette.xml`; an omitted extension
 gets `.xml`. Replacing an existing file requires confirmation. An export failure
 keeps editing available and reports the error in the fixed-color window.
 
 Edits preview only in the owning instance. **Apply** atomically saves the palette
-in `palette.xml` in the Synth2 user settings directory. Other instances read the
+in `palette.xml` in the `Synth2` user settings directory. Other instances read the
 saved preference when their editors are next opened. Missing preferences restore
 the built-in appearance, including when the file was deleted while an editor was closed. Sound changes, A/B and DAW
 state recall do not change the palette or publish host parameter changes.

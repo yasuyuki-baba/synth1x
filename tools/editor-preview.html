@@ -2,7 +2,7 @@
 <html lang="en">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Synth2 — GUI study</title>
+<title>Synth1X — GUI study</title>
 <style>
 *{box-sizing:border-box}body{margin:0;background:#101316;color:#eaece8;font-family:Arial,sans-serif}button,input,select{font:inherit}button,select{cursor:pointer}button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid #87cbbb;outline-offset:3px}
 .intro{max-width:1280px;margin:32px auto 20px;display:flex;align-items:center;justify-content:space-between;gap:24px;padding:0 4px}.intro h1{font-size:20px;font-weight:500;letter-spacing:-.4px;margin:0 0 8px}.intro p{font-size:12px;color:#9ca7ad;margin:0}.intro label{font-size:12px;color:#9ca7ad}.intro select{margin-left:8px;background:#252c33;color:#eaece8;border:1px solid #3b454f;border-radius:5px;padding:7px}
@@ -57,9 +57,9 @@
 .intro{flex-wrap:wrap}.preview-tools{display:flex;align-items:center;gap:12px}.preview-tools #filter{position:static;width:180px;height:30px}.preview-tools #library{padding:7px 12px}.display-scale{position:absolute;font-size:var(--type-auxiliary);color:var(--text)}.display-scale label{display:inline-block;width:42px;line-height:28px}.display-scale select{position:absolute;left:42px;top:0;width:102px;height:28px;font-size:var(--type-auxiliary);text-align:center;background:var(--panel);color:var(--text);border:1px solid var(--controlEdge);border-radius:3px}.version-label{position:absolute;display:flex;align-items:center;justify-content:flex-end;color:var(--muted);font-size:var(--type-auxiliary)}#oversampling{position:absolute;font-size:var(--type-auxiliary)}.status{max-width:510px}
 .comparison-controls{position:absolute;display:flex}.comparison-controls button{flex:1;min-width:0;background:var(--control);color:var(--text);border:1px solid var(--border);font:inherit;font-size:var(--type-label)}.comparison-controls button.active{background:var(--selectedRow)}#copy-a,#copy-b{font-size:var(--type-label);color:var(--muted)}.preset::after{display:none}
 </style>
-<div class="intro"><div><h1>Synth2 / the red-panel study</h1><p>Layout preview — no audio. Native iPlug2 uses the same layout.</p></div><div class="preview-tools"><label>Preview filter <input id="filter" placeholder="Search patches..." aria-label="Search preview patches"></label><button class="button" id="library">Preview library</button></div></div>
-<div id="viewport"><main id="instrument" aria-label="Synth2 synthesizer layout">
-<div class="brand">SYNTH<span>2</span></div><div class="subtitle">VIRTUAL ANALOG SYNTHESIZER</div>
+<div class="intro"><div><h1>Synth1X / the red-panel study</h1><p>Layout preview — no audio. Native iPlug2 uses the same layout.</p></div><div class="preview-tools"><label>Preview filter <input id="filter" placeholder="Search patches..." aria-label="Search preview patches"></label><button class="button" id="library">Preview library</button></div></div>
+<div id="viewport"><main id="instrument" aria-label="Synth1X synthesizer layout">
+<div class="brand">Synth<span>1X</span></div><div class="subtitle">VIRTUAL ANALOG SYNTHESIZER</div>
 <button class="preset" id="preset" aria-haspopup="true" aria-expanded="false"><span class="preset-name" id="patch-name">Init</span></button><div id="popup" role="menu"></div>
 <button class="nav" style="left:890px" id="previous" aria-label="Previous patch">‹</button><button class="nav" style="left:944px" id="next" aria-label="Next patch">›</button>
 <div class="display-scale" id="display-scale"><label for="scale">Scale</label><select id="scale" aria-label="Display scale"><option value="fit">Fit</option><option value="0.5">50%</option><option value="0.75">75%</option><option value="1" selected>100%</option><option value="1.25">125%</option><option value="1.5">150%</option><option value="1.75">175%</option><option value="2">200%</option></select></div><span class="bank-label" id="bank-name">0 sounds in library</span>

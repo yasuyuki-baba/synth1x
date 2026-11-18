@@ -176,19 +176,24 @@ and are not tracked as missing automated tests.
 
 ## Product identity
 
-The plugin and APP are named `Synth2`. The four-character plugin ID is `Syn2`;
-the displayed manufacturer name is `babab` and the four-character manufacturer ID
-is `BABA`. The manufacturer ID includes uppercase characters because all-lowercase
-Audio Unit manufacturer codes are reserved for Apple. This shared ID also applies
-to native formats that derive their identity from `PLUG_MFR_ID`. Bundle
-components are domain `io.github`, namespace owner `yasuyuki-baba` and name
+The plugin, editor and standalone window display `Synth1X`. Native filenames
+and settings paths use `Synth2`. The four-character plugin ID is `Syn2`. The
+displayed manufacturer name is `babab` and the four-character manufacturer ID
+is `BABA`. Apple reserves all-lowercase Audio Unit manufacturer codes. This
+shared ID also applies to formats that derive their identity from `PLUG_MFR_ID`.
+Bundle components are domain `io.github`, namespace owner `yasuyuki-baba` and name
 `Synth2`, with the
 format component (`vst3`, `clap`, `audiounit` or `app`) between manufacturer and
 name (for example, `io.github.yasuyuki-baba.vst3.Synth2`). The bundle namespace
 is independent of the displayed manufacturer and four-character manufacturer ID.
+The CLAP descriptor ID is `io.github.yasuyuki-baba.Synth2`.
 Native target names are `Synth2-vst3`, `Synth2-clap`, `Synth2-au` and
 `Synth2-app` as applicable. Keep config.h, native resource metadata and build
 presets consistent. Internal class names do not define parameter identities.
+
+On Windows, the standalone SDK retains its existing single-instance mutex. Its
+window lookup still uses the bundle name, so a second launch may leave the
+already running instance in the background.
 
 DAW plugin-identity compatibility is not established by readable state chunks.
 Parameter IDs, ordering, ranges and processor state encoding remain independent
