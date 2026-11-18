@@ -21,9 +21,15 @@ Keep the package's license and notice files with your downloaded distribution.
 
 ## Upgrading from Synth2
 
+Synth1X uses a new plugin ID for AUv2 and CLAP. The VST3 class ID stays the same.
+Before replacing Synth2, open any AUv2 or CLAP projects you want to migrate and
+export their patches. Keep a backup of those projects and the old plugin files.
+
 1. Close the DAW and standalone app. Move the old `Synth2` plugins out of your
-   DAW's scan folders and install the corresponding `Synth1X` files. The two sets
-   share plugin IDs. Rescan the plugins after replacing the files.
+   DAW's scan folders, install the corresponding `Synth1X` files and rescan. In
+   existing AUv2 or CLAP projects, add Synth1X in place of each Synth2 instance,
+   load the exported patch and reassign any automation that targeted the old
+   instance.
 2. Before opening Synth1X, copy the contents of your old Synth2 user data folder
    into the sibling `Synth1X` folder. This brings over the default library,
    tags, favorites, palette and standalone patch state. Keep the old folder as a
