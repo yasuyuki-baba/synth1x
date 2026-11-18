@@ -24,7 +24,7 @@ set(synth2_iplug_formats ${SYNTH2_IPLUG2_FORMATS})
 if(APPLE AND "APP" IN_LIST synth2_iplug_formats)
     # The SDK includes the SWELL resources and compiles the XIB into the bundle.
     # A missing XIB otherwise produces an app that cannot initialize its menu.
-    foreach(resource Synth2-macOS-Info.plist.in Synth2-macOS-MainMenu.xib main.rc_mac_dlg main.rc_mac_menu)
+    foreach(resource Synth2-macOS-Info.plist.in Synth1X-macOS-MainMenu.xib main.rc_mac_dlg main.rc_mac_menu)
         if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/resources/${resource}")
             message(FATAL_ERROR "The macOS standalone requires resources/${resource}")
         endif()
@@ -84,7 +84,7 @@ foreach(format IN LISTS synth2_iplug_formats)
     endif()
 endforeach()
 
-iplug_add_plugin(Synth2
+iplug_add_plugin(Synth1X
     SOURCES Synth2.cpp ${synth2_editor_sources} Synth2.h config.h
     FORMATS ${synth2_iplug_formats}
     UI IGRAPHICS
@@ -92,12 +92,13 @@ iplug_add_plugin(Synth2
     LINK Synth2Core Synth2EditorFonts
 )
 
-# Native formats share the Synth2 binary name. MSVC derives both the import
+# Native formats share the Synth1X binary name. MSVC derives both the import
 # library and .exp sidecar from it, so parallel links need separate directories.
 if(WIN32)
-    foreach(target Synth2-vst3 Synth2-clap Synth2-app)
+    foreach(target Synth1X-vst3 Synth1X-clap Synth1X-app)
         if(TARGET ${target})
             set_target_properties(${target} PROPERTIES
+                PREFIX ""
                 ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/link/${target}/$<CONFIG>")
         endif()
     endforeach()
@@ -106,7 +107,7 @@ endif()
 # Keep Xcode's per-configuration bundle paths aligned with the SDK resource
 # hooks and the candidate packager, which both consume build/out directly.
 if(APPLE)
-    foreach(target Synth2-vst3 Synth2-clap Synth2-au Synth2-app)
+    foreach(target Synth1X-vst3 Synth1X-clap Synth1X-au Synth1X-app)
         if(TARGET ${target})
             foreach(configuration DEBUG RELEASE RELWITHDEBINFO MINSIZEREL)
                 set_target_properties(${target} PROPERTIES
@@ -122,8 +123,8 @@ if(APPLE)
         string(REPLACE "|" ";" fields "${pair}")
         list(GET fields 0 suffix)
         list(GET fields 1 format)
-        if(TARGET Synth2-${suffix})
-            set_target_properties(Synth2-${suffix} PROPERTIES MACOSX_BUNDLE_INFO_PLIST
+        if(TARGET Synth1X-${suffix})
+            set_target_properties(Synth1X-${suffix} PROPERTIES MACOSX_BUNDLE_INFO_PLIST
                 "${SYNTH2_VERSION_DIR}/Synth2-${format}-Info.plist")
         endif()
     endforeach()

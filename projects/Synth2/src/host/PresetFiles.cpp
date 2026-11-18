@@ -382,7 +382,7 @@ fs::path PresetFiles::settingsDirectory()
 #endif
     if (home.empty())
         throw std::runtime_error("The user data directory is unavailable.");
-    return home / "Synth2";
+    return home / "Synth1X";
 }
 fs::path PresetFiles::defaultDirectory() { return settingsDirectory() / "Library"; }
 fs::path PresetFiles::configuredDirectory()

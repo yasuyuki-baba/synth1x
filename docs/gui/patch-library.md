@@ -241,9 +241,9 @@ ZIP/RAR/7z/`.sy1` files remain discoverable alongside managed records.
 
 | Platform | Default library folder |
 | --- | --- |
-| Windows | `%APPDATA%/Synth2/Library` |
-| macOS | `~/Library/Application Support/Synth2/Library` |
-| Linux portable tools | `$XDG_DATA_HOME/Synth2/Library` or `~/.local/share/Synth2/Library` |
+| Windows | `%APPDATA%/Synth1X/Library` |
+| macOS | `~/Library/Application Support/Synth1X/Library` |
+| Linux portable tools | `$XDG_DATA_HOME/Synth1X/Library` or `~/.local/share/Synth1X/Library` |
 
 **Add... → Open library folder** reveals this folder. **Choose library folder...**
 changes the shared root without moving files. Other instances adopt the configured

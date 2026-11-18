@@ -132,8 +132,8 @@
       "configurePreset": "windows",
       "configuration": "Release",
       "targets": [
-        "Synth2-vst3",
-        "Synth2-clap"
+        "Synth1X-vst3",
+        "Synth1X-clap"
       ]
     },
     {
@@ -141,7 +141,7 @@
       "configurePreset": "windows-app",
       "configuration": "Release",
       "targets": [
-        "Synth2-app"
+        "Synth1X-app"
       ]
     },
     {
@@ -149,9 +149,9 @@
       "configurePreset": "macos",
       "configuration": "Release",
       "targets": [
-        "Synth2-vst3",
-        "Synth2-clap",
-        "Synth2-au"
+        "Synth1X-vst3",
+        "Synth1X-clap",
+        "Synth1X-au"
       ]
     },
     {
@@ -159,22 +159,22 @@
       "configurePreset": "macos-app",
       "configuration": "Release",
       "targets": [
-        "Synth2-app"
+        "Synth1X-app"
       ]
     },
     {
       "name": "linux",
       "configurePreset": "linux",
       "targets": [
-        "Synth2-vst3",
-        "Synth2-clap"
+        "Synth1X-vst3",
+        "Synth1X-clap"
       ]
     },
     {
       "name": "linux-app",
       "configurePreset": "linux-app",
       "targets": [
-        "Synth2-app"
+        "Synth1X-app"
       ]
     }
   ],

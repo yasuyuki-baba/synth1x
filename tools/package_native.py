@@ -10,9 +10,9 @@ import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
 PRODUCTS = {
-    'linux': ['Synth2.vst3', 'Synth2.clap', 'Synth2'],
-    'windows': ['Synth2.vst3', 'Synth2.clap', 'Synth2.exe'],
-    'macos': ['Synth2.vst3', 'Synth2.clap', 'Synth2.component', 'Synth2.app'],
+    'linux': ['Synth1X.vst3', 'Synth1X.clap', 'Synth1X'],
+    'windows': ['Synth1X.vst3', 'Synth1X.clap', 'Synth1X.exe'],
+    'macos': ['Synth1X.vst3', 'Synth1X.clap', 'Synth1X.component', 'Synth1X.app'],
 }
 
 
@@ -22,11 +22,11 @@ def package(root, build, platform, manifest, output):
         binary = path
         if path.is_dir():
             if platform == 'linux':
-                binary = path / 'Contents' / 'x86_64-linux' / 'Synth2.so'
+                binary = path / 'Contents' / 'x86_64-linux' / 'Synth1X.so'
             elif platform == 'windows':
-                binary = path / 'Contents' / 'x86_64-win' / 'Synth2.vst3'
+                binary = path / 'Contents' / 'x86_64-win' / 'Synth1X.vst3'
             else:
-                binary = path / 'Contents' / 'MacOS' / 'Synth2'
+                binary = path / 'Contents' / 'MacOS' / 'Synth1X'
         if not binary.is_file() or binary.stat().st_size == 0:
             raise ValueError(f'Missing native product: {path}')
     metadata = json.loads(manifest.read_text())
@@ -34,11 +34,11 @@ def package(root, build, platform, manifest, output):
         raise ValueError('Dependency manifest lacks product/SDK identities')
     output.mkdir(parents=True, exist_ok=True)
     suffix = '.zip' if platform == 'windows' else '.tar.gz'
-    archive = output / ('Synth2-' + platform + suffix)
+    archive = output / ('Synth1X-' + platform + suffix)
     if archive.exists():
         raise ValueError('Refusing to replace an existing native package')
     with tempfile.TemporaryDirectory() as temporary:
-        staging = Path(temporary) / 'Synth2'
+        staging = Path(temporary) / 'Synth1X'
         staging.mkdir()
         for path in products:
             destination = staging / path.name
@@ -78,7 +78,7 @@ def package(root, build, platform, manifest, output):
                 target.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copy2(source, target)
         (staging / 'README.txt').write_text(
-            'Synth2 native build candidate\n\n'
+            'Synth1X native build candidate\n\n'
             'These unsigned binaries have not been certified for DAW or device use.\n'
             'Installation and unsigned-build instructions are in INSTALL.md.\n'
             'Build identity and SDK revisions are in dependencies.json.\n'
@@ -87,7 +87,7 @@ def package(root, build, platform, manifest, output):
             'See LICENSE and notices for the applicable source/component terms.\n')
         if platform != 'windows':
             with tarfile.open(archive, 'w:gz', dereference=False) as result:
-                result.add(staging, arcname='Synth2')
+                result.add(staging, arcname='Synth1X')
         else:
             with zipfile.ZipFile(archive, 'w', zipfile.ZIP_DEFLATED) as result:
                 for path in sorted(staging.rglob('*')):

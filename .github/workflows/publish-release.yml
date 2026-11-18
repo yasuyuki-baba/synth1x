@@ -52,21 +52,26 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          gh run download "$RUN_ID" --repo "$GH_REPO" --pattern 'Synth2-*' --dir packages
-          test -s packages/Synth2-linux/Synth2-linux.tar.gz
-          test -s packages/Synth2-windows/Synth2-windows.zip
-          test -s packages/Synth2-macos/Synth2-macos.tar.gz
+          gh run download "$RUN_ID" --repo "$GH_REPO" --pattern 'Synth1X-*' --dir packages
+          test -s packages/Synth1X-linux/Synth1X-linux.tar.gz
+          test -s packages/Synth1X-windows/Synth1X-windows.zip
+          test -s packages/Synth1X-macos/Synth1X-macos.tar.gz
       - name: Publish packages and checksums
         working-directory: packages
         shell: bash
         run: |
           set -euo pipefail
-          mv Synth2-linux/Synth2-linux.tar.gz .
-          mv Synth2-windows/Synth2-windows.zip .
-          mv Synth2-macos/Synth2-macos.tar.gz .
-          sha256sum Synth2-linux.tar.gz Synth2-windows.zip Synth2-macos.tar.gz > SHA256SUMS
+          mv Synth1X-linux/Synth1X-linux.tar.gz .
+          mv Synth1X-windows/Synth1X-windows.zip .
+          mv Synth1X-macos/Synth1X-macos.tar.gz .
+          sha256sum Synth1X-linux.tar.gz Synth1X-windows.zip Synth1X-macos.tar.gz > SHA256SUMS
           cat > release-notes.md <<'NOTES'
-          Synth2 native packages for Linux (x86_64, Ubuntu 24.04 or compatible), Windows (x64) and macOS (Apple Silicon, arm64).
+          Synth1X native packages for Linux (x86_64, Ubuntu 24.04 or compatible), Windows (x64) and macOS (Apple Silicon, arm64).
+
+          **Upgrading from Synth2:** Close your DAW and standalone app. Move the old Synth2 plugins
+          out of the scan folders, install the Synth1X files, then rescan. Plugin IDs stay the same.
+          Copy your old Synth2 user data into the new Synth1X folder to bring over patches and settings.
+          See the [migration steps and folder paths](https://github.com/yasuyuki-baba/synth2/blob/main/INSTALL.md#upgrading-from-synth2).
 
           These builds are unsigned; macOS builds are not notarized.
           See [installation instructions](https://github.com/yasuyuki-baba/synth2/blob/main/INSTALL.md)
@@ -77,11 +82,11 @@ jobs:
           Build identity and dependency revisions are included in `dependencies.json`.
           NOTES
           if gh release view "$TAG" --repo "$GH_REPO" > /dev/null 2>&1; then
-            gh release upload "$TAG" Synth2-linux.tar.gz Synth2-windows.zip Synth2-macos.tar.gz SHA256SUMS --repo "$GH_REPO" --clobber
+            gh release upload "$TAG" Synth1X-linux.tar.gz Synth1X-windows.zip Synth1X-macos.tar.gz SHA256SUMS --repo "$GH_REPO" --clobber
           else
             extra=()
             if [[ "$TAG" == *-* ]]; then extra+=(--prerelease); fi
-            gh release create "$TAG" Synth2-linux.tar.gz Synth2-windows.zip Synth2-macos.tar.gz SHA256SUMS \
-              --repo "$GH_REPO" --verify-tag --title "Synth2 $TAG" \
+            gh release create "$TAG" Synth1X-linux.tar.gz Synth1X-windows.zip Synth1X-macos.tar.gz SHA256SUMS \
+              --repo "$GH_REPO" --verify-tag --title "Synth1X $TAG" \
               --notes-file release-notes.md "${extra[@]}"
           fi

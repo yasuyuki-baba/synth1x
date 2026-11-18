@@ -1,4 +1,4 @@
-name: Native Synth2 builds
+name: Native Synth1X builds
 
 on:
   workflow_call:
@@ -80,7 +80,7 @@ jobs:
         run: |
           set -euo pipefail
           for format in vst3 clap component app; do
-            binary="build/out/Synth2.$format/Contents/MacOS/Synth2"
+            binary="build/out/Synth1X.$format/Contents/MacOS/Synth1X"
             architectures=$(lipo -archs "$binary")
             if [[ "$architectures" != "arm64" ]]; then
               echo "Unexpected architectures in $binary: $architectures" >&2
@@ -95,8 +95,8 @@ jobs:
       - name: Preserve native packages
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
-          name: Synth2-${{ matrix.platform }}
-          path: dist/Synth2-*
+          name: Synth1X-${{ matrix.platform }}
+          path: dist/Synth1X-*
           if-no-files-found: error
           retention-days: 14
       - name: Preserve native build diagnostics
