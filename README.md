@@ -26,8 +26,10 @@ See [capabilities and verification boundaries](docs/status.md) for the current s
 ## Install native packages
 
 See [INSTALL.md](INSTALL.md) for Linux/Windows/macOS product locations, unsigned-build
-prompts and plugin rescanning. Source archives require building; native candidate
-packages are available from successful Actions runs.
+prompts and plugin rescanning. Find published packages under
+[Releases](https://github.com/yasuyuki-baba/synth1x/releases) and native candidates
+in successful [GitHub Actions runs](https://github.com/yasuyuki-baba/synth1x/actions).
+Source archives require building.
 
 Upgrading from Synth2 0.1.x to Synth1X 0.2.x or later requires manual migration.
 See the [migration guide](MIGRATION.md) before upgrading.

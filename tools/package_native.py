@@ -84,7 +84,7 @@ def package(root, build, platform, manifest, output):
             'Installation and unsigned-build instructions are in INSTALL.md.\n'
             'Upgrade instructions are in MIGRATION.md.\n'
             'Build identity and SDK revisions are in dependencies.json.\n'
-            'Source: https://github.com/yasuyuki-baba/synth2/tree/'
+            'Source: https://github.com/yasuyuki-baba/synth1x/tree/'
             + metadata['product_commit'] + '\n'
             'See LICENSE and notices for the applicable source/component terms.\n')
         if platform != 'windows':
