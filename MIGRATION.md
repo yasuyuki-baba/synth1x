@@ -8,9 +8,8 @@ standalone filenames change from `Synth2` to `Synth1X`, and user data and
 standalone settings use new directories. Copy your existing library and settings
 to the new locations.
 
-The AUv2 subtype and CLAP plugin ID also change. Replace existing AUv2 and CLAP
-instances in your DAW projects after exporting their patches. The VST3 class ID
-stays the same.
+The VST3 class ID, AUv2 subtype and CLAP plugin ID also change. Export your
+patches from existing instances before replacing them in your DAW projects.
 
 On macOS, the plugin and standalone bundle IDs now end in `.Synth1X`.
 
@@ -18,8 +17,7 @@ On macOS, the plugin and standalone bundle IDs now end in `.Synth1X`.
 
 Keep a copy of your DAW projects, the old Synth2 binaries and the old user data
 folders. If you use a custom library folder, back it up as well. While you can
-still open your projects with Synth2, prepare any AUv2 or CLAP instances you want
-to migrate:
+still open your projects with Synth2, prepare each instance you want to migrate:
 
 1. In each instance, use **Save → Save as...** to export its sound as a `.sy1`
    file inside the active library folder. Use a distinct filename for each
@@ -104,21 +102,21 @@ automatic tag cache on the first scan if the new cache file is missing.
 
 Move the old `Synth2` plugins out of your DAW's scan folders, install the
 matching `Synth1X` products using the [platform installation instructions](INSTALL.md)
-and rescan.
-Open a copy of your project and follow the steps for its plugin format.
+and rescan. The DAW will see these as new plugins.
 
-| Format | What to do in an existing project |
+| Format | Identifier change |
 | --- | --- |
-| VST3 | The class ID stays the same. Rescan and check that the DAW opens the existing instance with its saved state. |
-| CLAP | The ID changes from `io.github.yasuyuki-baba.Synth2` to `io.github.yasuyuki-baba.Synth1X`. Add a Synth1X instance, load the exported patch and reassign automation. |
-| AUv2 | The subtype changes from `Syn2` to `Sy1X`. Add a Synth1X instance, load the exported patch and reassign automation. |
+| VST3 | The four-character code used in the class ID changes from `Syn2` to `Sy1X`. |
+| CLAP | The ID changes from `io.github.yasuyuki-baba.Synth2` to `io.github.yasuyuki-baba.Synth1X`. |
+| AUv2 | The subtype changes from `Syn2` to `Sy1X`. |
 
-For replacement AUv2 and CLAP instances, load the exported sounds from the
-library. If you kept them outside the active library, register them with
+Open a copy of your project, replace each old instance with a new Synth1X
+instance, and load the exported sounds from the library. If you kept them
+outside the active library, register them with
 **Add... → Add .zip/.rar/.7z bank or .sy1 file...** first. If you exported both
 A/B sounds, select each side in the new instance and load the corresponding
-patch. Restore any shared settings you noted. Check playback and automation
-before saving the project copy.
+patch. Restore any shared settings you noted and reassign DAW automation.
+Check playback and automation before saving the project copy.
 
 Launch the new standalone app from its new file and update any shortcuts. On
 macOS it has a new app identity and virtual MIDI ports named `To Synth1X` and

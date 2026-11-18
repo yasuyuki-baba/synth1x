@@ -70,10 +70,10 @@ jobs:
 
           **Upgrading from Synth2 0.1.x to Synth1X 0.2.x or later** requires manual migration.
           Plugin and standalone filenames and user data folders change from Synth2 to Synth1X.
-          Export your patches from existing AUv2 and CLAP instances before replacing Synth2.
+          Export your patches from existing VST3, AUv2 and CLAP instances before replacing Synth2.
           Then close your DAW and standalone app, replace the old plugin files and rescan.
-          AUv2 and CLAP use new IDs, so replace their instances in existing projects and load the exported
-          patches. The VST3 class ID stays the same.
+          VST3, AUv2 and CLAP use new IDs. Replace their instances in existing projects,
+          load the exported patches and reassign automation.
           Copy your old Synth2 user data into the new Synth1X folder to bring over patches and settings.
           The standalone is a new app. Copy `settings.ini` to bring over audio and MIDI device settings,
           update shortcuts, and reselect the renamed virtual MIDI ports on macOS.

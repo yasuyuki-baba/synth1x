@@ -4,12 +4,8 @@
 #include "BuildVersion.h"
 #define PLUG_VERSION_HEX SYNTH1X_VERSION_HEX
 #define PLUG_VERSION_STR SYNTH1X_VERSION_STR
-#if defined(AU_API)
+// Used by the AUv2 subtype and by iPlug2 to derive the VST3 class ID.
 #define PLUG_UNIQUE_ID 'Sy1X'
-#else
-// VST3 derives its class ID from this value and PLUG_MFR_ID.
-#define PLUG_UNIQUE_ID 'Syn2'
-#endif
 #define PLUG_MFR_ID 'BABA'
 #define PLUG_URL_STR ""
 #define PLUG_EMAIL_STR ""

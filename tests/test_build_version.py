@@ -49,6 +49,8 @@ class BuildVersion(unittest.TestCase):
             self.assertEqual(data['CFBundleVersion'], numeric)
             self.assertEqual(data['CFBundleShortVersionString'], numeric)
             self.assertIn(display, data['CFBundleGetInfoString'])
+            if format == 'VST3':
+                self.assertEqual(data['CFBundleSignature'], 'Sy1X')
             if format == 'AU':
                 component = data['AudioComponents'][0]
                 self.assertEqual(component['version'], packed)

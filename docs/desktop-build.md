@@ -184,7 +184,7 @@ The plugin, editor and standalone window display `Synth1X`. Native filenames,
 product data paths and standalone audio and MIDI device preferences use
 `Synth1X`. The Linux standalone also uses `Synth1X` as its X11 window class.
 The displayed manufacturer name is `babab`, and the four-character manufacturer
-ID is `BABA`. The VST3 class ID retains the `Syn2` code. The AUv2 component uses
+ID is `BABA`. The VST3 class ID uses the `Sy1X` code. The AUv2 component uses
 type `aumu`, subtype `Sy1X` and manufacturer `BABA`. The CLAP descriptor ID is
 `io.github.yasuyuki-baba.Synth1X`.
 
