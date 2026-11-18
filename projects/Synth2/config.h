@@ -1,10 +1,10 @@
 #pragma once
-#define PLUG_NAME "Synth2"
+#define PLUG_NAME "Synth1X"
 #define PLUG_MFR "babab"
 #include "BuildVersion.h"
 #define PLUG_VERSION_HEX SYNTH2_VERSION_HEX
 #define PLUG_VERSION_STR SYNTH2_VERSION_STR
-// Product identity is independent of internal DSP and loading class names.
+// Keep the existing plugin and bundle identifiers when changing the display name.
 #define PLUG_UNIQUE_ID 'Syn2'
 #define PLUG_MFR_ID 'BABA'
 #define PLUG_URL_STR ""
@@ -36,7 +36,7 @@
 #define VST3_SUBCATEGORY "Instrument|Synth"
 #define CLAP_MANUAL_URL ""
 #define CLAP_SUPPORT_URL ""
-#define CLAP_DESCRIPTION "Synth2 synthesizer"
+#define CLAP_DESCRIPTION PLUG_NAME " synthesizer"
 #define CLAP_FEATURES "instrument", "synthesizer", "stereo"
 
 // SDK standalone host: stereo output, unity gain and 64-frame DSP vectors.

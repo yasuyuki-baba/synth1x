@@ -105,7 +105,7 @@ void Synth2::layoutEditor(IGraphics* graphics)
         .WithColor(kPR,appearance.accent).WithColor(kFR,appearance.panel).WithColor(kHL,appearance.accent)
         .WithDrawShadows(false).WithLabelText(text.WithSize(Typography::button))
         .WithValueText(text.WithSize(Typography::value).WithVAlign(EVAlign::Bottom)).WithRoundness(0.1f);
-    graphics->AttachControl(new PaletteTextControl(IRECT(20,16,214,65),"SYNTH2",text.WithFont("Synth2UIBold").WithSize(29.f).WithAlign(EAlign::Near)));
+    graphics->AttachControl(new PaletteTextControl(IRECT(20,16,214,65),PLUG_NAME,text.WithFont("Synth2UIBold").WithSize(29.f).WithAlign(EAlign::Near)));
     graphics->AttachControl(new PaletteTextControl(IRECT(20,62,214,78),"VIRTUAL ANALOG SYNTHESIZER",text.WithSize(11.f).WithAlign(EAlign::Near)));
     const auto& volume=synth2::editor::editorMasterVolumeControl;
     auto* volumeControl=new PanelKnobControl(rect(synth2::editor::editorMasterVolumeBounds),volume.parameter,volume.label,style);

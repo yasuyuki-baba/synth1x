@@ -71,7 +71,7 @@ bool EditorPaletteShell::open(void* owner,int width,int height)
     const bool positioned=parent && GetWindowRect(parent,&ownerBounds);
     constexpr DWORD style=WS_OVERLAPPED|WS_CAPTION|WS_SYSMENU|WS_CLIPCHILDREN;
     AdjustWindowRectEx(&bounds,style,FALSE,WS_EX_TOOLWINDOW);
-    state->window=CreateWindowExW(WS_EX_TOOLWINDOW,L"STATIC",L"Synth2 — Palette",style,
+    state->window=CreateWindowExW(WS_EX_TOOLWINDOW,L"STATIC",L"Synth1X — Palette",style,
         positioned ? ownerBounds.left+40 : CW_USEDEFAULT,positioned ? ownerBounds.top+40 : CW_USEDEFAULT,
         bounds.right-bounds.left,bounds.bottom-bounds.top,parent,nullptr,GetModuleHandleW(nullptr),nullptr);
     if(!state->window)return false;
@@ -84,7 +84,7 @@ bool EditorPaletteShell::open(void* owner,int width,int height)
     state->delegate=[[Synth2PaletteCloseDelegate alloc] init];
     state->delegate->closeRequest=&state->closed;
     [state->window setDelegate:state->delegate];
-    [state->window setReleasedWhenClosed:NO];[state->window setTitle:@"Synth2 — Palette"];
+    [state->window setReleasedWhenClosed:NO];[state->window setTitle:@"Synth1X — Palette"];
     if(owner) {
         NSWindow* parent=[static_cast<NSView*>(owner) window];
         const auto origin=[parent frame].origin;
@@ -95,7 +95,7 @@ bool EditorPaletteShell::open(void* owner,int width,int height)
 #else
     state->display=XOpenDisplay(nullptr);if(!state->display)return false;
     state->window=XCreateSimpleWindow(state->display,DefaultRootWindow(state->display),60,60,width,height,0,0,0x232226);
-    XStoreName(state->display,state->window,"Synth2 — Palette");
+    XStoreName(state->display,state->window,"Synth1X — Palette");
     state->close=XInternAtom(state->display,"WM_DELETE_WINDOW",False);
     XSetWMProtocols(state->display,state->window,&state->close,1);
     XSizeHints size{};size.flags=PMinSize|PMaxSize;size.min_width=size.max_width=width;size.min_height=size.max_height=height;

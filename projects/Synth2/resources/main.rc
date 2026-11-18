@@ -71,7 +71,7 @@ END
 
 IDD_DIALOG_MAIN DIALOG 0, 0, 300, 300
 STYLE DS_SETFONT | DS_CENTER | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_POPUP | WS_CAPTION | WS_SYSMENU
-CAPTION "Synth2"
+CAPTION "Synth1X"
 MENU IDR_MENU1
 FONT 8, "MS Sans Serif"
 BEGIN
@@ -211,9 +211,9 @@ BEGIN
         BEGIN
             VALUE "FileVersion", SYNTH2_VERSION_STR
             VALUE "ProductVersion", SYNTH2_VERSION_STR
-            VALUE "FileDescription", "Synth2"
+            VALUE "FileDescription", "Synth1X"
             VALUE "InternalName", "Synth2"
-            VALUE "ProductName", "Synth2"
+            VALUE "ProductName", "Synth1X"
             VALUE "CompanyName", "babab"
             VALUE "LegalCopyright", "Copyright 2026 Synth2 contributors"
             VALUE "LegalTrademarks", "VST is a trademark of Steinberg Media Technologies GmbH, Audio Unit is a trademark of Apple, Inc."

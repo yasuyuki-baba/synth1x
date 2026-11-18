@@ -1,20 +1,21 @@
-# Installing Synth2
+# Installing Synth1X
 
 Choose the native package for your operating system:
-`Synth2-linux.tar.gz`, `Synth2-windows.zip` or `Synth2-macos.tar.gz`. GitHub's source archives are for
-building Synth2, not installing it. The current workflow uploads candidates to
-GitHub Actions; if a version is published under
+`Synth2-linux.tar.gz`, `Synth2-windows.zip` or `Synth2-macos.tar.gz`. GitHub's
+source archives contain the files for building Synth1X. The current workflow
+uploads candidates to GitHub Actions; if a version is published under
 [Releases](https://github.com/yasuyuki-baba/synth2/releases), use its native assets.
 Downloading an Actions artifact may require signing in to GitHub. An Actions
 artifact ZIP wraps the native package: extract that outer ZIP first, then extract
 the native ZIP or tar.gz inside it.
 
-The extracted native package contains a `Synth2` folder with the plugin products,
+The native package keeps the existing `Synth2` filenames. The extracted package
+contains a `Synth2` folder with the plugin products,
 standalone application, `dependencies.json`, `LICENSE` and `notices/`.
 Products are directly inside `Synth2/`, not in an `out/` subfolder.
 `dependencies.json` identifies the source and SDK revisions for that build.
 
-Close your DAW and Synth2 before installing or updating. Copy each complete
+Close your DAW and Synth1X before installing or updating. Copy each complete
 product, keeping its original name and contents. When updating, replace the old
 bundle rather than merging folders. Install only formats your DAW supports.
 Keep the package's license and notice files with your downloaded distribution.

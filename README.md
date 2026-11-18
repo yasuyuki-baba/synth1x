@@ -1,12 +1,12 @@
-# Synth2
+# Synth1X
 
-Synth2 is a virtual analog synthesizer with Synth1-compatible patch loading.
+Synth1X is a virtual analog synthesizer with Synth1-compatible patch loading.
 Load `.sy1` patches and ZIP banks directly, without extracting them, and shape
 sounds from a single-panel interface.
-Synth2 starts with Init and an empty library. Add your own patches or banks;
+Synth1X starts with Init and an empty library. Add your own patches or banks;
 all imported sounds can be tagged, favorited and removed through the same UI.
 
-![Synth2 editor showing the Init patch](docs/images/synth2.png)
+![Synth1X editor showing the Init patch](docs/images/synth2.png)
 
 The editor combines Synth1-inspired functional groups with restrained red accents,
 warm-white legends and black controls. MIDI routing and the sound library have
@@ -93,7 +93,7 @@ native plugin or DAW operation.
 
 SPDX-License-Identifier: GPL-3.0-or-later
 
-Synth2's project-owned source code is free software: you can redistribute it and/or
+Synth1X's project-owned source code is free software: you can redistribute it and/or
 modify it under the terms of the GNU General Public License as published by the
 Free Software Foundation, either version 3 of the License, or (at your option)
 any later version.
