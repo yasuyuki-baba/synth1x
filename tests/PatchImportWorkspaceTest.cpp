@@ -11,7 +11,7 @@ TEST(PatchImportWorkspace, CompatibilityWordsPromoteExactlyIncludingOutOfHostRan
     {
         compatible.values.fill(value);
         const auto before=compatible.values;
-        const auto promoted=synth2::promoteCompatibleControls(compatible);
+        const auto promoted=synth1x::promoteCompatibleControls(compatible);
         for(float dial:promoted.dials)EXPECT_DOUBLE_EQ(dial,static_cast<double>(value));
         EXPECT_EQ(compatible.values,before);
     }
@@ -25,7 +25,7 @@ TEST(PatchImportWorkspace, PromotionFollowsVersionConversionAndDoesNotConvertTwi
         const auto document=Synth1PatchDocument::makeParsed("Owned staged loading",version,
             {{16,64},{21,64},{52,64},{75,64},{86,45057}});
         const auto compatible=synth1::patch::resolveNativePatchControls(document);
-        const auto promoted=synth2::promoteCompatibleControls(compatible);
+        const auto promoted=synth1x::promoteCompatibleControls(compatible);
         for(size_t i=0;i<compatible.values.size();++i)
             EXPECT_DOUBLE_EQ(promoted.dials[i],static_cast<double>(compatible.values[i]));
         // The resolved legacy decay is 62, not its serialized 64. Conversion
@@ -73,12 +73,12 @@ TEST(PatchImportWorkspace, DirectSourceMappingKeepsTypedVersionConversionByDefau
         const auto imported=importSynth1Patch(document);
         std::array<float,128> source{};
         for(const auto& entry:document.entries)source[entry.index]=entry.rawValue/127.0f;
-        synth2::Synth1PatchMapper mapper(version);synth2::RenderControls mapped;
+        synth1x::Synth1PatchMapper mapper(version);synth1x::RenderControls mapped;
         mapper.mapFromRawBuffer(source.data(),mapped);
-        EXPECT_FLOAT_EQ(mapped.filterEnv.decaySec,synth2::envelopeDecayReleaseSeconds(*imported.filter.decay));
-        EXPECT_FLOAT_EQ(mapped.filterEnv.releaseSec,synth2::envelopeDecayReleaseSeconds(*imported.filter.release));
-        EXPECT_FLOAT_EQ(mapped.ampDecaySec,synth2::envelopeDecayReleaseSeconds(*imported.amplifier.decay));
-        EXPECT_FLOAT_EQ(mapped.ampReleaseSec,synth2::envelopeDecayReleaseSeconds(*imported.amplifier.release));
+        EXPECT_FLOAT_EQ(mapped.filterEnv.decaySec,synth1x::envelopeDecayReleaseSeconds(*imported.filter.decay));
+        EXPECT_FLOAT_EQ(mapped.filterEnv.releaseSec,synth1x::envelopeDecayReleaseSeconds(*imported.filter.release));
+        EXPECT_FLOAT_EQ(mapped.ampDecaySec,synth1x::envelopeDecayReleaseSeconds(*imported.amplifier.decay));
+        EXPECT_FLOAT_EQ(mapped.ampReleaseSec,synth1x::envelopeDecayReleaseSeconds(*imported.amplifier.release));
         EXPECT_FLOAT_EQ(mapped.filterEnvAmount,(*imported.filter.envelopeAmount-63.0f)/64.0f);
         EXPECT_FLOAT_EQ(mapped.chorus.time,*imported.chorusFlanger.time/127.0f);
         EXPECT_EQ(mapper.getSourceValues(),source);

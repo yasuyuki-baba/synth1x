@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>English</string>
+	<key>CFBundleExecutable</key>
+	<string>Synth1X</string>
+	<key>CFBundleGetInfoString</key>
+	<string>Synth1X v@SYNTH1X_BUILD_VERSION@ Copyright 2026 Synth1X contributors</string>
+	<key>CFBundleIdentifier</key>
+	<string>io.github.yasuyuki-baba.app.Synth1X</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleDisplayName</key>
+	<string>Synth1X</string>
+	<key>CFBundleName</key>
+	<string>Synth1X</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>@SYNTH1X_NUMERIC_VERSION@</string>
+	<key>CFBundleSignature</key>
+	<string>Syn2</string>
+	<key>CFBundleVersion</key>
+	<string>@SYNTH1X_NUMERIC_VERSION@</string>
+	<key>CSResourcesFileMapped</key>
+	<true/>
+	<key>LSMinimumSystemVersion</key>
+	<string>13.0</string>
+	<key>LSApplicationCategoryType</key>
+	<string>public.app-category.music</string>
+	<key>NSMainNibFile</key>
+	<string>Synth1X-macOS-MainMenu</string>
+	<key>NSPrincipalClass</key>
+	<string>SWELLApplication</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Audio input is optional; Synth1X produces sound from MIDI input.</string>
+</dict>
+</plist>

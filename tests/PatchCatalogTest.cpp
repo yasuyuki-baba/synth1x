@@ -10,14 +10,14 @@
 #include <fstream>
 #include <algorithm>
 
-using namespace synth2::host;
+using namespace synth1x::host;
 namespace {
 namespace fs=std::filesystem;
 struct CatalogFiles {
     fs::path dir;
     CatalogFiles() {
         static std::atomic<unsigned> serial{0};
-        dir=fs::temp_directory_path()/("synth2-catalog-"+std::to_string(std::chrono::steady_clock::now().time_since_epoch().count())+"-"+std::to_string(serial++));
+        dir=fs::temp_directory_path()/("synth1x-catalog-"+std::to_string(std::chrono::steady_clock::now().time_since_epoch().count())+"-"+std::to_string(serial++));
         fs::create_directories(dir);
     }
     ~CatalogFiles(){std::error_code ignored;fs::remove_all(dir,ignored);}
@@ -544,10 +544,10 @@ TEST(PatchCatalog, BrandedTagOverridesArePreservedWhenSavedWithNeutralHeader) {
 
 TEST(PatchCatalog, MultipleTagsMatchAllAcrossManualAndAutomaticTags) {
     CatalogFiles files;const auto root=files.dir/"Library";fs::create_directories(root);
-    ProcessorBridge processor;auto patch=synth2::parseContinuousPatch(processor.savePatch());
+    ProcessorBridge processor;auto patch=synth1x::parseContinuousPatch(processor.savePatch());
     patch.name="Owned Pad";patch.values[45]=64;patch.values[7]=0;patch.values[25]=100;
-    std::ofstream(root/"1.sy1")<<synth2::formatContinuousPatch(patch);
-    patch.values[45]=0;std::ofstream(root/"2.sy1")<<synth2::formatContinuousPatch(patch);
+    std::ofstream(root/"1.sy1")<<synth1x::formatContinuousPatch(patch);
+    patch.values[45]=0;std::ofstream(root/"2.sy1")<<synth1x::formatContinuousPatch(patch);
     PatchCatalog catalog(root);std::string error;ASSERT_TRUE(catalog.reload(error))<<error;
     const auto id=catalog.patches().front().id;ASSERT_TRUE(catalog.setTags(id,"Choice",error));
     CatalogFilter filter;filter.selectedTags={"pAD","fm","choice"};
@@ -626,11 +626,11 @@ TEST(PatchCatalog, InlineBankAndTagFiltersCombineWithSearchAndFavorites)
     ASSERT_EQ(catalog.search(filter).size(),3u);
     filter.bankId="Bank A";
     ASSERT_EQ(catalog.search(filter).size(),2u);
-    ASSERT_TRUE(synth2::editor::editorToggleLibraryTag(filter.selectedTags,"Velvet"));
+    ASSERT_TRUE(synth1x::editor::editorToggleLibraryTag(filter.selectedTags,"Velvet"));
     const auto matches=catalog.search(filter);
     ASSERT_EQ(matches.size(),1u);EXPECT_EQ(catalog.patches()[matches[0]].patch.name,"Warm One");
     EXPECT_EQ(filter.query,"warm");EXPECT_TRUE(filter.favoritesOnly);EXPECT_EQ(filter.bankId,"Bank A");
     EXPECT_EQ(filter.selectedTags,(std::vector<std::string>{"Choice","Velvet"}));
-    ASSERT_TRUE(synth2::editor::editorToggleLibraryTag(filter.selectedTags,"velvet"));
+    ASSERT_TRUE(synth1x::editor::editorToggleLibraryTag(filter.selectedTags,"velvet"));
     EXPECT_EQ(catalog.search(filter).size(),2u);
 }

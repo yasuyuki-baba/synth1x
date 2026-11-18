@@ -4,7 +4,7 @@
 #include <stdexcept>
 #include <string>
 
-using namespace synth2::host;
+using namespace synth1x::host;
 void require(bool condition) { if(!condition) throw std::runtime_error("Host parameter contract failed"); }
 int main()
 {

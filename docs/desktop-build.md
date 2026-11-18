@@ -1,7 +1,7 @@
 # Desktop instrument and build boundary
 
-All product code lives in `projects/Synth2`, using the iPlug2OOS layout. The portable
-core in `projects/Synth2/src` must remain independent of iPlug2 headers. Production,
+All product code lives in `projects/Synth1X`, using the iPlug2OOS layout. The portable
+core in `projects/Synth1X/src` must remain independent of iPlug2 headers. Production,
 tools and the portable build graph do not depend on JUCE or an original Synth1 DLL.
 ZIP/RAR/7z/XML support uses bundled miniz/libarchive/liblzma/tinyxml2 implementations.
 The static RAR/7z reader needs no external decompressor or network download; see
@@ -30,18 +30,22 @@ find the C++ compiler.
 
 ## Build targets and compiler requirements
 
-`Synth2Core` is the shared portable library used by native wrappers, tools and
+Use a fresh build directory when switching a checkout across the internal
+rename. Update custom build commands to use the `SYNTH1X_*` CMake options and
+`Synth1X` targets listed below.
+
+`Synth1XCore` is the shared portable library used by native wrappers, tools and
 tests. `Synth1PatchCore` owns source parsing/conversion; resources and ZIP/RAR/7z/XML
 support have their own static libraries. Editor fonts are native-only. These are
 build targets, not separately loaded runtime plugins.
 
-`SYNTH2_BUILD_TOOLS` selects offline tools independently of native wrappers and
+`SYNTH1X_BUILD_TOOLS` selects offline tools independently of native wrappers and
 public tests. When tests are enabled without optional tools, only their required
-`Synth2Probe` and `CompareWaves` executables are added. With tools and tests both
+`Synth1XProbe` and `CompareWaves` executables are added. With tools and tests both
 disabled, no offline executable targets are added. Native presets select this
 product-only configuration; the portable core preset includes tools and tests.
 
-C++20 is a public target requirement of `Synth2Core` and `Synth1PatchCore` and
+C++20 is a public target requirement of `Synth1XCore` and `Synth1PatchCore` and
 propagates to linked consumers, including consumers in a parent CMake project.
 Project libraries and executables declare their compiler requirements on targets;
 they do not set a parent project's global C++ standard. The native SDK retains
@@ -145,7 +149,7 @@ cmake --preset linux-app
 cmake --build --preset linux-app --parallel 4
 ```
 
-Linux native builds are opt-in: these presets enable `SYNTH2_BUILD_IPLUG2` while
+Linux native builds are opt-in: these presets enable `SYNTH1X_BUILD_IPLUG2` while
 a plain Linux configure keeps the portable default. Both use X11 and NanoVG/GL3;
 a Wayland desktop needs XWayland. Native Wayland, Skia and WebView are outside the
 fork's Linux support scope. GTK3 and audio development packages are needed even
@@ -214,8 +218,8 @@ these development builds. Reconfigure to refresh the label after changing commit
 or dates; `SOURCE_DATE_EPOCH` provides a reproducible development date.
 
 For an explicit local release build or a source archive, configure with
-`-DSYNTH2_RELEASE_TAG=vMAJOR.MINOR.PATCH`. Clear that cache value with
-`-DSYNTH2_RELEASE_TAG=` to return to development labeling. The override affects
+`-DSYNTH1X_RELEASE_TAG=vMAJOR.MINOR.PATCH`. Clear that cache value with
+`-DSYNTH1X_RELEASE_TAG=` to return to development labeling. The override affects
 metadata only and does not create or move a Git tag. Minor and patch components
 must fit the plugin format's 8-bit fields; major uses 16 bits. Prerelease labels
 remain in display strings while numeric bundle fields retain the version triplet.

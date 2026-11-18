@@ -41,17 +41,17 @@ void jsonString(std::ostream& out,std::string_view value)
     }
     out<<'"';
 }
-std::vector<synth2::host::UserPreset> readSources(const std::filesystem::path& source)
+std::vector<synth1x::host::UserPreset> readSources(const std::filesystem::path& source)
 {
     std::string error;
     if(std::filesystem::is_directory(source)) {
-        synth2::host::PresetFiles files(source);
+        synth1x::host::PresetFiles files(source);
         if(!files.scan(error,false))throw std::runtime_error(error);
         return files.entries();
     }
-    synth2::host::PatchLibrary bank;
+    synth1x::host::PatchLibrary bank;
     if(!bank.openFile(utf8(source),error))throw std::runtime_error(error);
-    std::vector<synth2::host::UserPreset> result;
+    std::vector<synth1x::host::UserPreset> result;
     const auto relative=utf8(source.filename());
     for(const auto& patch:bank.patches()) {
         const auto id=std::to_string(relative.size())+":"+relative+patch.entry;
@@ -62,15 +62,15 @@ std::vector<synth2::host::UserPreset> readSources(const std::filesystem::path& s
 int run(const std::filesystem::path& source)
 {
     const auto patches=readSources(source);
-    synth2::host::ProcessorBridge bridge;
-    std::cout<<"{\"inference_revision\":"<<synth2::host::patchTagCacheVersion<<"}\n";
+    synth1x::host::ProcessorBridge bridge;
+    std::cout<<"{\"inference_revision\":"<<synth1x::host::patchTagCacheVersion<<"}\n";
     bool failed=false;
     for(const auto& patch:patches) {
         auto error=patch.error;std::string name=patch.name;
-        std::vector<synth2::host::PatchTagSuggestion> suggestions;
+        std::vector<synth1x::host::PatchTagSuggestion> suggestions;
         if(error.empty() && bridge.loadPatch(patch.text,error)) {
             name=bridge.currentPatchName();
-            suggestions=synth2::host::explainPatchTags(name,synth2::parseContinuousPatch(bridge.savePatch()).values);
+            suggestions=synth1x::host::explainPatchTags(name,synth1x::parseContinuousPatch(bridge.savePatch()).values);
         }
         failed=failed || !error.empty();
         std::cout<<"{\"id\":";jsonString(std::cout,patch.id);
@@ -106,7 +106,7 @@ int main(int argc,char** argv)
 #endif
 {
     try {
-        if(argc!=2)throw std::runtime_error("Usage: Synth2TagProbe PATCH_OR_ARCHIVE_OR_DIRECTORY");
+        if(argc!=2)throw std::runtime_error("Usage: Synth1XTagProbe PATCH_OR_ARCHIVE_OR_DIRECTORY");
         return run(std::filesystem::path(argv[1]));
     } catch(const std::exception& error) {std::cerr<<error.what()<<'\n';return 1;}
 }

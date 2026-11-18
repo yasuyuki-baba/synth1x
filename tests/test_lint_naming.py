@@ -80,7 +80,7 @@ struct GoodSettings {};
 
     def test_command_failure_is_actionable_and_success_needs_no_compiler(self):
         with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory) / 'projects/Synth2/src'
+            root = Path(directory) / 'projects/Synth1X/src'
             root.mkdir(parents=True)
             path = root / 'Patch.h'
             path.write_text('class patch_name {};')

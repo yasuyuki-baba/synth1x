@@ -9,7 +9,7 @@
 #include <vector>
 
 namespace {
-using synth2::host::ProcessorBridge;
+using synth1x::host::ProcessorBridge;
 auto processor(){return std::make_unique<ProcessorBridge>();}
 int index(const std::string& id){return id=="masterVolume" ? 128 : std::stoi(id.substr(1));}
 float normalized(ProcessorBridge& p,const std::string& id){return p.normalizedValue(index(id));}
@@ -76,12 +76,12 @@ TEST(ProcessorState, RestoredStateProducesTheSameAudioAndRemainsEditable)
     float peak = 0.0f;
     for (int block = 0; block < 20; ++block)
     {
-        synth2::audio::AudioBuffer<float> a (2, 64), b (2, 64);
+        synth1x::audio::AudioBuffer<float> a (2, 64), b (2, 64);
         a.clear(); b.clear();
-        synth2::audio::MidiBuffer midiA, midiB;
+        synth1x::audio::MidiBuffer midiA, midiB;
         if (block == 0)
         {
-            midiA.addEvent (synth2::audio::MidiMessage::noteOn (1, 69, 1.0f), 0);
+            midiA.addEvent (synth1x::audio::MidiMessage::noteOn (1, 69, 1.0f), 0);
             midiB = midiA;
         }
         processPortableBlock(*source,a,midiA);
@@ -109,7 +109,7 @@ TEST(ProcessorState, ProgramLoadsAndRejectedTransactionsPreserveTheSelectedState
     // Processor transactions retain the sound and index after invalid input.
     EXPECT_FALSE(p->loadProgram("Invalid\nver=999\n",0,error));EXPECT_EQ(bytes,save(*p));
     EXPECT_FALSE(p->loadProgram(programs[0],-1,error));EXPECT_EQ(bytes,save(*p));
-    EXPECT_FALSE(p->loadProgram(programs[0],static_cast<int>(synth2::host::PatchLibrary::maximumPatches),error));EXPECT_EQ(bytes,save(*p));
+    EXPECT_FALSE(p->loadProgram(programs[0],static_cast<int>(synth1x::host::PatchLibrary::maximumPatches),error));EXPECT_EQ(bytes,save(*p));
 }
 
 TEST(HostTempo, TempoChangesReachSyncedLfoAndInvalidTempoUsesFallback)
@@ -123,9 +123,9 @@ TEST(HostTempo, TempoChangesReachSyncedLfoAndInvalidTempoUsesFallback)
         std::vector<float> samples;
         for (int block = 0; block < 200; ++block)
         {
-            synth2::audio::AudioBuffer<float> buffer (2, 64); buffer.clear();
-            synth2::audio::MidiBuffer midi;
-            if (block == 0) midi.addEvent (synth2::audio::MidiMessage::noteOn (1, 69, 1.0f), 0);
+            synth1x::audio::AudioBuffer<float> buffer (2, 64); buffer.clear();
+            synth1x::audio::MidiBuffer midi;
+            if (block == 0) midi.addEvent (synth1x::audio::MidiMessage::noteOn (1, 69, 1.0f), 0);
             processPortableBlock(*p,buffer,midi,bpm);
             samples.insert (samples.end(), buffer.getReadPointer(0), buffer.getReadPointer(0) + 64);
         }
@@ -213,10 +213,10 @@ TEST(ProcessorState, SparseEnvelopeDefaultsRenderLikeExplicitSourceDefaults)
         float peak = 0;
         for (int block = 0; block < 120; ++block)
         {
-            synth2::audio::AudioBuffer<float> a(2,64), b(2,64), c(2,64);
-            synth2::audio::MidiBuffer ma,mb,mc;
-            if (block == 0) ma.addEvent (synth2::audio::MidiMessage::noteOn(1,60,1.0f),0);
-            if (block == 60) ma.addEvent (synth2::audio::MidiMessage::noteOff(1,60),0);
+            synth1x::audio::AudioBuffer<float> a(2,64), b(2,64), c(2,64);
+            synth1x::audio::MidiBuffer ma,mb,mc;
+            if (block == 0) ma.addEvent (synth1x::audio::MidiMessage::noteOn(1,60,1.0f),0);
+            if (block == 60) ma.addEvent (synth1x::audio::MidiMessage::noteOff(1,60),0);
             mb = ma; mc = ma;
             processPortableBlock(*sparse,a,ma); processPortableBlock(*full,b,mb); processPortableBlock(*restored,c,mc);
             peak = std::max(peak,a.getMagnitude(0,64));

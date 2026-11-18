@@ -10,8 +10,8 @@ int main(int argc,char** argv) try {
     for(int i=1;i<argc;++i){std::string arg=argv[i];if(arg=="--window" && i+1<argc)searchRange=std::stoi(argv[++i]);else if(refFile.empty())refFile=arg;else if(testFile.empty())testFile=arg;else throw std::runtime_error("Unexpected argument");}
     if(refFile.empty() || testFile.empty())throw std::runtime_error("Usage: CompareWaves ref.wav test.wav [--window samples]");
     log("[CompareWaves] ref = "+refFile.string());log("[CompareWaves] test = "+testFile.string());
-    auto refReader=std::make_unique<synth2::offline::WaveFile>(refFile);
-    auto testReader=std::make_unique<synth2::offline::WaveFile>(testFile);
+    auto refReader=std::make_unique<synth1x::offline::WaveFile>(refFile);
+    auto testReader=std::make_unique<synth1x::offline::WaveFile>(testFile);
     if (std::abs (refReader->sampleRate - testReader->sampleRate) > 1.0)
     {
         log ("[CompareWaves] WARNING: sampleRate mismatch: ref=" + number (refReader->sampleRate)
@@ -56,8 +56,8 @@ int main(int argc,char** argv) try {
     }
 
     // Mix to mono for analysis
-    synth2::audio::AudioBuffer<float> refMono  (1, (int) numSamplesRef);
-    synth2::audio::AudioBuffer<float> testMono (1, (int) numSamplesTest);
+    synth1x::audio::AudioBuffer<float> refMono  (1, (int) numSamplesRef);
+    synth1x::audio::AudioBuffer<float> testMono (1, (int) numSamplesTest);
 
     refMono.clear();
     testMono.clear();

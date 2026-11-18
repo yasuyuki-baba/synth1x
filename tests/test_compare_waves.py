@@ -17,7 +17,7 @@ class WaveComparison(unittest.TestCase):
     def setUp(self):
         self.directory = tempfile.TemporaryDirectory()
         self.root = Path(self.directory.name)
-        self.binary = os.environ["SYNTH2_COMPARE_BIN"]
+        self.binary = os.environ["SYNTH1X_COMPARE_BIN"]
 
     def tearDown(self):
         self.directory.cleanup()

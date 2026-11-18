@@ -8,7 +8,7 @@
 namespace {
 std::vector<float> render(int voices,float time,float depth,float rate,bool history=false)
 {
-    auto chorus=std::make_unique<synth2::dsp::ChorusKernel>();
+    auto chorus=std::make_unique<synth1x::dsp::ChorusKernel>();
     EXPECT_TRUE(chorus->configure(44100,voices,64,64,64,64,127));
     if(history)
     {
@@ -54,7 +54,7 @@ TEST(ChorusPath, ZeroDepthKeepsExactIntegralAndFractionalImpulseDelays)
 {
     for(float dial:{64.f,64.125f})
     {
-        auto chorus=std::make_unique<synth2::dsp::ChorusKernel>();
+        auto chorus=std::make_unique<synth1x::dsp::ChorusKernel>();
         ASSERT_TRUE(chorus->configure(44100,1,64,0,64,64,127));
         chorus->setTimeDial(dial);chorus->reset();
         std::vector<float> audio(1400);audio[0]=1;
@@ -70,7 +70,7 @@ TEST(ChorusPath, ZeroDepthKeepsExactIntegralAndFractionalImpulseDelays)
 
 TEST(ChorusPath, ModulationAndAudioRingUseFloatWords)
 {
-    auto chorus=std::make_unique<synth2::dsp::ChorusKernel>();
+    auto chorus=std::make_unique<synth1x::dsp::ChorusKernel>();
     ASSERT_TRUE(chorus->configure(44100,2,64,0,50,64,127));
     chorus->setRateDial(50.125f);
     chorus->reset();
@@ -94,7 +94,7 @@ TEST(ChorusPath, FractionalImpulseWeightsDoNotDependOnRingCursor)
     for(int voices:{1,2,4})for(int start:{0,4095,8191,16381})for(float dial:{64.1f,64.9f})
     {
         SCOPED_TRACE(::testing::Message()<<"voices="<<voices<<" start="<<start<<" dial="<<dial);
-        auto chorus=std::make_unique<synth2::dsp::ChorusKernel>();
+        auto chorus=std::make_unique<synth1x::dsp::ChorusKernel>();
         ASSERT_TRUE(chorus->configure(44100,voices,64,0,0,64,127));
         chorus->setTimeDial(dial);chorus->reset();
         const float delay=chorus->getDelayFramesContinuous();

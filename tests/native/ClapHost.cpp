@@ -106,7 +106,7 @@ private:
     bool active = false, processing = false;
     int64_t position = 0;
     clap_host_t host{
-        CLAP_VERSION, this, "Synth2 audio smoke", "Synth2", "https://github.com/yasuyuki-baba/synth1x", "1",
+        CLAP_VERSION, this, "Synth1X audio smoke", "Synth1X", "https://github.com/yasuyuki-baba/synth1x", "1",
         [](const clap_host_t*, const char*) -> const void* { return nullptr; },
         [](const clap_host_t*) {}, [](const clap_host_t*) {}, [](const clap_host_t*) {}};
 };

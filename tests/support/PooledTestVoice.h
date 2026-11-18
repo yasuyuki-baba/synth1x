@@ -2,7 +2,7 @@
 #include "SynthVoice.h"
 #include "VoiceCorePool.h"
 
-namespace synth2::test
+namespace synth1x::test
 {
     // Tests provide the same mandatory borrowed storage as the Engine.
     struct VoiceStorage

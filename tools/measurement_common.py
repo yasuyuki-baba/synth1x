@@ -1,4 +1,4 @@
-"""Shared I/O for reference measurements, independent of DLLs and Synth2 builds.
+"""Shared I/O for reference measurements, independent of DLLs and Synth1X builds.
 
 Preserve numeric conventions here; capture histories, ABI checks and pass bounds
 belong to the calling workflow. CLI modules re-export their historical helpers.
@@ -29,7 +29,7 @@ def built_executable(directory, name, *, config=None):
 def clean_environment(env=None, *, wine=None):
     """Copy the environment, clearing diagnostic overrides but retaining trust/VPN settings."""
     cleaned = {key: value for key, value in (os.environ if env is None else env).items()
-               if not key.startswith(("SYNTH2_", "SYNTH1_", "SYNTH_OSC"))}
+               if not key.startswith(("SYNTH1X_", "SYNTH2_", "SYNTH1_", "SYNTH_OSC"))}
     if wine:
         cleaned["WINELOADER"] = str(Path(wine).resolve())
     return cleaned

@@ -15,22 +15,22 @@
 #include <vector>
 namespace
 {
-synth2::dsp::SharedModulationSettings sharedSettings()
+synth1x::dsp::SharedModulationSettings sharedSettings()
 {
-    synth2::dsp::SharedModulationSettings settings;
+    synth1x::dsp::SharedModulationSettings settings;
     for(auto& lfo:settings.lfos)
     { lfo.on=true;  lfo.keySync=true; lfo.amount=.5f; lfo.speed=.5f; }
     return settings;
 }
-void prepare(synth2::dsp::SharedModulationRuntime& runtime,const synth2::dsp::SharedModulationSettings& settings)
+void prepare(synth1x::dsp::SharedModulationRuntime& runtime,const synth1x::dsp::SharedModulationSettings& settings)
 { runtime.prepareBlock(64); runtime.synchronize(settings,48000); }
-void advance(synth2::dsp::SharedModulationRuntime& runtime,const synth2::dsp::SharedModulationSettings& settings)
+void advance(synth1x::dsp::SharedModulationRuntime& runtime,const synth1x::dsp::SharedModulationSettings& settings)
 { runtime.beginChunk(0); runtime.renderSpan(0,64,settings); }
 }
 
 TEST(ModulationBehavior, FractionalSharedDepthChangesSignalsWithoutChangingClocksOrRandomHistory)
 {
-    using synth2::dsp::SharedModulationRuntime;
+    using synth1x::dsp::SharedModulationRuntime;
     for(int wave=0;wave<4;++wave)
     {
         SCOPED_TRACE(wave);
@@ -61,7 +61,7 @@ TEST(ModulationBehavior, FractionalSharedDepthChangesSignalsWithoutChangingClock
 
 TEST(ModulationBehavior, FractionalRandomDepthPreservesSharedDrawSequenceAndKeySync)
 {
-    using namespace synth2::dsp;
+    using namespace synth1x::dsp;
     for(int wave:{4,5})
     {
         SCOPED_TRACE(wave);
@@ -74,7 +74,7 @@ TEST(ModulationBehavior, FractionalRandomDepthPreservesSharedDrawSequenceAndKeyS
         SharedModulationRuntime first,second;
         first.applyHistory(load,120);second.applyHistory(load,120);
         prepare(first,a);prepare(second,b);
-        const auto note=synth2::audio::MidiMessage::noteOn(1,60,uint8_t{100});
+        const auto note=synth1x::audio::MidiMessage::noteOn(1,60,uint8_t{100});
         first.trackKey(note,a);second.trackKey(note,b);
         bool differs=false,fractional=false;
         for(int block=0;block<512;++block)
@@ -95,7 +95,7 @@ TEST(ModulationBehavior, FractionalRandomDepthPreservesSharedDrawSequenceAndKeyS
 
 TEST(ModulationBehavior, FractionalSharedRateSurvivesBothSlotsSyncAndRepeatedUpdates)
 {
-    using synth2::dsp::SharedModulationRuntime;
+    using synth1x::dsp::SharedModulationRuntime;
     for(int slot:{0,1})
     {
         SCOPED_TRACE(slot);
@@ -135,7 +135,7 @@ TEST(ModulationBehavior, SharedFreeRateUsesFloatClockStorage)
     auto settings=sharedSettings();
     settings.lfos[0].speed=64.0f/127;
     settings.lfos[1].speed=82.0f/127;
-    synth2::dsp::SharedModulationRuntime runtime;
+    synth1x::dsp::SharedModulationRuntime runtime;
     prepare(runtime,settings);
     for(int slot=0;slot<2;++slot)
     {
@@ -156,7 +156,7 @@ TEST(ModulationBehavior, DiagnosticClockWordsKeepTheirFloat32Format)
     for(size_t slot=0;slot<2;++slot)
     {
         std::array<uint32_t,7> words{};
-        ASSERT_TRUE(synth2::readNativeLfoClockWords(*processor,slot,words));
+        ASSERT_TRUE(synth1x::readNativeLfoClockWords(*processor,slot,words));
         const auto& clock=processor->engineForInspection().getNativeLfoClock(slot);
         EXPECT_EQ(std::bit_cast<float>(words[2]),static_cast<float>(clock.currentHz));
         EXPECT_EQ(std::bit_cast<float>(words[3]),static_cast<float>(clock.targetHz));
@@ -166,23 +166,23 @@ TEST(ModulationBehavior, DiagnosticClockWordsKeepTheirFloat32Format)
 TEST(ModulationBehavior, FirstHeldKeyResetsClockButOverlappingKeysDoNot)
 {
     auto settings=sharedSettings();
-    synth2::dsp::SharedModulationRuntime runtime; prepare(runtime,settings);
+    synth1x::dsp::SharedModulationRuntime runtime; prepare(runtime,settings);
     advance(runtime,settings); ASSERT_NE(runtime.clock(0).counter,0);
-    runtime.trackKey(synth2::audio::MidiMessage::noteOn(1,60,uint8_t{100}),settings);
+    runtime.trackKey(synth1x::audio::MidiMessage::noteOn(1,60,uint8_t{100}),settings);
     EXPECT_EQ(runtime.clock(0).counter,0);
     advance(runtime,settings); const auto phase=runtime.clock(0).counter;
-    runtime.trackKey(synth2::audio::MidiMessage::noteOn(1,67,uint8_t{100}),settings);
+    runtime.trackKey(synth1x::audio::MidiMessage::noteOn(1,67,uint8_t{100}),settings);
     EXPECT_EQ(runtime.clock(0).counter,phase);
-    runtime.trackKey(synth2::audio::MidiMessage::noteOff(1,60),settings);
-    runtime.trackKey(synth2::audio::MidiMessage::noteOff(1,67),settings);
-    runtime.trackKey(synth2::audio::MidiMessage::noteOn(1,72,uint8_t{100}),settings);
+    runtime.trackKey(synth1x::audio::MidiMessage::noteOff(1,60),settings);
+    runtime.trackKey(synth1x::audio::MidiMessage::noteOff(1,67),settings);
+    runtime.trackKey(synth1x::audio::MidiMessage::noteOn(1,72,uint8_t{100}),settings);
     EXPECT_EQ(runtime.clock(0).counter,0);
 }
 
 TEST(ModulationBehavior, DisabledSharedClocksAdvanceAndEnablingKeepsTheirHistory)
 {
     auto settings=sharedSettings(); for(auto& lfo:settings.lfos) lfo.on=false;
-    synth2::dsp::SharedModulationRuntime runtime; prepare(runtime,settings);
+    synth1x::dsp::SharedModulationRuntime runtime; prepare(runtime,settings);
     const auto before=runtime.clock(0).counter;
     advance(runtime,settings);
     EXPECT_NE(runtime.clock(0).counter,before);
@@ -195,9 +195,9 @@ TEST(ModulationBehavior, DisabledSharedClocksAdvanceAndEnablingKeepsTheirHistory
 TEST(ModulationBehavior, ConsumerViewsAndBoundaryQueriesDoNotAdvanceClocks)
 {
     auto settings=sharedSettings();
-    synth2::dsp::SharedModulationRuntime runtime; prepare(runtime,settings); advance(runtime,settings);
-    static_assert(std::is_same_v<decltype(runtime.clock(0)),const synth2::dsp::LfoClock&>);
-    static_assert(std::is_same_v<decltype(runtime.block()),const synth2::dsp::LfoBlock&>);
+    synth1x::dsp::SharedModulationRuntime runtime; prepare(runtime,settings); advance(runtime,settings);
+    static_assert(std::is_same_v<decltype(runtime.clock(0)),const synth1x::dsp::LfoClock&>);
+    static_assert(std::is_same_v<decltype(runtime.block()),const synth1x::dsp::LfoBlock&>);
     const auto first=runtime.clock(0).counter,second=runtime.clock(1).counter;
     for(int i=0;i<32;++i)
     {
@@ -210,16 +210,16 @@ TEST(ModulationBehavior, ConsumerViewsAndBoundaryQueriesDoNotAdvanceClocks)
 TEST(ModulationBehavior, FirstKeyDoesNotResetAnUnsynchronizedReceiver)
 {
     auto settings=sharedSettings(); settings.lfos[0].keySync=false;
-    synth2::dsp::SharedModulationRuntime runtime; prepare(runtime,settings); advance(runtime,settings);
+    synth1x::dsp::SharedModulationRuntime runtime; prepare(runtime,settings); advance(runtime,settings);
     const auto first=runtime.clock(0).counter; ASSERT_NE(first,0);
-    runtime.trackKey(synth2::audio::MidiMessage::noteOn(1,60,uint8_t{100}),settings);
+    runtime.trackKey(synth1x::audio::MidiMessage::noteOn(1,60,uint8_t{100}),settings);
     EXPECT_EQ(runtime.clock(0).counter,first);
     EXPECT_EQ(runtime.clock(1).counter,0); // The second slot remains key synchronized.
 }
 
 TEST(ModulationBehavior, LoadRoutingRateRedispatchPrecedesTheSyncSetter)
 {
-    using synth2::dsp::SharedModulationRuntime;
+    using synth1x::dsp::SharedModulationRuntime;
     for(bool oldSync:{false,true})for(bool nextSync:{false,true})
         for(int destination:{43,48})for(int routes:{1,2})for(int dial:{7,37,89})
             for(bool queued:{false,true})
@@ -246,7 +246,7 @@ TEST(ModulationBehavior, LoadRoutingRateRedispatchPrecedesTheSyncSetter)
         explicitSetters.applyHistory({3,slot,nextSync},120);
         if(queued)
         {
-            synth2::dsp::LfoHistoryEvent event;
+            synth1x::dsp::LfoHistoryEvent event;
             event.kind=2;event.a=slot==0 ? dial : 0;event.b=slot==1 ? dial : 0;
             event.routes=settings.midiRoutingControls;
             event.sync={settings.lfos[0].tempoSync,settings.lfos[1].tempoSync};
@@ -262,7 +262,7 @@ TEST(ModulationBehavior, LoadRoutingRateRedispatchPrecedesTheSyncSetter)
 
 TEST(ModulationBehavior, EveryWaveformUsesBoundedPhysicalControlsAndReplaysItsHistory)
 {
-    using namespace synth2::dsp;
+    using namespace synth1x::dsp;
     for(int wave=0;wave<6;++wave)for(int dest=0;dest<7;++dest)
     {
         SCOPED_TRACE(::testing::Message()<<wave<<" "<<dest);
@@ -289,7 +289,7 @@ TEST(ModulationBehavior, EveryWaveformUsesBoundedPhysicalControlsAndReplaysItsHi
 }
 TEST(ModulationBehavior, UnknownHistoryKeepsTheSameClockAndCrtProcessing)
 {
-    using namespace synth2::dsp;
+    using namespace synth1x::dsp;
     auto settings=sharedSettings();settings.lfos[0].wave=4;
     LfoHistoryEvent load;load.kind=1;load.randomAdmitted=true;load.randomControls={{{1,3,64},{1,0,0}}};
     SharedModulationRuntime known,unknown;
@@ -297,7 +297,7 @@ TEST(ModulationBehavior, UnknownHistoryKeepsTheSameClockAndCrtProcessing)
     unknown.invalidateRandomHistory();
     for(int block=0;block<64;++block)
     {
-        if(block==17)for(auto* runtime:{&known,&unknown})runtime->trackKey(synth2::audio::MidiMessage::noteOn(1,60,uint8_t{100}),settings);
+        if(block==17)for(auto* runtime:{&known,&unknown})runtime->trackKey(synth1x::audio::MidiMessage::noteOn(1,60,uint8_t{100}),settings);
         for(auto* runtime:{&known,&unknown})advance(*runtime,settings);
         EXPECT_EQ(known.block().controls,unknown.block().controls);
         EXPECT_EQ(known.randomState().random.state,unknown.randomState().random.state);
@@ -306,20 +306,20 @@ TEST(ModulationBehavior, UnknownHistoryKeepsTheSameClockAndCrtProcessing)
 }
 TEST(PanInputs, BothPreparedSlotsUseTheirOwnDepthAtTheOutputOffset)
 {
-    synth2::RenderControls p;p.lfo1.on=p.lfo2.on=true;p.lfo1.dest=p.lfo2.dest=6;
-    synth2::dsp::LfoBlock block;block.startSample=100;
+    synth1x::RenderControls p;p.lfo1.on=p.lfo2.on=true;p.lfo1.dest=p.lfo2.dest=6;
+    synth1x::dsp::LfoBlock block;block.startSample=100;
     block.controls[0].fill(19);block.controls[1].fill(23);
-    const auto view=synth2::render::outputPanControls(p,&block,103);
+    const auto view=synth1x::render::outputPanControls(p,&block,103);
     EXPECT_EQ(view.values[0],block.controls[0].data()+3);
     EXPECT_EQ(view.values[1],block.controls[1].data()+3);
     EXPECT_TRUE(view.receivers[0].enabled);EXPECT_TRUE(view.receivers[1].enabled);
-    EXPECT_FALSE(synth2::render::outputPanControls(p,nullptr,103).available);
+    EXPECT_FALSE(synth1x::render::outputPanControls(p,nullptr,103).available);
 }
 namespace
 {
     std::vector<float> renderFragmentedTone(int hostFrames,int wave,bool arp,int preparedFrames=64,bool amplitudeLfo=true)
     {
-        synth2::SynthEngine engine;auto& p=engine.getParams();
+        synth1x::SynthEngine engine;auto& p=engine.getParams();
         p.osc1WaveIndex=1;p.oscMix=0;p.unisonVoices=1;
         p.ampAttackSec=0;p.ampDecaySec=.001f;p.ampSustain=1;p.ampReleaseSec=.001f;
         p.filterEnvAmount=0;
@@ -332,12 +332,12 @@ namespace
         for(int position=0;position<9000;position+=hostFrames)
         {
             const int count=std::min(hostFrames,9000-position);
-            synth2::audio::AudioBuffer<float> audio(2,count+5);audio.clear();
-            synth2::audio::MidiBuffer midi;
+            synth1x::audio::AudioBuffer<float> audio(2,count+5);audio.clear();
+            synth1x::audio::MidiBuffer midi;
             if(position<=119 && 119<position+count)
-                midi.addEvent(synth2::audio::MidiMessage::noteOn(1,62,uint8_t{91}),5+119-position);
+                midi.addEvent(synth1x::audio::MidiMessage::noteOn(1,62,uint8_t{91}),5+119-position);
             if(position<=7601 && 7601<position+count)
-                midi.addEvent(synth2::audio::MidiMessage::noteOff(1,62),5+7601-position);
+                midi.addEvent(synth1x::audio::MidiMessage::noteOff(1,62),5+7601-position);
             engine.render(audio,midi,5,count);
             for(int i=0;i<count;++i)for(int channel=0;channel<2;++channel)
                 result.push_back(audio.getSample(channel,i+5));
@@ -350,7 +350,7 @@ namespace
 
 TEST(ModulationBehavior, SilentTailFragmentsDoNotChangeRetainedPhysicalOscillatorPhases)
 {
-    synth2::SynthEngine first,second;
+    synth1x::SynthEngine first,second;
     for(auto* engine:{&first,&second})
     {
         auto& p=engine->getParams();p.osc1WaveIndex=1;p.oscMix=0;
@@ -358,15 +358,15 @@ TEST(ModulationBehavior, SilentTailFragmentsDoNotChangeRetainedPhysicalOscillato
         p.ampSustain=1;p.ampReleaseSec=.01f;p.filterEnvAmount=0;
         engine->prepareToPlay(44100,64);
     }
-    const auto play=[](synth2::SynthEngine& engine,int total)
+    const auto play=[](synth1x::SynthEngine& engine,int total)
     {
         for(int position=0;position<total;position+=64)
         {
             const int count=std::min(64,total-position);
-            synth2::audio::AudioBuffer<float> audio(2,count);audio.clear();
-            synth2::audio::MidiBuffer midi;
-            if(position==0)midi.addEvent(synth2::audio::MidiMessage::noteOn(1,65,uint8_t{93}),0);
-            if(position==256)midi.addEvent(synth2::audio::MidiMessage::noteOff(1,65),0);
+            synth1x::audio::AudioBuffer<float> audio(2,count);audio.clear();
+            synth1x::audio::MidiBuffer midi;
+            if(position==0)midi.addEvent(synth1x::audio::MidiMessage::noteOn(1,65,uint8_t{93}),0);
+            if(position==256)midi.addEvent(synth1x::audio::MidiMessage::noteOff(1,65),0);
             engine.render(audio,midi,0,count);
         }
     };
@@ -386,7 +386,7 @@ TEST(AmplitudeInputs, GainHorizonRetainsProgressAndCanBeInterruptedByANewTarget)
 {
     const auto render=[](int block)
     {
-        synth2::dsp::AmplitudeEnvelope state(true);
+        synth1x::dsp::AmplitudeEnvelope state(true);
         state.setParameters(0,0,2048,64);state.setGainScale(.35f);state.noteOn();
         std::vector<float> gains(512);
         const std::array<int,5> edges{{0,113,197,259,512}};
@@ -417,14 +417,14 @@ TEST(AmplitudeInputs, CompleteVoiceDispatchUsesItsDeclaredGainHorizon)
 {
     for(int mode:{0,1,2})
     {
-        synth2::SynthEngine engine;auto& p=engine.getParams();
+        synth1x::SynthEngine engine;auto& p=engine.getParams();
         p.unisonVoices=1;p.ampAttackSec=0;p.ampDecaySec=0;p.ampSustain=1;
         p.lfo1.on=mode!=0;p.lfo1.dest=mode==1 ? 0 : 3;
         p.lfo1.amount=mode==2 ? .8f : 0;
         engine.prepareToPlay(44100,64);
-        synth2::audio::AudioBuffer<float> audio(2,1);audio.clear();
-        synth2::audio::MidiBuffer midi;
-        midi.addEvent(synth2::audio::MidiMessage::noteOn(1,60,uint8_t{100}),0);
+        synth1x::audio::AudioBuffer<float> audio(2,1);audio.clear();
+        synth1x::audio::MidiBuffer midi;
+        midi.addEvent(synth1x::audio::MidiMessage::noteOn(1,60,uint8_t{100}),0);
         engine.render(audio,midi,0,1);
         std::array<uint32_t,22> words{};ASSERT_TRUE(engine.readCoreFloatWords(0,words));
         float current{},target{};std::memcpy(&current,&words[0],sizeof(current));
@@ -449,7 +449,7 @@ TEST(ModulationBehavior, ArpGainRampsSurviveHostFragmentsWithoutAmplitudeModulat
 
 TEST(AmplitudeInputs, RepeatedGainSpansStopAtTheDeclaredEventBoundary)
 {
-    synth2::dsp::AmplitudeEnvelope actual(true);
+    synth1x::dsp::AmplitudeEnvelope actual(true);
     actual.setParameters(0,0,2048,10000);actual.setGainScale(.4f);actual.noteOn();
     alignas(16) std::array<float,64> warm{};actual.render(warm.data(),64);actual.noteOff();
     auto expected=actual;
@@ -460,7 +460,7 @@ TEST(AmplitudeInputs, RepeatedGainSpansStopAtTheDeclaredEventBoundary)
         expected.render(want.data()+offset,count);
         offset+=count;
     }
-    synth2::dsp::AmplitudeBlockRenderer::render({0,10,64,100},{},actual,100,got.data());
+    synth1x::dsp::AmplitudeBlockRenderer::render({0,10,64,100},{},actual,100,got.data());
     for(size_t i=0;i<got.size();++i)EXPECT_FLOAT_EQ(got[i],want[i])<<i;
     EXPECT_EQ(actual.getPhase(),expected.getPhase());
     EXPECT_EQ(actual.getCounter(),expected.getCounter());
@@ -469,9 +469,9 @@ TEST(AmplitudeInputs, RepeatedGainSpansStopAtTheDeclaredEventBoundary)
 
 TEST(ModulationInputs, RingRetainsPhysicalFmSlewAndResumesWhenDisabled)
 {
-    using namespace synth2::dsp;
-    synth2::RenderControls controls;controls.ringMod=1;controls.osc1FmAmount=0;
-    auto config=synth2::render::oscillatorControls(controls,44100,false);
+    using namespace synth1x::dsp;
+    synth1x::RenderControls controls;controls.ringMod=1;controls.osc1FmAmount=0;
+    auto config=synth1x::render::oscillatorControls(controls,44100,false);
     FrequencyModulation state;state.settle=false;state.current=state.target=4096.25f;
     state.elapsed=44;
     VoiceControlBuffer envelope{},depth{};VoiceSpanBuffer spans{};
@@ -482,7 +482,7 @@ TEST(ModulationInputs, RingRetainsPhysicalFmSlewAndResumesWhenDisabled)
     EXPECT_EQ(state.remaining,44);EXPECT_EQ(state.elapsed,44);
     // A different physical core must still advance while this core uses Ring.
     auto independent=state;
-    controls.ringMod=0;config=synth2::render::oscillatorControls(controls,44100,false);
+    controls.ringMod=0;config=synth1x::render::oscillatorControls(controls,44100,false);
     OscillatorControlRenderer::fm(config,{},independent,256,envelope,spans,depth);
     EXPECT_EQ(independent.current,0);EXPECT_EQ(independent.remaining,0);
     EXPECT_EQ(state.current,4096.25f);EXPECT_EQ(state.remaining,44);
@@ -493,7 +493,7 @@ TEST(ModulationInputs, RingRetainsPhysicalFmSlewAndResumesWhenDisabled)
 
 TEST(ModulationInputs, GlidePublishesNestedFmDispatchSpansWithoutChangingPitch)
 {
-    using namespace synth2::dsp;
+    using namespace synth1x::dsp;
     OscillatorControlSettings config;config.portamentoDial=40;config.applyPortamento=true;
     Portamento state;state.setDuration(Portamento::timeSeconds(40),44100);
     state.note=60;state.setNote(72,true);

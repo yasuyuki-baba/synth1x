@@ -15,23 +15,23 @@
 // editor and preview consume the same panel geometry and source-choice values.
 int main()
 {
-    synth2::host::ProcessorBridge processor;
-    const auto& a=synth2::editor::editorAppearance();
-    std::cout << "{\"width\":1280,\"height\":920,\"version\":" << std::quoted(SYNTH2_VERSION_STR)
+    synth1x::host::ProcessorBridge processor;
+    const auto& a=synth1x::editor::editorAppearance();
+    std::cout << "{\"width\":1280,\"height\":920,\"version\":" << std::quoted(SYNTH1X_VERSION_STR)
               << ",\"chrome\":{";
     bool firstBounds=true;
-    for(const auto& [name,b]:std::initializer_list<std::pair<const char*,synth2::editor::EditorBounds>>{
-        {"displayScale",synth2::editor::editorDisplayScaleBounds},
-        {"librarySummary",synth2::editor::editorLibrarySummaryBounds},
-        {"presetDisplay",synth2::editor::editorPresetDisplayBounds},
-        {"masterVolume",synth2::editor::editorMasterVolumeBounds},
-        {"pan",synth2::editor::editorPanBounds},
-        {"comparison",synth2::editor::editorComparisonBounds},
-        {"copyAToB",synth2::editor::editorCopyAToBBounds},
-        {"copyBToA",synth2::editor::editorCopyBToABounds},
-        {"version",synth2::editor::editorVersionBounds},
-        {"oversampling",synth2::editor::editorOversamplingBounds},
-        {"keyboardToggle",synth2::editor::editorKeyboardToggleBounds}})
+    for(const auto& [name,b]:std::initializer_list<std::pair<const char*,synth1x::editor::EditorBounds>>{
+        {"displayScale",synth1x::editor::editorDisplayScaleBounds},
+        {"librarySummary",synth1x::editor::editorLibrarySummaryBounds},
+        {"presetDisplay",synth1x::editor::editorPresetDisplayBounds},
+        {"masterVolume",synth1x::editor::editorMasterVolumeBounds},
+        {"pan",synth1x::editor::editorPanBounds},
+        {"comparison",synth1x::editor::editorComparisonBounds},
+        {"copyAToB",synth1x::editor::editorCopyAToBBounds},
+        {"copyBToA",synth1x::editor::editorCopyBToABounds},
+        {"version",synth1x::editor::editorVersionBounds},
+        {"oversampling",synth1x::editor::editorOversamplingBounds},
+        {"keyboardToggle",synth1x::editor::editorKeyboardToggleBounds}})
     {
         if(!firstBounds)std::cout << ',';firstBounds=false;
         std::cout << std::quoted(name) << ":[" << b.x << ',' << b.y << ',' << b.width << ',' << b.height << ']';
@@ -48,24 +48,24 @@ int main()
         if (!firstColor) std::cout << ','; firstColor=false;
         std::cout << std::quoted(color.first) << ':' << std::quoted(color.second);
     }
-    using T=synth2::editor::EditorTypography;
+    using T=synth1x::editor::EditorTypography;
     std::cout << "},\"typography\":{\"auxiliary\":" << T::auxiliary
               << ",\"label\":" << T::label << ",\"value\":" << T::value
               << ",\"button\":" << T::button << ",\"heading\":" << T::heading
               << ",\"patchTitle\":" << T::patchTitle << "},\"panels\":[";
-    const auto writePanel=[&](const synth2::editor::EditorPanel& panel,bool midi) {
+    const auto writePanel=[&](const synth1x::editor::EditorPanel& panel,bool midi) {
         std::cout << "{\"title\":" << std::quoted(panel.title) << ",\"description\":" << std::quoted(panel.description)
                   << ",\"accent\":" << std::quoted(panel.accent) << ",\"bounds\":[" << panel.bounds.x << ','
                   << panel.bounds.y << ',' << panel.bounds.width << ',' << panel.bounds.height << "],\"dividers\":[";
         bool firstDivider=true;
-        for(const auto& b:synth2::editor::editorPanelDividers(panel))
+        for(const auto& b:synth1x::editor::editorPanelDividers(panel))
         {
             if(!firstDivider)std::cout << ',';firstDivider=false;
             std::cout << '[' << b.x << ',' << b.y << ',' << b.width << ',' << b.height << ']';
         }
         std::cout << "],\"groups\":[";
         bool firstGroup=true;
-        for(const auto& b:synth2::editor::editorPanelGroups(panel)) {
+        for(const auto& b:synth1x::editor::editorPanelGroups(panel)) {
             if(!firstGroup)std::cout << ',';firstGroup=false;
             std::cout << '[' << b.x << ',' << b.y << ',' << b.width << ',' << b.height << ']';
         }
@@ -75,33 +75,33 @@ int main()
         {
             if (!first) std::cout << ','; first=false;
             const auto& control=panel.controls[cell];
-            const auto b=midi ? synth2::editor::editorMidiControlBounds(panel,cell) : synth2::editor::editorControlBounds(panel,cell);
+            const auto b=midi ? synth1x::editor::editorMidiControlBounds(panel,cell) : synth1x::editor::editorControlBounds(panel,cell);
             std::cout << "{\"parameter\":" << control.parameter << ",\"label\":" << std::quoted(control.label)
                       << ",\"bounds\":[" << b.x << ',' << b.y << ',' << b.width << ',' << b.height << "]"
-                      << ",\"diameter\":" << synth2::editor::editorKnobDiameter(control.parameter,b.height)
-                      << ",\"groupLabel\":" << (synth2::editor::editorGroupHeading(control.parameter) ? "true" : "false")
-                      << ",\"help\":" << std::quoted(synth2::editor::editorControlHelp(control.parameter) ? synth2::editor::editorControlHelp(control.parameter) : "")
+                      << ",\"diameter\":" << synth1x::editor::editorKnobDiameter(control.parameter,b.height)
+                      << ",\"groupLabel\":" << (synth1x::editor::editorGroupHeading(control.parameter) ? "true" : "false")
+                      << ",\"help\":" << std::quoted(synth1x::editor::editorControlHelp(control.parameter) ? synth1x::editor::editorControlHelp(control.parameter) : "")
                       << ",\"tone\":" << std::quoted(control.parameter==19 ? a.accent : a.pointer) << '}';
         }
         std::cout << "]}";
     };
     bool firstPanel=true;
-    for(const auto& panel:synth2::editor::editorPanels()) {
+    for(const auto& panel:synth1x::editor::editorPanels()) {
         if(!firstPanel)std::cout << ',';firstPanel=false;writePanel(panel,false);
     }
     std::cout << "],\"midiPanels\":[";firstPanel=true;
-    for(const auto& panel:synth2::editor::editorMidiPanels()) {
+    for(const auto& panel:synth1x::editor::editorMidiPanels()) {
         if(!firstPanel)std::cout << ',';firstPanel=false;writePanel(panel,true);
     }
-    const auto writeHeaderControl=[&](const char* key,const synth2::editor::EditorControl& control,const synth2::editor::EditorBounds& bounds) {
+    const auto writeHeaderControl=[&](const char* key,const synth1x::editor::EditorControl& control,const synth1x::editor::EditorBounds& bounds) {
         std::cout << "," << std::quoted(key) << ":{\"parameter\":" << control.parameter << ",\"label\":" << std::quoted(control.label)
                   << ",\"name\":" << std::quoted(processor.parameter(control.parameter).name)
-                  << ",\"diameter\":" << synth2::editor::editorKnobDiameter(control.parameter,bounds.height) << '}';
+                  << ",\"diameter\":" << synth1x::editor::editorKnobDiameter(control.parameter,bounds.height) << '}';
     };
     std::cout << ']';
-    writeHeaderControl("headerMaster",synth2::editor::editorMasterVolumeControl,synth2::editor::editorMasterVolumeBounds);
-    writeHeaderControl("headerPan",synth2::editor::editorPanControl,synth2::editor::editorPanBounds);
-    const auto timing=synth2::editor::editorDelayTimingBounds;
+    writeHeaderControl("headerMaster",synth1x::editor::editorMasterVolumeControl,synth1x::editor::editorMasterVolumeBounds);
+    writeHeaderControl("headerPan",synth1x::editor::editorPanControl,synth1x::editor::editorPanBounds);
+    const auto timing=synth1x::editor::editorDelayTimingBounds;
     std::cout << ",\"delayTimingBounds\":[" << timing.x << ',' << timing.y << ','
               << timing.width << ',' << timing.height << "],\"parameters\":[";
     for (int index=0;index<processor.parameterCount;++index)
@@ -110,30 +110,30 @@ int main()
         const auto& info=processor.parameter(index);
         const auto initial=std::lround(index==87 || index==89 ? processor.midiDestination((index-87)/2)
             : info.minimum+processor.normalizedValue(index)*(info.maximum-info.minimum));
-        std::cout << "{\"minimum\":" << (index==128 ? info.minimum : (index==87 || index==89) ? -1 : synth2::sourceMinimum(index)) << ",\"maximum\":" << (index==128 ? info.maximum : synth2::sourceMaximum(index))
+        std::cout << "{\"minimum\":" << (index==128 ? info.minimum : (index==87 || index==89) ? -1 : synth1x::sourceMinimum(index)) << ",\"maximum\":" << (index==128 ? info.maximum : synth1x::sourceMaximum(index))
                   << ",\"initial\":" << initial
-                  << ",\"integerSteps\":" << (synth2::editor::parameterUsesIntegerSteps(index) ? "true" : "false")
-                  << ",\"toggle\":" << (synth2::editor::editorToggle(index) ? "true" : "false") << ",\"choices\":[";
+                  << ",\"integerSteps\":" << (synth1x::editor::parameterUsesIntegerSteps(index) ? "true" : "false")
+                  << ",\"toggle\":" << (synth1x::editor::editorToggle(index) ? "true" : "false") << ",\"choices\":[";
         bool first=true;
-        for (const auto& choice:synth2::editor::editorChoices(index))
+        for (const auto& choice:synth1x::editor::editorChoices(index))
         {
             if (!first) std::cout << ','; first=false;
             std::cout << '[' << choice.value << ',' << std::quoted(choice.label) << ',' << std::quoted(choice.group ? choice.group : "") << ']';
         }
         std::cout << "],\"unitDisplay\":[";
-        if (synth2::editor::editorHasUnit(index))
+        if (synth1x::editor::editorHasUnit(index))
             for (int raw=0;raw<128;++raw)
             {
                 if (raw) std::cout << ',';
-                std::cout << std::quoted(synth2::editor::editorValueDisplay(index,raw));
+                std::cout << std::quoted(synth1x::editor::editorValueDisplay(index,raw));
             }
         std::cout << "]}";
     }
     std::cout << "],\"supplements\":[";
-    for (std::size_t i=5;i<synth2::editor::editorPages().size();++i)
+    for (std::size_t i=5;i<synth1x::editor::editorPages().size();++i)
     {
         if (i!=5) std::cout << ',';
-        const auto& page=synth2::editor::editorPages()[i];
+        const auto& page=synth1x::editor::editorPages()[i];
         std::cout << "{\"name\":" << std::quoted(page.name) << ",\"parameters\":[";
         bool first=true;
         for (int parameter:page.parameters) { if (!first) std::cout << ','; first=false; std::cout << parameter; }

@@ -3,9 +3,9 @@
 #include <cmath>
 
 namespace {
-synth2::dsp::FilterEnvelope attacking()
+synth1x::dsp::FilterEnvelope attacking()
 {
-    synth2::dsp::FilterEnvelope envelope;
+    synth1x::dsp::FilterEnvelope envelope;
     envelope.configure(100,1000,100,0,10000);
     envelope.noteOn();envelope.render(10,[](float,int){});
     return envelope;
@@ -37,7 +37,7 @@ TEST(FilterEnvelopePrecision, ExactRatiosAndSamePeakKeepState)
 
 TEST(FilterEnvelopePrecision, ReleasePeakEditsKeepTheCapturedRealTrajectory)
 {
-    using Phase=synth2::dsp::FilterEnvelope::Phase;
+    using Phase=synth1x::dsp::FilterEnvelope::Phase;
     for(float peak:{.5f,50.f,103.f-1e-9f,103.f,103.f+1e-9f,200.25f})
     {
         SCOPED_TRACE(peak);
@@ -71,15 +71,15 @@ TEST(FilterEnvelopePrecision, ZeroPeakCannotRestoreAnOldReleaseLevel)
 
 TEST(FilterEnvelopePrecision, SustainEditsUseTheNewSustainWithoutRescaling)
 {
-    synth2::dsp::FilterEnvelope envelope;
+    synth1x::dsp::FilterEnvelope envelope;
     envelope.configure(0,0,100,40,1000);envelope.noteOn();envelope.render(1,[](float,int){});
-    ASSERT_EQ(envelope.getPhase(),synth2::dsp::FilterEnvelope::Phase::Sustain);
+    ASSERT_EQ(envelope.getPhase(),synth1x::dsp::FilterEnvelope::Phase::Sustain);
     envelope.configure(0,0,103.25f,41.125f,1000);EXPECT_EQ(envelope.getLevel(),41.125f);
 }
 
 TEST(FilterEnvelopePrecision, CommonConfiguratorPreservesIntegralSourceNormalization)
 {
-    using namespace synth2::dsp;
+    using namespace synth1x::dsp;
     for(int amount:{0,32,63,64,79,95,127})for(int dial=0;dial<=127;++dial)
         for(bool multiply:{false,true})
         {

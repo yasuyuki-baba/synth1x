@@ -48,7 +48,7 @@ native SDK uses its static-runtime configuration.
 ## Local equivalents
 
 ```sh
-cmake -S . -B build-oos-ci -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DSYNTH2_BUILD_IPLUG2=OFF -DSYNTH2_BUILD_TOOLS=OFF -DSYNTH2_BUILD_TESTS=ON
+cmake -S . -B build-oos-ci -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DSYNTH1X_BUILD_IPLUG2=OFF -DSYNTH1X_BUILD_TOOLS=OFF -DSYNTH1X_BUILD_TESTS=ON
 cmake --build build-oos-ci --config Release --parallel 4
 ctest --test-dir build-oos-ci -C Release -L portable --output-on-failure --no-tests=error
 python tools/audit_dsp_headers.py --build-dir build-oos-ci
@@ -62,9 +62,9 @@ For native products, first initialize `iPlug2` and run the dependency helper as 
 [the desktop guide](desktop-build.md). On the corresponding native platform:
 
 ```sh
-cmake --preset windows-ci -B build "-DSYNTH2_IPLUG2_FORMATS=VST3;CLAP;APP"
+cmake --preset windows-ci -B build "-DSYNTH1X_IPLUG2_FORMATS=VST3;CLAP;APP"
 # On macOS instead:
-cmake --preset macos-ci -B build "-DSYNTH2_IPLUG2_FORMATS=VST3;CLAP;AU;APP"
+cmake --preset macos-ci -B build "-DSYNTH1X_IPLUG2_FORMATS=VST3;CLAP;AU;APP"
 cmake --build build --config Release --parallel 4
 python tools/package_native.py --build build --platform windows --manifest build/dependencies.json --output dist
 # Use --platform macos on macOS.

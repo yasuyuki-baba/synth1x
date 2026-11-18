@@ -71,12 +71,12 @@ class TagComparison(unittest.TestCase):
             compare(before, after)
 
 
-@unittest.skipUnless(os.environ.get("SYNTH2_TAG_PROBE_BIN"), "Tag probe target not selected")
+@unittest.skipUnless(os.environ.get("SYNTH1X_TAG_PROBE_BIN"), "Tag probe target not selected")
 class TagProbe(unittest.TestCase):
     def setUp(self):
         self.temporary = tempfile.TemporaryDirectory()
         self.root = Path(self.temporary.name)
-        self.probe = Path(os.environ["SYNTH2_TAG_PROBE_BIN"])
+        self.probe = Path(os.environ["SYNTH1X_TAG_PROBE_BIN"])
 
     def tearDown(self):
         self.temporary.cleanup()

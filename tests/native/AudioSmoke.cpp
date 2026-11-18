@@ -17,21 +17,21 @@ smoke::State patchState(const std::filesystem::path& file, int factor, bool frac
     std::ifstream input(file, std::ios::binary);
     smoke::require(input.good(), "Cannot read patch: " + file.string());
     const std::string text{std::istreambuf_iterator<char>(input), {}};
-    synth2::host::ProcessorBridge processor;
+    synth1x::host::ProcessorBridge processor;
     std::string error;
     smoke::require(processor.loadPatch(text, error), "Patch load failed: " + error);
     if(fractional)
     {
-        auto patch = synth2::parseContinuousPatch(processor.savePatch());
+        auto patch = synth1x::parseContinuousPatch(processor.savePatch());
         patch.values[19] = 63.75f;
         patch.values[64] = 2.25f;
-        smoke::require(processor.loadPatch(synth2::formatContinuousPatch(patch), error), "Fractional patch load failed");
+        smoke::require(processor.loadPatch(synth1x::formatContinuousPatch(patch), error), "Fractional patch load failed");
     }
     smoke::require(processor.setOversamplingFactor(factor), "Invalid quality factor");
-    synth2::host::PresetBrowserState browser;
+    synth1x::host::PresetBrowserState browser;
     browser.capture(processor);
     // This encodes the public session format, not a reference audio oracle.
-    return synth2::host::savePresetSession(processor, browser);
+    return synth1x::host::savePresetSession(processor, browser);
 }
 
 struct Signal
@@ -73,7 +73,7 @@ void check(const std::string& label, const Signal& signal, bool audible, double 
         label + (audible ? ": expected sound" : ": expected silence"));
 }
 
-#ifdef SYNTH2_SMOKE_VST3
+#ifdef SYNTH1X_SMOKE_VST3
 void checkVst3Echo(const std::filesystem::path& binary, const smoke::State& state)
 {
     auto baseline = smoke::makeVst3(binary);
@@ -106,22 +106,22 @@ int main(int argc, char** argv)
 {
     try
     {
-        smoke::require(argc == 4, "Usage: Synth2AudioSmoke <vst3|clap|au> <binary> <patch-directory>");
+        smoke::require(argc == 4, "Usage: Synth1XAudioSmoke <vst3|clap|au> <binary> <patch-directory>");
         const std::string format = argv[1];
         std::unique_ptr<smoke::Host> host;
-#ifdef SYNTH2_SMOKE_VST3
+#ifdef SYNTH1X_SMOKE_VST3
         if (format == "vst3") host = smoke::makeVst3(argv[2]);
 #endif
-#ifdef SYNTH2_SMOKE_CLAP
+#ifdef SYNTH1X_SMOKE_CLAP
         if (format == "clap") host = smoke::makeClap(argv[2]);
 #endif
-#ifdef SYNTH2_SMOKE_AU
+#ifdef SYNTH1X_SMOKE_AU
         if (format == "au") host = smoke::makeAu(argv[2]);
 #endif
         smoke::require(bool(host), "Unknown format: " + format);
         for (const int factor : {1, 8})
         {
-#ifdef SYNTH2_SMOKE_VST3
+#ifdef SYNTH1X_SMOKE_VST3
             if(format == "vst3")for(const bool fractional : {false, true})
                 checkVst3Echo(argv[2], patchState(std::filesystem::path(argv[3]) / "legacy.sy1", factor, fractional));
 #endif
@@ -144,17 +144,17 @@ int main(int argc, char** argv)
             }
         }
         // Exercise the persisted A/B envelope through every actual format.
-        synth2::host::ProcessorBridge processor;
-        synth2::host::PresetBrowserState browser;
+        synth1x::host::ProcessorBridge processor;
+        synth1x::host::PresetBrowserState browser;
         const auto tone=patchState(std::filesystem::path(argv[3])/"0-tone.sy1",8);
         const auto mute=patchState(std::filesystem::path(argv[3])/"1-mute.sy1",8);
-        smoke::require(synth2::host::restorePresetSession(tone.data(),tone.size(),processor,browser)>0,"A/B tone fixture failed");
-        synth2::host::PatchComparison comparison;comparison.reset(processor,browser);
+        smoke::require(synth1x::host::restorePresetSession(tone.data(),tone.size(),processor,browser)>0,"A/B tone fixture failed");
+        synth1x::host::PatchComparison comparison;comparison.reset(processor,browser);
         smoke::require(comparison.select(1,processor,browser),"Select fixture B failed");
-        smoke::require(synth2::host::restorePresetSession(mute.data(),mute.size(),processor,browser)>0,"A/B mute fixture failed");
+        smoke::require(synth1x::host::restorePresetSession(mute.data(),mute.size(),processor,browser)>0,"A/B mute fixture failed");
         for(const int slot:{0,1,0}) {
             smoke::require(comparison.select(slot,processor,browser),"Switch fixture A/B failed");
-            host->load(synth2::host::savePresetSession(processor,browser,&comparison));
+            host->load(synth1x::host::savePresetSession(processor,browser,&comparison));
             check(format+" A/B slot "+std::to_string(slot),render(*host,96,smoke::Midi::noteOn),slot==0);
             render(*host,96,smoke::Midi::noteOff);
         }

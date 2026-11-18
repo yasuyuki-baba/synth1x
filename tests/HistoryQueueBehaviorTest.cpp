@@ -8,8 +8,8 @@
 
 TEST(HistoryQueue, FullQueueRejectsNewEventsPreservesFifoAndReportsEveryDrop)
 {
-    synth2::dsp::LfoHistory<8> queue;
-    synth2::dsp::LfoHistoryEvent event;
+    synth1x::dsp::LfoHistory<8> queue;
+    synth1x::dsp::LfoHistoryEvent event;
     EXPECT_FALSE(queue.pop(event));
     for(int i=0;i<8;++i) ASSERT_TRUE(queue.push({0,i,i+17,{}}));
     for(int i=0;i<3;++i) EXPECT_FALSE(queue.push({3,99,i,{}}));
@@ -25,7 +25,7 @@ TEST(HistoryQueue, FullQueueRejectsNewEventsPreservesFifoAndReportsEveryDrop)
 
 TEST(HistoryQueue, WrappedSlotsRemainReusableAfterRepeatedSaturation)
 {
-    synth2::dsp::LfoHistory<8> queue;
+    synth1x::dsp::LfoHistory<8> queue;
     for(int round=0;round<128;++round)
     {
         SCOPED_TRACE(round);
@@ -33,7 +33,7 @@ TEST(HistoryQueue, WrappedSlotsRemainReusableAfterRepeatedSaturation)
         EXPECT_FALSE(queue.push({}));
         for(int i=0;i<8;++i)
         {
-            synth2::dsp::LfoHistoryEvent event;
+            synth1x::dsp::LfoHistoryEvent event;
             ASSERT_TRUE(queue.pop(event));
             EXPECT_EQ(event.a,round); EXPECT_EQ(event.b,i);
             EXPECT_EQ(event.sync,(std::array<int,2>{1,0}));
@@ -46,14 +46,14 @@ TEST(HistoryQueue, WrappedSlotsRemainReusableAfterRepeatedSaturation)
 
 TEST(HistoryQueue, BridgeReportsLostHistoryAndAcceptsNewEditsAfterDrain)
 {
-    synth2::host::ProcessorBridge processor;
+    synth1x::host::ProcessorBridge processor;
     std::string error;
     ASSERT_TRUE(processor.loadPatch(hostvalidation::patch(),error));
     processor.prepare(44100,64);
     std::array<float,64> left{},right{};
     ASSERT_TRUE(processor.process(left.data(),right.data(),64,120));
     ASSERT_EQ(processor.historyDrops(),0u);
-    constexpr auto capacity=synth2::dsp::LfoHistory<>::capacity;
+    constexpr auto capacity=synth1x::dsp::LfoHistory<>::capacity;
     for(unsigned i=0;i<capacity+7;++i) processor.setNormalizedValue(43,(i%2)/127.);
     EXPECT_EQ(processor.historyDrops(),7u);
     const auto source=processor.saveState();
@@ -78,7 +78,7 @@ TEST(HistoryQueue, BridgeReportsLostHistoryAndAcceptsNewEditsAfterDrain)
 
 TEST(HistoryQueue, ConcurrentPublishersPreserveEveryAcceptedEventAndPerProducerOrder)
 {
-    synth2::dsp::LfoHistory<16> queue;
+    synth1x::dsp::LfoHistory<16> queue;
     constexpr int events=512;
     std::array<std::array<bool,events>,2> accepted{},seen{};
     std::atomic<int> finished{};
@@ -93,7 +93,7 @@ TEST(HistoryQueue, ConcurrentPublishersPreserveEveryAcceptedEventAndPerProducerO
     start.arrive_and_wait();
     std::array<int,2> last{-1,-1};
     int received=0;
-    const auto consume=[&](const synth2::dsp::LfoHistoryEvent& event) {
+    const auto consume=[&](const synth1x::dsp::LfoHistoryEvent& event) {
         EXPECT_GE(event.a,0); EXPECT_LT(event.a,2); EXPECT_GE(event.b,0); EXPECT_LT(event.b,events);
         if(event.a<0 || event.a>=2 || event.b<0 || event.b>=events)return;
         EXPECT_FALSE(seen[event.a][event.b]); EXPECT_GT(event.b,last[event.a]);
@@ -101,7 +101,7 @@ TEST(HistoryQueue, ConcurrentPublishersPreserveEveryAcceptedEventAndPerProducerO
     };
     for(;;)
     {
-        synth2::dsp::LfoHistoryEvent event;
+        synth1x::dsp::LfoHistoryEvent event;
         while(queue.pop(event)) consume(event);
         if(finished.load(std::memory_order_acquire)==2)
         {

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Check portable C++ file/type spelling and setting-type suffixes without an SDK.
 
-Scope is projects/Synth2/src, including the maintained patch core. This is a lexical
+Scope is projects/Synth1X/src, including the maintained patch core. This is a lexical
 check, not a C++ parser: responsibility, identifier meaning and variable/function
 spelling remain review concerns. SDK-required wrapper/resource names, tools,
 third-party code and generated files are outside this tree.
@@ -90,7 +90,7 @@ def main():
     parser.add_argument('--root', type=Path, default=ROOT, help='Product repository root')
     args = parser.parse_args()
     try:
-        files, errors = audit(args.root / 'projects/Synth2/src')
+        files, errors = audit(args.root / 'projects/Synth1X/src')
     except (ValueError, OSError) as error:
         parser.exit(2, str(error) + '\n')
     if errors:

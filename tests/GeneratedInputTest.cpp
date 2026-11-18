@@ -38,7 +38,7 @@ TEST(GeneratedInput, BoundedPatchAndMidiCombinationsRemainFiniteAndPreserveState
         for(int index:{2,3,5,14,15,21,22,23,24,25,29}) setDial(text,index,inputs()%128);
         // Select valid filter choices; envelopes keep the helper's short release.
         setDial(text,14,inputs()%4);
-        synth2::host::ProcessorBridge processor;
+        synth1x::host::ProcessorBridge processor;
         std::string error;
         ASSERT_TRUE(processor.loadPatch(text,error))<<error;
         processor.prepare(rate,257);
@@ -74,7 +74,7 @@ TEST(GeneratedInput, BoundedPatchAndMidiCombinationsRemainFiniteAndPreserveState
 
 TEST(GeneratedInput, GeneratedMalformedSourceTokensCannotReplaceValidProgram)
 {
-    synth2::host::ProcessorBridge processor;
+    synth1x::host::ProcessorBridge processor;
     std::string error;
     ASSERT_TRUE(processor.loadProgram(hostvalidation::patch(),5,error));
     const auto before=processor.saveState();
@@ -93,7 +93,7 @@ TEST(GeneratedInput, GeneratedMalformedSourceTokensCannotReplaceValidProgram)
 
 TEST(GeneratedInput, TruncatedStatePayloadsCannotPartiallyReplaceParameters)
 {
-    synth2::host::ProcessorBridge processor,donor;
+    synth1x::host::ProcessorBridge processor,donor;
     std::string error;
     ASSERT_TRUE(processor.loadProgram(hostvalidation::patch(),5,error));
     ASSERT_TRUE(donor.loadProgram("Different source\nver=101\n19,33\n29,12\n",2,error));

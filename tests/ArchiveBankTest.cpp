@@ -14,8 +14,8 @@
 namespace
 {
 namespace fs = std::filesystem;
-using namespace synth2::host;
-const auto fixtures = fs::path(SYNTH2_SOURCE_DIR) / "tests/fixtures";
+using namespace synth1x::host;
+const auto fixtures = fs::path(SYNTH1X_SOURCE_DIR) / "tests/fixtures";
 
 std::string bytes(const fs::path& path)
 {

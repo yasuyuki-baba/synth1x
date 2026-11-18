@@ -7,7 +7,7 @@ TEST(OutputTonePrecision, FractionalEditsApproachIntegralSettingsContinuously)
 {
     for(double rate:{22050.,44100.,48000.,96000.})for(int dial=1;dial<127;++dial)
     {
-        synth2::dsp::OutputTone seed;seed.prepare(rate);seed.setDial(dial);
+        synth1x::dsp::OutputTone seed;seed.prepare(rate);seed.setDial(dial);
         for(int i=0;i<64;++i)seed.process(static_cast<float>(std::sin(i*.13)),i%2);
         auto exact=seed,lower=seed,upper=seed;
         lower.setFractionalDial(dial-.00001f);upper.setFractionalDial(dial+.00001f);
@@ -25,7 +25,7 @@ TEST(OutputTonePrecision, FractionalEditsApproachIntegralSettingsContinuously)
 
 TEST(OutputTonePrecision, BypassRetainsHistoryWithoutConsumingInput)
 {
-    synth2::dsp::OutputTone tone;tone.prepare(22050);tone.setDial(0);
+    synth1x::dsp::OutputTone tone;tone.prepare(22050);tone.setDial(0);
     for(int i=0;i<16;++i)tone.process(i==0 ? 1.f : 0.f,0);
     auto retained=tone;
     tone.setDial(64);ASSERT_TRUE(tone.isBypassed());
@@ -38,12 +38,12 @@ TEST(OutputTonePrecision, PreparePreservesFractionalSettingAndOptionalHistory)
 {
     for(double rate:{22050.,44100.,96000.})for(float dial:{0.f,32.25f,63.875f,64.f,64.125f,96.5f,127.f})
     {
-        synth2::dsp::OutputTone tone;tone.prepare(rate);tone.setFractionalDial(dial);
+        synth1x::dsp::OutputTone tone;tone.prepare(rate);tone.setFractionalDial(dial);
         for(int i=0;i<64;++i)tone.process(i==0 ? .5f : 0.f,i%2);
         auto retained=tone;tone.prepare(rate,true);
         for(int i=0;i<128;++i)EXPECT_EQ(tone.process(.1f,i%2),retained.process(.1f,i%2));
         tone.prepare(rate);
-        synth2::dsp::OutputTone fresh;fresh.prepare(rate);fresh.setFractionalDial(dial);
+        synth1x::dsp::OutputTone fresh;fresh.prepare(rate);fresh.setFractionalDial(dial);
         for(int i=0;i<128;++i)EXPECT_EQ(tone.process(i==0 ? 1.f : 0.f,i%2),fresh.process(i==0 ? 1.f : 0.f,i%2));
     }
 }

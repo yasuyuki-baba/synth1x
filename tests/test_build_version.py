@@ -22,8 +22,8 @@ class BuildVersion(unittest.TestCase):
         source.mkdir()
         # Source snapshots have no Git directory; no outside repository is consulted.
         script = root / 'version.cmake'
-        script.write_text(f'include("{ROOT.as_posix()}/cmake/Synth2Version.cmake")\n'
-                          f'synth2_configure_version("{source.as_posix()}" "{root.as_posix()}/out")\n')
+        script.write_text(f'include("{ROOT.as_posix()}/cmake/Synth1XVersion.cmake")\n'
+                          f'synth1x_configure_version("{source.as_posix()}" "{root.as_posix()}/out")\n')
         env = {key: value for key, value in os.environ.items()
                if key not in ('GITHUB_ACTIONS', 'GITHUB_REF_TYPE', 'GITHUB_REF_NAME')}
         env['SOURCE_DATE_EPOCH'] = '1767225600'  # 2026-01-01 UTC
@@ -31,7 +31,7 @@ class BuildVersion(unittest.TestCase):
         if github:
             env.update(GITHUB_ACTIONS='true', GITHUB_REF_TYPE='tag', GITHUB_REF_NAME=tag)
         elif tag is not None:
-            command.append('-DSYNTH2_RELEASE_TAG=' + tag)
+            command.append('-DSYNTH1X_RELEASE_TAG=' + tag)
         result = subprocess.run(command + ['-P', str(script)], env=env,
                                 capture_output=True, text=True)
         return root / 'out', result
@@ -39,11 +39,11 @@ class BuildVersion(unittest.TestCase):
     def check_metadata(self, output, numeric, display, packed):
         header = (output / 'BuildVersion.h').read_text()
         self.assertIn(f'"{display}"', header)
-        word = re.search(r'SYNTH2_VERSION_HEX (0x[0-9a-f]+)', header).group(1)
+        word = re.search(r'SYNTH1X_VERSION_HEX (0x[0-9a-f]+)', header).group(1)
         self.assertEqual(int(word, 16), packed)
         bundle_formats = {'AU': 'audiounit', 'CLAP': 'clap', 'VST3': 'vst3', 'macOS': 'app'}
         for format, identifier in bundle_formats.items():
-            data = plistlib.loads((output / f'Synth2-{format}-Info.plist').read_bytes())
+            data = plistlib.loads((output / f'Synth1X-{format}-Info.plist').read_bytes())
             self.assertEqual(data['CFBundleExecutable'], 'Synth1X')
             self.assertEqual(data['CFBundleIdentifier'], f'io.github.yasuyuki-baba.{identifier}.Synth1X')
             self.assertEqual(data['CFBundleVersion'], numeric)
@@ -55,6 +55,8 @@ class BuildVersion(unittest.TestCase):
                 self.assertEqual(component['manufacturer'], 'BABA')
                 self.assertEqual(component['subtype'], 'Sy1X')
                 self.assertEqual(data['CFBundleSignature'], component['subtype'])
+                self.assertEqual(component['factoryFunction'], 'Synth1X_Factory')
+                self.assertEqual(data['NSPrincipalClass'], 'Synth1X_View')
             if format == 'macOS':
                 self.assertEqual(data['NSMainNibFile'], 'Synth1X-macOS-MainMenu')
 

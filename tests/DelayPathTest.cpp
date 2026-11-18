@@ -7,7 +7,7 @@
 #include <memory>
 
 namespace {
-using synth2::dsp::DelayKernel;
+using synth1x::dsp::DelayKernel;
 auto makeDelay(int kind=0,int tone=64)
 {
     auto delay=std::make_unique<DelayKernel>();
@@ -102,14 +102,14 @@ TEST(DelayPath, IntegralFrameTargetsPreserveTheExactImpulseEndpoint)
 
 TEST(DelayPath, AdjacentFloatTempoUsesAlignedFrameWords)
 {
-    synth2::DelaySettings settings;
+    synth1x::DelaySettings settings;
     settings.enable=true;settings.time=7.0f/127;settings.spread=settings.tone=64.0f/127;
     settings.feedback=0;settings.level=1;settings.type=0;
-    synth2::ChorusSettings chorus;chorus.enabled=false;
+    synth1x::ChorusSettings chorus;chorus.enabled=false;
     const float tempo=std::nextafter(120.0f,121.0f);
     ASSERT_GT(tempo,120.0f);
-    auto cold=std::make_unique<synth2::dsp::EffectPair>();
-    auto changed=std::make_unique<synth2::dsp::EffectPair>();
+    auto cold=std::make_unique<synth1x::dsp::EffectPair>();
+    auto changed=std::make_unique<synth1x::dsp::EffectPair>();
     cold->prepare(48000);changed->prepare(48000);
     cold->setParams(settings,chorus,tempo);
     changed->setParams(settings,chorus,120);changed->setParams(settings,chorus,tempo);
@@ -162,10 +162,10 @@ TEST(DelayPath, NegativeTapRoundingAtRingEndWrapsToFirstSample)
 
 TEST(DelayPath, TimingReadoutTracksTempoSpreadAndTheActualSlewingTap)
 {
-    synth2::DelaySettings d;
+    synth1x::DelaySettings d;
     d.enable=true;d.time=7.0f/127;d.spread=d.tone=64.0f/127;d.feedback=0;d.level=1;
-    synth2::ChorusSettings c;c.enabled=false;
-    auto effects=std::make_unique<synth2::dsp::EffectPair>();effects->prepare(48000);
+    synth1x::ChorusSettings c;c.enabled=false;
+    auto effects=std::make_unique<synth1x::dsp::EffectPair>();effects->prepare(48000);
     effects->setParams(d,c,120);
     EXPECT_FLOAT_EQ(effects->delayMilliseconds()[0],187.5f);
     EXPECT_FLOAT_EQ(effects->delayMilliseconds()[1],187.5f);

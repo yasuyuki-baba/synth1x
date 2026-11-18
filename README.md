@@ -50,7 +50,7 @@ No plugin SDK, display, audio device, Synth1 DLL or Wine is required.
 
 Build switches can also be set explicitly:
 
-| Configuration | SYNTH2_BUILD_IPLUG2 | SYNTH2_BUILD_TOOLS | SYNTH2_BUILD_TESTS |
+| Configuration | SYNTH1X_BUILD_IPLUG2 | SYNTH1X_BUILD_TOOLS | SYNTH1X_BUILD_TESTS |
 | --- | --- | --- | --- |
 | Portable library only | OFF | OFF | OFF |
 | Offline tools | OFF | ON | OFF |
@@ -62,7 +62,7 @@ and WAV comparator they require even with optional tools disabled. Use a separat
 build directory for each configuration; for example:
 
 ```sh
-cmake -S . -B build-oos-tests -DSYNTH2_BUILD_IPLUG2=OFF -DSYNTH2_BUILD_TOOLS=OFF -DSYNTH2_BUILD_TESTS=ON
+cmake -S . -B build-oos-tests -DSYNTH1X_BUILD_IPLUG2=OFF -DSYNTH1X_BUILD_TOOLS=OFF -DSYNTH1X_BUILD_TESTS=ON
 cmake --build build-oos-tests --parallel 4
 ctest --test-dir build-oos-tests --output-on-failure
 ```

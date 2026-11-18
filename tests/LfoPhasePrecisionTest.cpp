@@ -4,12 +4,12 @@
 
 TEST(LfoPhasePrecision, AmplitudeAndPanInterpolateBetweenSineCoordinates)
 {
-    using synth2::dsp::LfoShape;
+    using synth1x::dsp::LfoShape;
     for(int destination:{3,6})for(int dial:{64,127})
     {
         SCOPED_TRACE(::testing::Message()<<destination<<' '<<dial);
         const LfoShape::DepthCurve curve(destination,dial);
-        const auto range=synth2::dsp::lfoDepthRange(destination+1,dial);
+        const auto range=synth1x::dsp::lfoDepthRange(destination+1,dial);
         const int depth=destination==3 ? range.first : range.second;
         bool fractional=false;
         for(int phase=0;phase<2048;++phase)
@@ -29,11 +29,11 @@ TEST(LfoPhasePrecision, AmplitudeAndPanInterpolateBetweenSineCoordinates)
 
 TEST(LfoPhasePrecision, OtherReceiversAndFallbackQueriesKeepCompatibleCoordinates)
 {
-    using synth2::dsp::LfoShape;
+    using synth1x::dsp::LfoShape;
     for(int destination:{0,1,2,3,4,5,6})for(int wave:{0,4,5})
     {
         if(wave==0 && (destination==3 || destination==6))continue;
-        const auto range=synth2::dsp::lfoDepthRange(destination+1,64);
+        const auto range=synth1x::dsp::lfoDepthRange(destination+1,64);
         const int depth=destination==3 ? range.first : range.second;
         const LfoShape::DepthCurve curve(destination,64);
         for(int counter:{1,1235,4095})
@@ -51,7 +51,7 @@ TEST(LfoPhasePrecision, OtherReceiversAndFallbackQueriesKeepCompatibleCoordinate
 
 TEST(LfoPhasePrecision, FractionalDepthAndPhaseRemainIndependentCoordinates)
 {
-    using Curve=synth2::dsp::LfoShape::DepthCurve;
+    using Curve=synth1x::dsp::LfoShape::DepthCurve;
     for(int destination:{3,6})for(int counter:{1,1235,4095})
     {
         const auto low=Curve(destination,64).query(0,counter,4096,32);
@@ -64,7 +64,7 @@ TEST(LfoPhasePrecision, FractionalDepthAndPhaseRemainIndependentCoordinates)
 
 TEST(LfoPhasePrecision, SlowClockKeepsPhaseWordWrappingWithoutLosingTheRemainder)
 {
-    using Curve=synth2::dsp::LfoShape::DepthCurve;
+    using Curve=synth1x::dsp::LfoShape::DepthCurve;
     for(int destination:{3,6})
     {
         const Curve curve(destination,127);

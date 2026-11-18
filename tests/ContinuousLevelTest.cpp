@@ -8,7 +8,7 @@
 
 TEST(ContinuousLevel, AttackRetainsSubLevelPrecisionAtWholeSettings)
 {
-    synth2::dsp::AmplitudeEnvelope envelope;
+    synth1x::dsp::AmplitudeEnvelope envelope;
     envelope.setParameters(1000,1000,512,4410);envelope.noteOn();
     std::array<float,64> gains{};envelope.render(gains.data(),64);
     EXPECT_EQ(envelope.getLevel(),131.072f);
@@ -19,7 +19,7 @@ TEST(ContinuousLevel, AttackRetainsSubLevelPrecisionAtWholeSettings)
 
 TEST(ContinuousLevel, CompletedAttackPreservesReleaseTimingAndFinalSilence)
 {
-    synth2::dsp::AmplitudeEnvelope envelope;
+    synth1x::dsp::AmplitudeEnvelope envelope;
     envelope.setParameters(1000,0,2048,4410);envelope.noteOn();
     std::array<float,1000> attack{};envelope.render(attack.data(),1000);
     EXPECT_EQ(envelope.getLevel(),2048);envelope.noteOff();
@@ -36,7 +36,7 @@ TEST(ContinuousLevel, ReleaseKeepsTheExistingActiveWindow)
     for(const auto [duration,end]:{std::pair{1000,832},std::pair{4410,3456},std::pair{16075,12416}})
     {
         SCOPED_TRACE(duration);
-        synth2::dsp::ReleaseRamp release;release.start(duration,2048);
+        synth1x::dsp::ReleaseRamp release;release.start(duration,2048);
         for(int frames=0;release.isActive() && frames<duration+64;frames+=64)
             release.advance(64,[&](double level,int count) {
                 EXPECT_GT(count,0);EXPECT_GE(level,0);EXPECT_LE(level,2048);
@@ -52,7 +52,7 @@ TEST(ContinuousLevel, StaticFilterPassesFractionalCutoffToTheExistingNativeKerne
     for(int mode=0;mode<5;++mode)
     {
         SCOPED_TRACE(mode);
-        synth2::dsp::Filter wrapped,direct,neighbor;
+        synth1x::dsp::Filter wrapped,direct,neighbor;
         for(auto* filter:{&wrapped,&direct,&neighbor})filter->prepare({44100,64,2});
         wrapped.setParams(mode,512.25f,.25f,0,0,0);
         direct.setParams(mode,512.25f,.25f,0,0,0);
@@ -73,7 +73,7 @@ TEST(ContinuousLevel, StaticFilterPassesFractionalCutoffToTheExistingNativeKerne
 
 TEST(ContinuousLevel, PhysicalFmSlewRetainsRealLevelsAndCompletesAtTheTarget)
 {
-    synth2::dsp::FrequencyModulation slew;
+    synth1x::dsp::FrequencyModulation slew;
     slew.render(.125,1,1000,[](double){});
     EXPECT_DOUBLE_EQ(slew.current,.125);
     for(double target:{.375,-.25,.0625})
@@ -90,7 +90,7 @@ TEST(ContinuousLevel, RepeatedAttackUsesWholeLevelRestartAnchorsWithoutRoundingA
     for(bool vectorRamp:{false,true})
     {
         SCOPED_TRACE(vectorRamp);
-        synth2::dsp::AmplitudeEnvelope envelope(vectorRamp);
+        synth1x::dsp::AmplitudeEnvelope envelope(vectorRamp);
         envelope.setParameters(100000,1000,512,1000);envelope.noteOn();
         alignas(16) std::array<float,64> gains{};
         // floor(100000*n/2048) for successive whole restart levels 1..6.
@@ -112,7 +112,7 @@ TEST(ContinuousLevel, RepeatedAttackUsesWholeLevelRestartAnchorsWithoutRoundingA
 
 TEST(ContinuousLevel, ReleaseRetriggerKeepsRealLevelAndUsesCompatibleSamplePosition)
 {
-    synth2::dsp::AmplitudeEnvelope envelope;
+    synth1x::dsp::AmplitudeEnvelope envelope;
     envelope.setParameters(0,0,512.25,1000);envelope.noteOn();
     std::array<float,64> gains{};envelope.render(gains.data(),64);
     envelope.noteOff();envelope.render(gains.data(),1);
