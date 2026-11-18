@@ -1,5 +1,9 @@
 # Upgrading from Synth2 0.1.x to Synth1X 0.2.x or later
 
+I've decided to rename the plugin from Synth2 to Synth1X while it's still in
+early development. I'm sorry for the extra work this creates for anyone already
+using Synth2.
+
 This upgrade requires manual migration. Starting with 0.2.x, the plugin and
 standalone filenames change from `Synth2` to `Synth1X`, and user data and
 standalone settings use new directories. Copy your existing library and settings
