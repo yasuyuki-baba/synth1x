@@ -5,6 +5,7 @@ import os
 from pathlib import Path
 import shutil
 import subprocess
+import sys
 import tarfile
 import tempfile
 import unittest
@@ -21,6 +22,70 @@ sdk_setup = importlib.util.module_from_spec(SDK_SPEC)
 SDK_SPEC.loader.exec_module(sdk_setup)
 
 
+class MigrationScripts(unittest.TestCase):
+    def test_preview_and_copy_preserve_existing_and_legacy_data(self):
+        with tempfile.TemporaryDirectory(prefix='migration test ') as work:
+            directory = Path(work)
+            scripts = Path(__file__).resolve().parents[1] / 'tools'
+            environment = os.environ.copy()
+            if os.name == 'nt':
+                data, config = directory / 'Roaming', directory / 'Local'
+                environment.update(APPDATA=str(data), LOCALAPPDATA=str(config))
+                command = ['powershell.exe', '-NoProfile', '-ExecutionPolicy', 'Bypass',
+                           '-File', str(scripts / 'migrate-synth2.ps1')]
+                flag = '-Apply'
+            else:
+                if sys.platform == 'darwin':
+                    environment['HOME'] = str(directory)
+                    data = config = directory / 'Library' / 'Application Support'
+                else:
+                    data, config = directory / 'Data', directory / 'Config'
+                    environment.update(XDG_DATA_HOME=str(data), XDG_CONFIG_HOME=str(config))
+                command = ['bash', str(scripts / 'migrate-synth2.sh')]
+                flag = '--apply'
+
+            source, destination = data / 'Synth2', data / 'Synth1X'
+            files = {
+                source / 'Library' / 'Warm Pad.sy1': b'patch',
+                source / 'Library' / 'tags' / 'Preset.tags': b'manual tags',
+                source / 'Library' / '.synth2-tags.cache': b'cache',
+                source / 'preset-directory': b'custom library',
+                source / 'standalone.state': b'patch state',
+                config / 'Synth2' / 'settings.ini': b'audio and MIDI settings',
+            }
+            for path, contents in files.items():
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_bytes(contents)
+
+            def run(*arguments):
+                result = subprocess.run(command + list(arguments), env=environment,
+                                        capture_output=True, text=True)
+                self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                return result.stdout
+
+            self.assertIn('Preview only', run())
+            self.assertFalse(destination.exists())
+            self.assertFalse((config / 'Synth1X').exists())
+            (destination / 'Library').mkdir(parents=True)
+            existing = destination / 'Library' / 'Warm Pad.sy1'
+            existing.write_bytes(b'existing patch')
+
+            for _ in range(2):
+                output = run(flag)
+                self.assertIn('Keep existing', output)
+                self.assertIn('Custom library', output)
+                self.assertEqual(existing.read_bytes(), b'existing patch')
+                self.assertEqual((destination / 'Library' / 'tags' / 'Preset.tags').read_bytes(),
+                                 b'manual tags')
+                self.assertEqual((destination / 'standalone.state').read_bytes(), b'patch state')
+                self.assertEqual((config / 'Synth1X' / 'settings.ini').read_bytes(),
+                                 b'audio and MIDI settings')
+                self.assertFalse((destination / 'Library' / '.synth2-tags.cache').exists())
+                self.assertFalse((destination / 'preset-directory').exists())
+                for path, contents in files.items():
+                    self.assertEqual(path.read_bytes(), contents)
+
+
 class CandidatePackages(unittest.TestCase):
     def setUp(self):
         self.directory = tempfile.TemporaryDirectory()
@@ -33,7 +98,8 @@ class CandidatePackages(unittest.TestCase):
                                              'iplug2': 'b' * 40}))
         (self.root / 'MIGRATION.md').write_text('# Upgrading from Synth2\n')
         for name in [
-            'LICENSE', 'INSTALL.md', 'third_party/miniz/LICENSE', 'third_party/tinyxml2/LICENSE',
+            'LICENSE', 'INSTALL.md', 'tools/migrate-synth2.ps1', 'tools/migrate-synth2.sh',
+            'third_party/miniz/LICENSE', 'third_party/tinyxml2/LICENSE',
             'third_party/libarchive/COPYING', 'third_party/libarchive/NOTICES',
             'third_party/xz/COPYING', 'third_party/xz/COPYING.0BSD',
             'projects/Synth2/resources/IPLUG2-LICENSE.txt',
@@ -78,6 +144,8 @@ class CandidatePackages(unittest.TestCase):
                              (self.root / 'INSTALL.md').read_bytes())
             self.assertEqual(archive.read('Synth1X/MIGRATION.md'),
                              (self.root / 'MIGRATION.md').read_bytes())
+            self.assertEqual(archive.read('Synth1X/migrate-synth2.ps1'),
+                             (self.root / 'tools/migrate-synth2.ps1').read_bytes())
             self.assertIn(b'INSTALL.md', archive.read('Synth1X/README.txt'))
             self.assertIn(b'MIGRATION.md', archive.read('Synth1X/README.txt'))
             self.assertEqual(archive.read('Synth1X/dependencies.json'),
@@ -103,6 +171,8 @@ class CandidatePackages(unittest.TestCase):
                              (self.root / 'INSTALL.md').read_bytes())
             self.assertEqual(archive.extractfile('Synth1X/MIGRATION.md').read(),
                              (self.root / 'MIGRATION.md').read_bytes())
+            self.assertEqual(archive.extractfile('Synth1X/migrate-synth2.sh').read(),
+                             (self.root / 'tools/migrate-synth2.sh').read_bytes())
 
     @unittest.skipIf(os.name == 'nt', 'Unix archive modes and symlinks require Unix')
     def test_linux_preserves_products_resources_modes_and_symlinks(self):
@@ -130,6 +200,8 @@ class CandidatePackages(unittest.TestCase):
             self.assertIn('Synth1X/INSTALL.md', archive.getnames())
             self.assertEqual(archive.extractfile('Synth1X/MIGRATION.md').read(),
                              (self.root / 'MIGRATION.md').read_bytes())
+            self.assertEqual(archive.extractfile('Synth1X/migrate-synth2.sh').read(),
+                             (self.root / 'tools/migrate-synth2.sh').read_bytes())
             self.assertIn('Synth1X/notices/iPlug2/WDL/license.txt', archive.getnames())
             self.assertNotIn('Synth1X/unrelated.so', archive.getnames())
 

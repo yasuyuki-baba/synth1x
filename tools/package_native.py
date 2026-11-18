@@ -53,6 +53,8 @@ def package(root, build, platform, manifest, output):
         shutil.copy2(root / 'LICENSE', staging / 'LICENSE')
         shutil.copy2(root / 'INSTALL.md', staging / 'INSTALL.md')
         shutil.copy2(root / 'MIGRATION.md', staging / 'MIGRATION.md')
+        migration_script = 'migrate-synth2.ps1' if platform == 'windows' else 'migrate-synth2.sh'
+        shutil.copy2(root / 'tools' / migration_script, staging / migration_script)
         for source, destination in [
             ('third_party/miniz/LICENSE', 'notices/miniz-LICENSE'),
             ('third_party/libarchive/COPYING', 'notices/libarchive-COPYING'),
