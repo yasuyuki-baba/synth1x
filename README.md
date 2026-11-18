@@ -6,7 +6,7 @@ sounds from a single-panel interface.
 Synth1X starts with Init and an empty library. Add your own patches or banks;
 all imported sounds can be tagged, favorited and removed through the same UI.
 
-![Synth1X editor showing the Init patch](docs/images/synth2.png)
+![Synth1X editor showing the Init patch](docs/images/synth1x.png)
 
 The editor combines Synth1-inspired functional groups with restrained red accents,
 warm-white legends and black controls. MIDI routing and the sound library have

@@ -1,4 +1,4 @@
-name: Build Synth2
+name: Build Synth1X
 
 on:
   push:
