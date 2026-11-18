@@ -184,10 +184,10 @@ ID is `BABA`. The VST3 class ID retains the `Syn2` code. The AUv2 component uses
 type `aumu`, subtype `Sy1X` and manufacturer `BABA`. The CLAP descriptor ID is
 `io.github.yasuyuki-baba.Synth1X`.
 
-The macOS standalone bundle ID is `io.github.yasuyuki-baba.app.Synth1X`, and
-the CLAP bundle ID is `io.github.yasuyuki-baba.clap.Synth1X`. The macOS VST3
-and AUv2 bundle IDs retain the `Synth2` suffix with the `vst3` and `audiounit`
-components, respectively.
+The macOS bundle IDs are `io.github.yasuyuki-baba.app.Synth1X` for the
+standalone, `io.github.yasuyuki-baba.clap.Synth1X` for CLAP,
+`io.github.yasuyuki-baba.vst3.Synth1X` for VST3, and
+`io.github.yasuyuki-baba.audiounit.Synth1X` for AUv2.
 The macOS standalone advertises its virtual MIDI input as `To Synth1X` and
 output as `From Synth1X`.
 Native target names are `Synth1X-vst3`, `Synth1X-clap`, `Synth1X-au` and
