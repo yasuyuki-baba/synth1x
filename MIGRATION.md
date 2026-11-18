@@ -17,11 +17,15 @@ On macOS, the plugin and standalone bundle IDs now end in `.Synth1X`.
 ## Prepare your projects
 
 Keep a copy of your DAW projects, the old Synth2 binaries and the old user data
-folders. While you can still open your projects with Synth2, prepare any AUv2 or
-CLAP instances you want to migrate:
+folders. If you use a custom library folder, back it up as well. While you can
+still open your projects with Synth2, prepare any AUv2 or CLAP instances you want
+to migrate:
 
 1. In each instance, use **Save → Save as...** to export its sound as a `.sy1`
-   file. If you use both A/B sounds, select and save each side separately.
+   file inside the active library folder. Use a distinct filename for each
+   instance so you can find it later. If you use both A/B sounds, select and save
+   each side under a different name. Keep a copy of the exported files with
+   your project backup.
 2. Note any DAW automation assignments and shared instance settings you want to
    reproduce, such as oversampling. A `.sy1` file carries one sound. The DAW
    project carries automation and the full plugin state.
@@ -55,8 +59,9 @@ On macOS, the user data copy above includes this file. On Linux, use an absolute
 `$XDG_CONFIG_HOME` in place of `~/.config` if set.
 
 If you picked a custom library location, the copied settings retain its saved
-absolute path. If you moved the library, reselect it with **Add... → Choose
-library folder...** after opening the editor.
+absolute path. To keep the Synth2 library available for rollback, copy the
+custom folder and select the copy in Synth1X with **Add... → Choose library
+folder...** before editing or saving any library data.
 
 Synth1X can open existing Synth2 palette files. Keep the original XML if you
 also use Synth2, which expects the original palette tag.
@@ -71,7 +76,7 @@ automatic tag cache on the first scan if the new cache file is missing.
 Move the old `Synth2` plugins out of your DAW's scan folders, install the
 matching `Synth1X` products using the [platform installation instructions](INSTALL.md)
 and rescan.
-Open a copy of your project to check playback and automation before saving it.
+Open a copy of your project and follow the steps for its plugin format.
 
 | Format | What to do in an existing project |
 | --- | --- |
@@ -79,8 +84,12 @@ Open a copy of your project to check playback and automation before saving it.
 | CLAP | The ID changes from `io.github.yasuyuki-baba.Synth2` to `io.github.yasuyuki-baba.Synth1X`. Add a Synth1X instance, load the exported patch and reassign automation. |
 | AUv2 | The subtype changes from `Syn2` to `Sy1X`. Add a Synth1X instance, load the exported patch and reassign automation. |
 
-If you exported both A/B sounds, select each side in the new instance and load
-the corresponding patch.
+For replacement AUv2 and CLAP instances, load the exported sounds from the
+library. If you kept them outside the active library, register them with
+**Add... → Add .zip/.rar/.7z bank or .sy1 file...** first. If you exported both
+A/B sounds, select each side in the new instance and load the corresponding
+patch. Restore any shared settings you noted. Check playback and automation
+before saving the project copy.
 
 Launch the new standalone app from its new file and update any shortcuts. On
 macOS it has a new app identity and virtual MIDI ports named `To Synth1X` and
