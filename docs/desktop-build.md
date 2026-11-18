@@ -188,6 +188,8 @@ format component (`vst3`, `clap`, `audiounit` or `app`) between manufacturer and
 name (for example, `io.github.yasuyuki-baba.vst3.Synth2`). The bundle namespace
 is independent of the displayed manufacturer and four-character manufacturer ID.
 The CLAP descriptor ID is `io.github.yasuyuki-baba.Synth2`.
+The macOS standalone advertises its virtual MIDI input as `To Synth1X` and
+output as `From Synth1X`.
 Native target names are `Synth1X-vst3`, `Synth1X-clap`, `Synth1X-au` and
 `Synth1X-app` as applicable. Keep config.h, native resource metadata and build
 presets consistent. Internal class names do not define parameter identities.
