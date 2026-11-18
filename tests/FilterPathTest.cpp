@@ -6,7 +6,7 @@ TEST(FilterPath, SelectedCompatibleKernelKeepsTheSameStateAcrossResonance112)
 {
     for(double rate:{44100.,48000.,96000.})for(int mode=0;mode<=4;++mode)
     {
-        synth2::dsp::Filter selected,reference;
+        synth1x::dsp::Filter selected,reference;
         selected.prepare({static_cast<float>(rate),64,1});reference.prepare({static_cast<float>(rate),64,1});
         for(int frame=0;frame<4096;++frame)
         {
@@ -26,7 +26,7 @@ TEST(FilterPath, CompatibleResonanceEditsAreContinuousAround112)
 {
     for(double rate:{44100.,48000.,96000.})for(int mode=0;mode<=4;++mode)
     {
-        synth2::dsp::Filter seed;seed.prepare({static_cast<float>(rate),64,1});
+        synth1x::dsp::Filter seed;seed.prepare({static_cast<float>(rate),64,1});
         seed.setParams(mode,400.25,112./127,0,0,0);
         for(int frame=0;frame<64;++frame)seed.processSample(frame==0 ? .5 : 0.,0);
         auto exact=seed,lower=seed,upper=seed;
@@ -42,7 +42,7 @@ TEST(FilterPath, CoordinateAdaptersShareOneHistoryAcrossParameterChanges)
 {
     for(int mode=0;mode<=4;++mode)
     {
-        synth2::dsp::Filter alternating,reference;
+        synth1x::dsp::Filter alternating,reference;
         alternating.prepare({44100,64,1});reference.prepare({44100,64,1});
         for(int frame=0;frame<1024;++frame)
         {
@@ -64,7 +64,7 @@ TEST(FilterPath, LowRateCutoffSweepsStayFiniteWithoutChangingKernels)
     for(double rate:{8000.,16000.,22050.})for(int mode=0;mode<=4;++mode)
     for(double resonance:{0.,.5,1.})
     {
-        synth2::dsp::Filter filter;filter.prepare({static_cast<float>(rate),64,1});
+        synth1x::dsp::Filter filter;filter.prepare({static_cast<float>(rate),64,1});
         for(int frame=0;frame<12000;++frame)
         {
             const double index=(frame%2048)*(1023./2047.);
@@ -90,13 +90,13 @@ TEST(FilterPath, CoefficientPreparationPreservesAnalyticPrecisionBeforeFloatStor
         const float expectedPole=std::clamp(static_cast<float>(3.6L*f-1.6L*f*f-1.L),-limit,limit);
         const float square=(f*2.5f)*f;
         const float expectedFeedback=static_cast<float>(std::exp(1.386249L*(1.L-(4.3L*f-square)/2.L)));
-        synth2::dsp::Lp24Kernel lp;
+        synth1x::dsp::Lp24Kernel lp;
         lp.prepare(rate);lp.configure(index,1.f);
         EXPECT_EQ(lp.getA(),expectedPole);
         EXPECT_EQ(lp.getFeedback(),expectedFeedback);
         if(index<=511)
         {
-            synth2::dsp::StateVariableFilter svf;
+            synth1x::dsp::StateVariableFilter svf;
             for(float resonance:{0.f,.125f,.7f,1.f})
             {
                 svf.configure(static_cast<float>(rate),index,resonance);
@@ -110,7 +110,7 @@ TEST(FilterPath, CoefficientPreparationPreservesAnalyticPrecisionBeforeFloatStor
 
 TEST(FilterPath, DiodeRetainsSubFloatImpulseResponseState)
 {
-    synth2::dsp::DiodeKernel diode;
+    synth1x::dsp::DiodeKernel diode;
     diode.configure(44100,128,.5f);
     // A normal Float32 input produces smaller internal ladder stages.
     diode.process(std::numeric_limits<float>::min());
@@ -127,9 +127,9 @@ TEST(FilterPath, ResonanceCacheMatchesForcedFrequencyPreparation)
 {
     for(int rate:{8000,44100,48000,48001,96000})for(float index:{0.f,128.25f,1023.f})
     {
-        synth2::dsp::Lp24Kernel lp;lp.prepare(rate);
-        synth2::dsp::StateVariableFilter sv;
-        synth2::dsp::DiodeKernel diode;
+        synth1x::dsp::Lp24Kernel lp;lp.prepare(rate);
+        synth1x::dsp::StateVariableFilter sv;
+        synth1x::dsp::DiodeKernel diode;
         for(float resonance:{0.f,.5f,.91f,1.f,.1f,1.f,.9f})
         {
             SCOPED_TRACE(::testing::Message()<<rate<<" / "<<index<<" / "<<resonance);

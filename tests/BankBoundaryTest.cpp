@@ -8,7 +8,7 @@
 
 namespace
 {
-using synth2::host::PatchLibrary;
+using synth1x::host::PatchLibrary;
 const std::string patch="Owned boundary\nver=113\n19,91\n29,73\n";
 bool repeatedZip(const std::filesystem::path& path,size_t count,const std::string& payload,bool extraByte=false)
 {
@@ -99,7 +99,7 @@ TEST(BankBoundary, LargeNestedCollectionIgnoresMacMetadataAndRecallsLateSelectio
     ASSERT_TRUE(library.openFile(file.string(),error))<<error;
     ASSERT_EQ(library.patches().size(),25000u);
     EXPECT_EQ(library.patches().back().name,"Patches/Bank195/24999.sy1  -  Owned boundary");
-    synth2::host::ProcessorBridge selected,recalled;
+    synth1x::host::ProcessorBridge selected,recalled;
     ASSERT_TRUE(selected.loadProgram(library.patches()[24999].text,24999,error))<<error;
     EXPECT_EQ(selected.currentProgram(),24999);
     const auto state=selected.saveState();ASSERT_TRUE(std::filesystem::remove(file));

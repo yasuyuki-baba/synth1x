@@ -12,8 +12,8 @@
 
 namespace hostvalidation
 {
-inline auto processor() { return std::make_unique<synth2::host::ProcessorBridge>(); }
-inline void load(synth2::host::ProcessorBridge& p,const std::string& text)
+inline auto processor() { return std::make_unique<synth1x::host::ProcessorBridge>(); }
+inline void load(synth1x::host::ProcessorBridge& p,const std::string& text)
 {
     std::string error;if(!p.loadPatch(text,error))throw std::runtime_error(error);
 }
@@ -30,32 +30,32 @@ inline std::string patch(int unison=1,int mode=0)
         "79,0\n80,0\n81,0\n82,0\n83,0\n84,64\n86,0\n87,0\n88,0\n89,0\n90,64\n91,0\n92,64\n93,"
         +std::to_string(unison)+"\n94,32\n95,0\n96,0\n97,0\n98,0\n";
 }
-inline void notes(synth2::audio::MidiBuffer& midi,int count,bool on=true,int offset=0)
+inline void notes(synth1x::audio::MidiBuffer& midi,int count,bool on=true,int offset=0)
 {
-    for(int n=0;n<count;++n)midi.addEvent(on ? synth2::audio::MidiMessage::noteOn(1,36+n,static_cast<uint8_t>(80))
-                                                         : synth2::audio::MidiMessage::noteOff(1,36+n),offset);
+    for(int n=0;n<count;++n)midi.addEvent(on ? synth1x::audio::MidiMessage::noteOn(1,36+n,static_cast<uint8_t>(80))
+                                                         : synth1x::audio::MidiMessage::noteOff(1,36+n),offset);
 }
-inline int activeCores(synth2::host::ProcessorBridge& p)
+inline int activeCores(synth1x::host::ProcessorBridge& p)
 {
     int result=0;
     for(size_t voice=0;voice<32;++voice)for(size_t core=0;core<8;++core)
     {
         std::array<uint32_t,16> words{};
-        if(synth2::readRenderingCoreWords(p,voice,core,words) && words[0])++result;
+        if(synth1x::readRenderingCoreWords(p,voice,core,words) && words[0])++result;
     }
     return result;
 }
-template<class Sample> bool finite(const synth2::audio::AudioBuffer<Sample>& audio)
+template<class Sample> bool finite(const synth1x::audio::AudioBuffer<Sample>& audio)
 {
     for(int ch=0;ch<audio.getNumChannels();++ch)for(int i=0;i<audio.getNumSamples();++i)
         if(!std::isfinite(audio.getSample(ch,i)))return false;
     return true;
 }
-template<class Sample> void process(synth2::host::ProcessorBridge& p,synth2::audio::AudioBuffer<Sample>& a,const synth2::audio::MidiBuffer& midi) {
+template<class Sample> void process(synth1x::host::ProcessorBridge& p,synth1x::audio::AudioBuffer<Sample>& a,const synth1x::audio::MidiBuffer& midi) {
     for(const auto& e:midi){const auto* b=e.getMessage().getRawData();if(!p.enqueueMidi(e.samplePosition,b[0],b[1],b[2]))throw std::runtime_error("MIDI rejected");}
     if(!p.process(a.getWritePointer(0),a.getWritePointer(1),a.getNumSamples(),120.))throw std::runtime_error("Block rejected");
 }
-inline auto save(synth2::host::ProcessorBridge& p){return p.saveState();}
-inline void restore(synth2::host::ProcessorBridge& p,const std::vector<uint8_t>& state)
+inline auto save(synth1x::host::ProcessorBridge& p){return p.saveState();}
+inline void restore(synth1x::host::ProcessorBridge& p,const std::vector<uint8_t>& state)
 {p.restoreState(state.data(),static_cast<int>(state.size()));}
 }

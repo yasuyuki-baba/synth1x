@@ -4,14 +4,14 @@
 #include <chrono>
 #include <fstream>
 
-using namespace synth2::editor;
-using synth2::host::EditorPaletteStore;
+using namespace synth1x::editor;
+using synth1x::host::EditorPaletteStore;
 namespace {
 class EditorPaletteTest : public ::testing::Test
 {
 protected:
     std::filesystem::path directory=std::filesystem::temp_directory_path()/
-        ("synth2-palette-"+std::to_string(std::chrono::steady_clock::now().time_since_epoch().count()));
+        ("synth1x-palette-"+std::to_string(std::chrono::steady_clock::now().time_since_epoch().count()));
     void SetUp() override {std::filesystem::create_directories(directory);}
     void TearDown() override {std::error_code ignored;std::filesystem::remove_all(directory,ignored);}
     void write(std::string_view text) {std::ofstream out(directory/"palette.xml");out<<text;}

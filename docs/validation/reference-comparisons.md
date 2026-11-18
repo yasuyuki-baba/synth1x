@@ -14,7 +14,7 @@ is involved.
 
 ```sh
 cmake --preset core
-cmake --build build-oos-core --target Synth2Probe Synth2LoadingProbe CompareWaves
+cmake --build build-oos-core --target Synth1XProbe Synth1XLoadingProbe CompareWaves
 ```
 
 ### Prepare immutable inputs
@@ -73,11 +73,11 @@ work = Path("build-oos-core/comparison-example")
 inputs = work / "inputs"
 output = work / stage
 output.mkdir()
-probe = built_executable("build-oos-core", "Synth2Probe")
-loading = built_executable("build-oos-core", "Synth2LoadingProbe")
+probe = built_executable("build-oos-core", "Synth1XProbe")
+loading = built_executable("build-oos-core", "Synth1XLoadingProbe")
 env = clean_environment()
-env.update(SYNTH2_PROBE_SAMPLE_RATE="44100", SYNTH2_PROBE_BLOCK_SIZE="64",
-           SYNTH2_PROBE_VELOCITY="100")
+env.update(SYNTH1X_PROBE_SAMPLE_RATE="44100", SYNTH1X_PROBE_BLOCK_SIZE="64",
+           SYNTH1X_PROBE_VELOCITY="100")
 run_logged(
     [loading, inputs, inputs / "cases.txt", output / "controls.tsv", "--dsp-routes"],
     output / "loading.log", env=env)
@@ -106,7 +106,7 @@ Retain the compiler/version, architecture, build flags and build logs alongside
 these outputs. A commit ID alone does not identify a dirty source tree; preserve
 the source diff or an exact source snapshot for each capture.
 
-`Synth2LoadingProbe CASE_ROOT CASE_LIST OUTPUT_TSV --dsp-routes` reads one case
+`Synth1XLoadingProbe CASE_ROOT CASE_LIST OUTPUT_TSV --dsp-routes` reads one case
 directory name per whitespace-separated entry in the case list. Each directory
 must contain `001.sy1` (donor) and `002.sy1` (target). This mode loads both with a
 64-frame silent callback after each, then renders at 44,100 Hz and 120 BPM. It

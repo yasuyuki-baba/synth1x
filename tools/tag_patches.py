@@ -127,7 +127,7 @@ def main():
     inspect = commands.add_parser("scan", help="Inspect a .sy1, ZIP/RAR/7z bank or recursive directory")
     inspect.add_argument("source", type=Path)
     inspect.add_argument("--probe", type=Path, default=ROOT / "build-oos-core" /
-                         ("Synth2TagProbe.exe" if sys.platform == "win32" else "Synth2TagProbe"))
+                         ("Synth1XTagProbe.exe" if sys.platform == "win32" else "Synth1XTagProbe"))
     difference = commands.add_parser("compare", help="Compare two reports, including reasons and source edits")
     difference.add_argument("before", type=Path)
     difference.add_argument("after", type=Path)

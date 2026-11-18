@@ -8,7 +8,7 @@ namespace testheap {
 thread_local Counts* active=nullptr;
 thread_local bool failNextCppAllocation=false;
 }
-#if defined(SYNTH2_TEST_WRAP_C_HEAP)
+#if defined(SYNTH1X_TEST_WRAP_C_HEAP)
 extern "C" void* __real_malloc(std::size_t);
 extern "C" void* __real_calloc(std::size_t,std::size_t);
 extern "C" void* __real_realloc(void*,std::size_t);
@@ -39,7 +39,7 @@ void* allocate(std::size_t size)
         throw std::bad_alloc();
     }
     if(testheap::active) ++testheap::active->allocations;
-#if defined(SYNTH2_TEST_WRAP_C_HEAP)
+#if defined(SYNTH1X_TEST_WRAP_C_HEAP)
     auto* pointer=__real_malloc(size ? size : 1);
 #else
     auto* pointer=std::malloc(size ? size : 1);
@@ -50,7 +50,7 @@ void* allocate(std::size_t size)
 void dispose(void* pointer) noexcept
 {
     if(pointer && testheap::active) ++testheap::active->deallocations;
-#if defined(SYNTH2_TEST_WRAP_C_HEAP)
+#if defined(SYNTH1X_TEST_WRAP_C_HEAP)
     __real_free(pointer);
 #else
     std::free(pointer);
@@ -74,7 +74,7 @@ void alignedDispose(void* pointer) noexcept
 #if defined(_MSC_VER)
     _aligned_free(pointer);
 #else
-#if defined(SYNTH2_TEST_WRAP_C_HEAP)
+#if defined(SYNTH1X_TEST_WRAP_C_HEAP)
     __real_free(pointer);
 #else
     std::free(pointer);

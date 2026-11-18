@@ -28,7 +28,7 @@ TEST(StateRepresentation, RecallUsesDecimalPointIndependentlyOfTheHostCLocale)
     std::array<std::vector<uint8_t>,3> states;
     for(int version:{1,2,3})
     {
-        synth2::host::ProcessorBridge source,canonical;std::string error;
+        synth1x::host::ProcessorBridge source,canonical;std::string error;
         ASSERT_TRUE(source.loadProgram("Owned locale state\nver=113\n19,91\n29,73\n",7,error));
         source.setNormalizedValue(19,.375);source.setNormalizedValue(128,.3125);
         auto xml=stateinspection::document(source);
@@ -42,7 +42,7 @@ TEST(StateRepresentation, RecallUsesDecimalPointIndependentlyOfTheHostCLocale)
     if(!locale.useComma())GTEST_SKIP()<<"A comma-decimal C locale is unavailable";
     for(const auto& state:states)
     {
-        synth2::host::ProcessorBridge restored;
+        synth1x::host::ProcessorBridge restored;
         restored.restoreState(state.data(),static_cast<int>(state.size()));
         EXPECT_EQ(restored.saveState(),state);
         EXPECT_EQ(restored.currentProgram(),7);
@@ -52,14 +52,14 @@ TEST(StateRepresentation, RecallUsesDecimalPointIndependentlyOfTheHostCLocale)
 
 TEST(StateRepresentation, LegacyNumberSpellingsRemainReadableAndInvalidNumbersAreAtomic)
 {
-    synth2::host::ProcessorBridge source;source.setNormalizedValue(128,.3125);
+    synth1x::host::ProcessorBridge source;source.setNormalizedValue(128,.3125);
     const auto expected=source.saveState();
     for(const auto* value:{"+0.3125"," \t0.3125","0x1.4p-2","3.125e-1"})
     {
         auto xml=stateinspection::document(expected);
         xml->RootElement()->LastChildElement()->SetAttribute("value",value);
         const auto bytes=stateinspection::bytes(*xml);
-        synth2::host::ProcessorBridge restored;
+        synth1x::host::ProcessorBridge restored;
         restored.restoreState(bytes.data(),static_cast<int>(bytes.size()));
         EXPECT_EQ(restored.saveState(),expected)<<value;
     }
@@ -80,7 +80,7 @@ TEST(StateRepresentation, ParameterOrderAndEquivalentNumbersPreserveNativeAndLeg
         SCOPED_TRACE(version);
         SCOPED_TRACE(scientific);
         SCOPED_TRACE(crlf);
-        synth2::host::ProcessorBridge source,restored;
+        synth1x::host::ProcessorBridge source,restored;
         std::string error;
         const std::string newline=crlf ? "\r\n" : "\n";
         ASSERT_TRUE(source.loadProgram("Owned state"+newline+"ver="+std::to_string(version)+newline+
@@ -107,14 +107,14 @@ TEST(StateRepresentation, ParameterOrderAndEquivalentNumbersPreserveNativeAndLeg
         restored.restoreState(incoming.data(),static_cast<int>(incoming.size()));
         EXPECT_EQ(restored.saveState(),expected);
         EXPECT_EQ(restored.currentProgram(),7);
-        for(int i=0;i<synth2::host::ProcessorBridge::parameterCount;++i)
+        for(int i=0;i<synth1x::host::ProcessorBridge::parameterCount;++i)
             EXPECT_EQ(restored.normalizedValue(i),source.normalizedValue(i))<<i;
     }
 }
 
 TEST(StateRepresentation, ReorderedUnknownOrDuplicateIdsStillRejectAtomically)
 {
-    synth2::host::ProcessorBridge source;
+    synth1x::host::ProcessorBridge source;
     source.setNormalizedValue(128,.375);
     const auto expected=source.saveState();
     for(bool duplicate:{false,true})

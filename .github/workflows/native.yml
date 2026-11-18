@@ -59,9 +59,9 @@ jobs:
       - name: Configure native products
         run: >-
           cmake --preset ${{ matrix.preset }} -B build
-          "-DSYNTH2_IPLUG2_FORMATS=${{ matrix.formats }}"
-          -DSYNTH2_BUILD_TOOLS=OFF -DSYNTH2_BUILD_TESTS=OFF
-          -DSYNTH2_BUILD_NATIVE_SMOKE=ON
+          "-DSYNTH1X_IPLUG2_FORMATS=${{ matrix.formats }}"
+          -DSYNTH1X_BUILD_TOOLS=OFF -DSYNTH1X_BUILD_TESTS=OFF
+          -DSYNTH1X_BUILD_NATIVE_SMOKE=ON
           "-DPython3_EXECUTABLE=${{ steps.python.outputs.python-path }}"
           -DIGRAPHICS_BACKEND=NANOVG
       - name: Build all selected formats

@@ -12,7 +12,7 @@
 #include <map>
 #include <set>
 
-using namespace synth2::editor;
+using namespace synth1x::editor;
 TEST(EditorLayout, PresetDisplaySeparatesTitleAndBankAndPreservesEditMarker)
 {
     const auto display=editorPresetDisplay("Warm Pad","User Bank",true);
@@ -130,8 +130,8 @@ TEST(EditorLayout, ChoicesRetainSourceWordsIncludingNonconsecutiveChorusValues)
         std::set<int> seen;
         for (const auto& choice:editorChoices(index))
         {
-            if(!synth2::isDisabledMidiDestination(index,choice.value))EXPECT_GE(choice.value,synth2::sourceMinimum(index));
-            EXPECT_LE(choice.value,synth2::sourceMaximum(index));
+            if(!synth1x::isDisabledMidiDestination(index,choice.value))EXPECT_GE(choice.value,synth1x::sourceMinimum(index));
+            EXPECT_LE(choice.value,synth1x::sourceMaximum(index));
             EXPECT_TRUE(seen.insert(choice.value).second);
         }
     }

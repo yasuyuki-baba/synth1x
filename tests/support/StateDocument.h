@@ -14,7 +14,7 @@ inline std::unique_ptr<tinyxml2::XMLDocument> document(const std::vector<uint8_t
     if(xml->Parse(reinterpret_cast<const char*>(bytes.data()+8),bytes.size()-9)!=tinyxml2::XML_SUCCESS || !xml->RootElement())throw std::runtime_error("Invalid state XML");
     return xml;
 }
-inline std::unique_ptr<tinyxml2::XMLDocument> document(const synth2::host::ProcessorBridge& p) {return document(p.saveState());}
+inline std::unique_ptr<tinyxml2::XMLDocument> document(const synth1x::host::ProcessorBridge& p) {return document(p.saveState());}
 inline std::string attribute(const tinyxml2::XMLDocument& xml,const char* key) {
     const auto* value=xml.RootElement()->Attribute(key);return value ? value : "";
 }
@@ -30,10 +30,10 @@ inline std::vector<uint8_t> bytes(const tinyxml2::XMLDocument& xml) {
     for(int i=0;i<2;++i)for(int j=0;j<4;++j)out[i*4+j]=static_cast<uint8_t>(fields[i]>>(j*8));
     std::copy(text.begin(),text.end(),out.begin()+8);return out;
 }
-inline float raw(const synth2::host::ProcessorBridge& p,int i) {
+inline float raw(const synth1x::host::ProcessorBridge& p,int i) {
     const auto& info=p.parameter(i);return static_cast<float>(info.minimum)+(static_cast<float>(info.maximum)-static_cast<float>(info.minimum))*static_cast<float>(p.normalizedValue(i));
 }
-inline float normalized(const synth2::host::ProcessorBridge& p,int i,float raw) {
+inline float normalized(const synth1x::host::ProcessorBridge& p,int i,float raw) {
     const auto& info=p.parameter(i);return (raw-static_cast<float>(info.minimum))/(static_cast<float>(info.maximum)-static_cast<float>(info.minimum));
 }
 }

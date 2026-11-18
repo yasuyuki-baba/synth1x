@@ -4,8 +4,8 @@ third_party/** -whitespace
 tests/fixtures/rar/input/** -text whitespace=cr-at-eol
 tests/fixtures/rar/*.rar -text
 tests/fixtures/7z/*.7z -text
-projects/Synth2/resources/IPLUG2-LICENSE.txt -whitespace
-projects/Synth2/src/dsp/OscillatorConstants.h linguist-generated=true
-projects/Synth2/src/dsp/FmTables.h linguist-generated=true
-projects/Synth2/src/dsp/FloatMathTables.h linguist-generated=true
-projects/Synth2/src/dsp/ControlTables.h linguist-generated=true
+projects/Synth1X/resources/IPLUG2-LICENSE.txt -whitespace
+projects/Synth1X/src/dsp/OscillatorConstants.h linguist-generated=true
+projects/Synth1X/src/dsp/FmTables.h linguist-generated=true
+projects/Synth1X/src/dsp/FloatMathTables.h linguist-generated=true
+projects/Synth1X/src/dsp/ControlTables.h linguist-generated=true

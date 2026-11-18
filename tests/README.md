@@ -49,26 +49,26 @@ and their scope. Select the relevant CTest entry or GoogleTest suite, for exampl
 
 ```sh
 ctest --test-dir build-oos-core --output-on-failure -R '^BuildToolsTests$'
-./build-oos-core/Synth2PatchTests --gtest_filter='HostLifecycle.*'
+./build-oos-core/Synth1XPatchTests --gtest_filter='HostLifecycle.*'
 ```
 
-Use `Synth2PatchTests.exe` on Windows. These examples run subsets, not the complete
+Use `Synth1XPatchTests.exe` on Windows. These examples run subsets, not the complete
 suite; retain the executed filter when recording results.
 
 For an additional local memory/undefined-behavior check with GCC or Clang:
 
 ```sh
-cmake -S . -B build/sanitized -DSYNTH2_BUILD_IPLUG2=OFF \
+cmake -S . -B build/sanitized -DSYNTH1X_BUILD_IPLUG2=OFF \
   -DXZ_SANDBOX=no \
   -DCMAKE_BUILD_TYPE=Debug \
   '-DCMAKE_CXX_FLAGS=-fsanitize=address,undefined -fno-omit-frame-pointer' \
   '-DCMAKE_C_FLAGS=-fsanitize=address,undefined -fno-omit-frame-pointer' \
   '-DCMAKE_EXE_LINKER_FLAGS=-fsanitize=address,undefined'
-cmake --build build/sanitized --target Synth2PatchTests Synth2RealtimeTests --parallel 4
+cmake --build build/sanitized --target Synth1XPatchTests Synth1XRealtimeTests --parallel 4
 ASAN_OPTIONS=detect_leaks=1 UBSAN_OPTIONS=halt_on_error=1 \
-  ./build/sanitized/Synth2PatchTests
+  ./build/sanitized/Synth1XPatchTests
 ASAN_OPTIONS=detect_leaks=1 UBSAN_OPTIONS=halt_on_error=1 \
-  ./build/sanitized/Synth2RealtimeTests
+  ./build/sanitized/Synth1XRealtimeTests
 ```
 
 The xz command-line sandbox must be disabled for sanitizer builds; this does not
@@ -86,7 +86,7 @@ audio device. On Linux with a C++20 compiler, run from the repository root:
 
 ```sh
 mkdir -p build/parameter-sdk
-c++ -std=c++20 -DNDEBUG -I iPlug2/IPlug -I iPlug2/WDL -I projects/Synth2 \
+c++ -std=c++20 -DNDEBUG -I iPlug2/IPlug -I iPlug2/WDL -I projects/Synth1X \
   tests/sdk/ParameterSetupTest.cpp iPlug2/IPlug/IPlugParameter.cpp -pthread \
   -o build/parameter-sdk/ParameterSetupTest
 build/parameter-sdk/ParameterSetupTest
@@ -97,7 +97,7 @@ portable core preset remains independent of the submodule.
 
 ## VST3 patch host check
 
-The SDK test compiles the production Synth2 wrapper and pinned iPlug2/VST3 sources
+The SDK test compiles the production Synth1X wrapper and pinned iPlug2/VST3 sources
 with a headless editor delegate. It verifies host readback during patch
 notifications, an audible-to-silent patch change followed by a host parameter
 readback/echo, preservation of recalled fractional controls, and one latency
@@ -132,7 +132,7 @@ is independent of the portable suite and opens no editor or audio device.
 
 ## Callback heap checks
 
-`Synth2RealtimeTests` is a separate executable with thread-local interception of
+`Synth1XRealtimeTests` is a separate executable with thread-local interception of
 global C++ new/delete (including arrays, aligned and nothrow forms). Setup, state/patch I/O, assertions and inspection stay outside measured callbacks.
 Separate checks also include parameter setters and MIDI publication in the measured scope. A positive tracker
 check prevents a silently inactive instrument. Prepared processing must perform
@@ -144,7 +144,7 @@ intercept every shared-library/OS allocation, inspect locks/I/O or prove deadlin
 ctest --preset core -L realtime
 ```
 
-For sanitizer validation, build both `Synth2PatchTests` and `Synth2RealtimeTests`
+For sanitizer validation, build both `Synth1XPatchTests` and `Synth1XRealtimeTests`
 in the sanitizer directory and run both with the documented sanitizer environment.
 LeakSanitizer requires an environment without ptrace attachment. Do not suppress
 an actual sanitizer report to obtain a passing run.

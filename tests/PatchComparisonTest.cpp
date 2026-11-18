@@ -1,7 +1,7 @@
 #include "host/PatchComparison.h"
 #include <gtest/gtest.h>
 #include <algorithm>
-using namespace synth2::host;
+using namespace synth1x::host;
 namespace
 {
 void load(ProcessorBridge& p,PresetBrowserState& b,const std::string& name,int cutoff)

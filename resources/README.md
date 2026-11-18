@@ -12,7 +12,7 @@ The separate masterVolume host parameter has its label in ProcessorBridge.
 The embedding tool and CMake dependencies consume these files directly. Keep
 initial patch bytes and label ordering stable unless the product contract
 explicitly changes. Native format metadata and bundled fonts live under
-projects/Synth2/resources.
+projects/Synth1X/resources.
 
 No bank is distributed or embedded. The library starts empty; users add banks
 and patches through the same import path. Init remains the independent startup

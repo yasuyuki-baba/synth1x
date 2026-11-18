@@ -52,7 +52,7 @@ jobs:
           cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
           -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
           "-DPython3_EXECUTABLE=${{ steps.python.outputs.python-path }}"
-          -DSYNTH2_BUILD_IPLUG2=OFF -DSYNTH2_BUILD_TOOLS=OFF -DSYNTH2_BUILD_TESTS=ON
+          -DSYNTH1X_BUILD_IPLUG2=OFF -DSYNTH1X_BUILD_TOOLS=OFF -DSYNTH1X_BUILD_TESTS=ON
       - name: Build
         run: cmake --build build --config Release --parallel 4
       - name: Test

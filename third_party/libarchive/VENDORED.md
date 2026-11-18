@@ -11,7 +11,7 @@ libarchive; and CMakeLists.txt in cat, tar, cpio, unzip and their test
 subdirectories, plus libarchive/test. Upstream test data and program sources are omitted. The disabled program/test directories retain their CMake entry
 points so the upstream build remains usable without rewriting it.
 
-`cmake/Synth2Archives.cmake` builds the static library with external compression,
+`cmake/Synth1XArchives.cmake` builds the static library with external compression,
 crypto, tools, tests and installation disabled. Only RAR, RAR5 and 7z format
 readers are registered by the product. liblzma is supplied as a bundled static
 target for 7z; other external codecs remain disabled. ZIP continues to use miniz. No CMake

@@ -8,9 +8,9 @@
       "binaryDir": "${sourceDir}/build-oos-core",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
-        "SYNTH2_BUILD_IPLUG2": "OFF",
-        "SYNTH2_BUILD_TESTS": "ON",
-        "SYNTH2_BUILD_TOOLS": "ON"
+        "SYNTH1X_BUILD_IPLUG2": "OFF",
+        "SYNTH1X_BUILD_TESTS": "ON",
+        "SYNTH1X_BUILD_TOOLS": "ON"
       }
     },
     {
@@ -20,10 +20,10 @@
       "architecture": "x64",
       "binaryDir": "${sourceDir}/build-oos-win",
       "cacheVariables": {
-        "SYNTH2_BUILD_IPLUG2": "ON",
-        "SYNTH2_BUILD_TESTS": "OFF",
-        "SYNTH2_IPLUG2_FORMATS": "VST3;CLAP",
-        "SYNTH2_BUILD_TOOLS": "OFF"
+        "SYNTH1X_BUILD_IPLUG2": "ON",
+        "SYNTH1X_BUILD_TESTS": "OFF",
+        "SYNTH1X_IPLUG2_FORMATS": "VST3;CLAP",
+        "SYNTH1X_BUILD_TOOLS": "OFF"
       },
       "condition": {
         "type": "equals",
@@ -50,7 +50,7 @@
       "inherits": "windows",
       "binaryDir": "${sourceDir}/build-oos-app",
       "cacheVariables": {
-        "SYNTH2_IPLUG2_FORMATS": "APP"
+        "SYNTH1X_IPLUG2_FORMATS": "APP"
       }
     },
     {
@@ -59,13 +59,13 @@
       "generator": "Xcode",
       "binaryDir": "${sourceDir}/build-oos-mac",
       "cacheVariables": {
-        "SYNTH2_BUILD_IPLUG2": "ON",
-        "SYNTH2_BUILD_TESTS": "OFF",
-        "SYNTH2_IPLUG2_FORMATS": "VST3;CLAP;AU",
+        "SYNTH1X_BUILD_IPLUG2": "ON",
+        "SYNTH1X_BUILD_TESTS": "OFF",
+        "SYNTH1X_IPLUG2_FORMATS": "VST3;CLAP;AU",
         "CMAKE_OSX_ARCHITECTURES": "arm64",
         "CMAKE_OSX_DEPLOYMENT_TARGET": "13.0",
         "IPLUG2_UNIVERSAL": "OFF",
-        "SYNTH2_BUILD_TOOLS": "OFF"
+        "SYNTH1X_BUILD_TOOLS": "OFF"
       },
       "condition": {
         "type": "equals",
@@ -89,7 +89,7 @@
       "inherits": "macos",
       "binaryDir": "${sourceDir}/build-oos-mac-app",
       "cacheVariables": {
-        "SYNTH2_IPLUG2_FORMATS": "APP"
+        "SYNTH1X_IPLUG2_FORMATS": "APP"
       }
     },
     {
@@ -99,12 +99,12 @@
       "binaryDir": "${sourceDir}/build-oos-linux",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
-        "SYNTH2_BUILD_IPLUG2": "ON",
-        "SYNTH2_BUILD_TESTS": "OFF",
-        "SYNTH2_IPLUG2_FORMATS": "VST3;CLAP",
+        "SYNTH1X_BUILD_IPLUG2": "ON",
+        "SYNTH1X_BUILD_TESTS": "OFF",
+        "SYNTH1X_IPLUG2_FORMATS": "VST3;CLAP",
         "IGRAPHICS_BACKEND": "NANOVG",
         "IGRAPHICS_RENDERER": "GL3",
-        "SYNTH2_BUILD_TOOLS": "OFF"
+        "SYNTH1X_BUILD_TOOLS": "OFF"
       },
       "condition": {
         "type": "equals",
@@ -118,7 +118,7 @@
       "inherits": "linux",
       "binaryDir": "${sourceDir}/build-oos-linux-app",
       "cacheVariables": {
-        "SYNTH2_IPLUG2_FORMATS": "APP"
+        "SYNTH1X_IPLUG2_FORMATS": "APP"
       }
     }
   ],

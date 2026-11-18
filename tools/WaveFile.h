@@ -8,7 +8,7 @@
 #include <limits>
 #include <stdexcept>
 #include <vector>
-namespace synth2::offline {
+namespace synth1x::offline {
 inline uint32_t little(const unsigned char* p,int bytes) { uint32_t v=0;for(int i=0;i<bytes;++i)v|=uint32_t(p[i])<<(8*i);return v; }
 inline void put(std::ostream& out,uint32_t v,int bytes) { for(int i=0;i<bytes;++i)out.put(static_cast<char>(v>>(8*i))); }
 struct WaveFile {

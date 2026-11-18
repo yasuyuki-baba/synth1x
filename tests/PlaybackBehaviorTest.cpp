@@ -11,7 +11,7 @@
 
 namespace
 {
-using synth2::host::ProcessorBridge;
+using synth1x::host::ProcessorBridge;
 using Stereo=std::array<std::array<float,64>,2>;
 Stereo block(ProcessorBridge& p,int position)
 {
@@ -83,16 +83,16 @@ TEST(PlaybackBehavior, PulseWidthPreservesFloatCoordinatesForIntegerAndFractiona
         SCOPED_TRACE(dial);
         processor->setNormalizedValue(8,static_cast<double>(dial)/127.0);
         block(*processor,1);
-        synth2::RenderControls mapped;
-        ASSERT_TRUE(synth2::readMappedSynthParams(*processor,mapped));
+        synth1x::RenderControls mapped;
+        ASSERT_TRUE(synth1x::readMappedSynthParams(*processor,mapped));
         EXPECT_EQ(mapped.pulseWidth,static_cast<float>(dial)/127.0f);
     }
     for(double dial:{.25,17.5,72.25,126.75})
     {
         SCOPED_TRACE(dial);
         continuous.setNormalizedValue(8,dial/127.0);block(continuous,1);
-        synth2::RenderControls mapped;
-        ASSERT_TRUE(synth2::readMappedSynthParams(continuous,mapped));
+        synth1x::RenderControls mapped;
+        ASSERT_TRUE(synth1x::readMappedSynthParams(continuous,mapped));
         EXPECT_NEAR(mapped.pulseWidth,dial/127.0,1e-7f);
     }
 }
@@ -132,8 +132,8 @@ TEST(PlaybackBehavior, FractionalSubLevelInterpolatesAndSurvivesRecall)
     auto gain=[&](double dial) {
         processor.setNormalizedValue(95,dial/127.);
         block(processor,1);
-        synth2::RenderControls mapped;
-        EXPECT_TRUE(synth2::readMappedSynthParams(processor,mapped));
+        synth1x::RenderControls mapped;
+        EXPECT_TRUE(synth1x::readMappedSynthParams(processor,mapped));
         return mapped.subOscGain;
     };
     for(const auto& interval:std::array<std::array<float,2>,2>{{{0,.25},{32,.5}}})
@@ -256,15 +256,15 @@ TEST(PlaybackBehavior, FractionalHostModeSurvivesSourceVersionChangesAndRecall)
         SCOPED_TRACE(version);
         ASSERT_TRUE(processor.loadPatch("Fractional host controls\nver="+std::to_string(version)+"\n19,37\n",error))<<error;
         processor.setNormalizedValue(19,37.25/127.0);block(processor,1);
-        synth2::RenderControls mapped;
-        ASSERT_TRUE(synth2::readMappedSynthParams(processor,mapped));
+        synth1x::RenderControls mapped;
+        ASSERT_TRUE(synth1x::readMappedSynthParams(processor,mapped));
         EXPECT_NEAR(mapped.cutoffIndex,(37.25f/127.0f)*1023.0f,1e-4f);
         const auto state=processor.saveState();
         EXPECT_EQ(stateinspection::attribute(*stateinspection::document(state),"stateVersion"),"3");
         ProcessorBridge restored;restored.restoreState(state.data(),static_cast<int>(state.size()));
         restored.prepare(44100,64);block(restored,1);
-        synth2::RenderControls recalled;
-        ASSERT_TRUE(synth2::readMappedSynthParams(restored,recalled));
+        synth1x::RenderControls recalled;
+        ASSERT_TRUE(synth1x::readMappedSynthParams(restored,recalled));
         EXPECT_EQ(recalled.cutoffIndex,mapped.cutoffIndex);
         EXPECT_EQ(restored.saveState(),state);
     }
@@ -279,8 +279,8 @@ TEST(PlaybackBehavior, FractionalEffectPolicyFollowsStateModeAndKeepsNearNeutral
     processor.setNormalizedValue(60,64.0/127);
     processor.setNormalizedValue(62,64.125/127);
     block(processor,1);
-    synth2::RenderControls mapped;
-    ASSERT_TRUE(synth2::readMappedSynthParams(processor,mapped));
+    synth1x::RenderControls mapped;
+    ASSERT_TRUE(synth1x::readMappedSynthParams(processor,mapped));
     EXPECT_NEAR(mapped.eq.level*127,64.125,1e-4);
     const auto expectDials=[&](float expected) {
         for(float value:{mapped.delay.time,mapped.delay.feedback,mapped.delay.level,
@@ -297,11 +297,11 @@ TEST(PlaybackBehavior, FractionalEffectPolicyFollowsStateModeAndKeepsNearNeutral
         const auto legacy=stateinspection::bytes(*old);
         processor.restoreState(legacy.data(),static_cast<int>(legacy.size()));
         block(processor,1);
-        ASSERT_TRUE(synth2::readMappedSynthParams(processor,mapped));
+        ASSERT_TRUE(synth1x::readMappedSynthParams(processor,mapped));
         expectDials(64.f);
         processor.restoreState(continuous.data(),static_cast<int>(continuous.size()));
         block(processor,1);
-        ASSERT_TRUE(synth2::readMappedSynthParams(processor,mapped));
+        ASSERT_TRUE(synth1x::readMappedSynthParams(processor,mapped));
         expectDials(64.125f);
     }
 }
@@ -316,8 +316,8 @@ TEST(PlaybackBehavior, LegacyRecallResolvesEveryOutputDialBeforeDsp)
         block(processor,1);
         const auto continuous=processor.saveState();
         const auto expectDials=[&](float expected) {
-            synth2::RenderControls mapped;
-            ASSERT_TRUE(synth2::readMappedSynthParams(processor,mapped));
+            synth1x::RenderControls mapped;
+            ASSERT_TRUE(synth1x::readMappedSynthParams(processor,mapped));
             for(float value:{mapped.delay.time,mapped.delay.feedback,mapped.delay.level,
                              mapped.delay.spread,mapped.delay.tone,mapped.chorus.time,
                              mapped.chorus.depth,mapped.chorus.rate,mapped.chorus.feedback,
@@ -652,8 +652,8 @@ TEST(PlaybackBehavior, PortamentoRespondsToOverlapAutomaticModeAndLiveDurationEd
             for(const auto& channel:audio)for(float value:channel)EXPECT_TRUE(std::isfinite(value));
             if(callback==0)
             {
-                synth2::RenderControls controls;
-                EXPECT_TRUE(synth2::readMappedSynthParams(processor,controls));
+                synth1x::RenderControls controls;
+                EXPECT_TRUE(synth1x::readMappedSynthParams(processor,controls));
                 EXPECT_EQ(controls.portamentoAuto,automatic);
                 EXPECT_EQ(controls.sourcePortamentoDial,dial);
             }
@@ -762,8 +762,8 @@ TEST(PlaybackBehavior, PitchLfoUsesCommonDepthForLocalAndSharedSources)
             EXPECT_TRUE(processor.process(audio[0].data(),audio[1].data(),64,120));
             if(callback==0)
             {
-                synth2::RenderControls controls;
-                EXPECT_TRUE(synth2::readMappedSynthParams(processor,controls));
+                synth1x::RenderControls controls;
+                EXPECT_TRUE(synth1x::readMappedSynthParams(processor,controls));
                 EXPECT_EQ(controls.lfo1.wave,3);EXPECT_EQ(controls.lfo1.dest,destination);
                 EXPECT_EQ(controls.lfo1.keySync,keySync);EXPECT_EQ(controls.unisonVoices,1);
                 EXPECT_NEAR(controls.lfo1.amount,depth/127.f,1e-6);
@@ -829,8 +829,8 @@ TEST(PlaybackBehavior, PulseWidthLfoKeepsBoundsEnvelopeCompositionAndKeySync)
             EXPECT_TRUE(processor.process(audio[0].data(),audio[1].data(),64,120));
             if(callback==0)
             {
-                synth2::RenderControls controls;
-                EXPECT_TRUE(synth2::readMappedSynthParams(processor,controls));
+                synth1x::RenderControls controls;
+                EXPECT_TRUE(synth1x::readMappedSynthParams(processor,controls));
                 EXPECT_EQ(controls.lfo1.wave,3);EXPECT_EQ(controls.lfo1.dest,4);
                 EXPECT_TRUE(controls.lfo1.on);EXPECT_EQ(controls.lfo1.keySync,keySync);
 
@@ -903,7 +903,7 @@ TEST(PlaybackBehavior, FmLfoUsesCommonDepthForLocalAndSharedSources)
             Stereo audio{};EXPECT_TRUE(processor.process(audio[0].data(),audio[1].data(),64,120));
             if(callback==0)
             {
-                synth2::RenderControls controls;EXPECT_TRUE(synth2::readMappedSynthParams(processor,controls));
+                synth1x::RenderControls controls;EXPECT_TRUE(synth1x::readMappedSynthParams(processor,controls));
                 EXPECT_EQ(controls.lfo1.wave,3);EXPECT_EQ(controls.lfo1.dest,5);
                 EXPECT_TRUE(controls.lfo1.on);EXPECT_EQ(controls.lfo1.keySync,keySync);
 
@@ -965,7 +965,7 @@ TEST(PlaybackBehavior, FilterLfoUsesCommonCutoffAndEnvelopeComposition)
             Stereo audio{};EXPECT_TRUE(processor.process(audio[0].data(),audio[1].data(),64,120));
             if(callback==0)
             {
-                synth2::RenderControls controls;EXPECT_TRUE(synth2::readMappedSynthParams(processor,controls));
+                synth1x::RenderControls controls;EXPECT_TRUE(synth1x::readMappedSynthParams(processor,controls));
                 EXPECT_EQ(controls.lfo1.wave,3);EXPECT_EQ(controls.lfo1.dest,2);
                 EXPECT_TRUE(controls.lfo1.on);EXPECT_EQ(controls.lfo1.keySync,keySync);
 
@@ -1024,7 +1024,7 @@ Stereo lfoReceiverRms(double rate,int version,bool keySync,int destination,int d
         Stereo audio{};EXPECT_TRUE(processor.process(audio[0].data(),audio[1].data(),64,120));
         if(callback==0)
         {
-            synth2::RenderControls controls;EXPECT_TRUE(synth2::readMappedSynthParams(processor,controls));
+            synth1x::RenderControls controls;EXPECT_TRUE(synth1x::readMappedSynthParams(processor,controls));
             EXPECT_EQ(controls.lfo1.dest,destination);EXPECT_EQ(controls.lfo1.wave,3);
             EXPECT_TRUE(controls.lfo1.on);EXPECT_EQ(controls.lfo1.keySync,keySync);
 
@@ -1106,7 +1106,7 @@ TEST(PlaybackBehavior, ZeroDepthRandomLfoDoesNotChangeSteadyOscillatorReadout)
             Stereo audio{};EXPECT_TRUE(processor.process(audio[0].data(),audio[1].data(),64,120));
             if(callback==0)
             {
-                synth2::RenderControls controls;EXPECT_TRUE(synth2::readMappedSynthParams(processor,controls));
+                synth1x::RenderControls controls;EXPECT_TRUE(synth1x::readMappedSynthParams(processor,controls));
                 EXPECT_EQ(controls.lfo1.on,enabled);EXPECT_EQ(controls.lfo1.wave,4);
                 EXPECT_EQ(controls.lfo1.amount,0);EXPECT_EQ(controls.lfo1.dest,3);
             }
@@ -1156,7 +1156,7 @@ std::vector<float> renderOscillatorComposition(double rate,bool ring,int fm,int 
         Stereo audio{};EXPECT_TRUE(processor.process(audio[0].data(),audio[1].data(),64,120));
         if(callback==0)
         {
-            synth2::MappedSynthSnapshot controls;EXPECT_TRUE(synth2::readMappedSynthParams(processor,controls));
+            synth1x::MappedSynthSnapshot controls;EXPECT_TRUE(synth1x::readMappedSynthParams(processor,controls));
             EXPECT_FALSE(controls.nativeRandomLfoHistoryValid);EXPECT_TRUE(controls.lfo1.on);
             EXPECT_EQ(controls.lfo1.wave,4);EXPECT_EQ(controls.lfo1.amount,0);
             EXPECT_EQ(controls.osc1StackDial,stack);EXPECT_NEAR(controls.subOscGain,sub*4.f/127.f,1e-6);
@@ -1260,7 +1260,7 @@ TEST(PlaybackBehavior, OrdinaryBendSlewsAndResetsForLegacySources)
         text.replace(text.find("\n42,1"),5,"\n42,3");text+="40,12\n";
         ProcessorBridge processor;setup(processor,text,rate);Stereo output{};
         ASSERT_TRUE(processor.process(output[0].data(),output[1].data(),64,120));
-        synth2::RenderControls mapped;ASSERT_TRUE(synth2::readMappedSynthParams(processor,mapped));
+        synth1x::RenderControls mapped;ASSERT_TRUE(synth1x::readMappedSynthParams(processor,mapped));
         ASSERT_EQ(mapped.pitchBendRange,12);
         const auto state=processor.saveState();
         ASSERT_TRUE(processor.enqueueMidi(7,static_cast<uint8_t>(0xe0+channel-1),127,127));
@@ -1299,14 +1299,14 @@ TEST(PlaybackBehavior, SoundingMonoReassignmentsRetainEnvelopeWithRandomLfo)
         setup(processor,text,rate);Stereo audio{};
         ASSERT_TRUE(processor.enqueueMidi(7,0x90,60,100));
         for(int n=0;n<32;++n)ASSERT_TRUE(processor.process(audio[0].data(),audio[1].data(),64,120));
-        synth2::RenderControls mapped;ASSERT_TRUE(synth2::readMappedSynthParams(processor,mapped));
+        synth1x::RenderControls mapped;ASSERT_TRUE(synth1x::readMappedSynthParams(processor,mapped));
         ASSERT_EQ(mapped.playMode,mode);
         const auto state=processor.saveState();
         const auto current=[&](int note)
         {
             std::array<uint32_t,16> words{};
             for(size_t voice=0;voice<32;++voice)
-                if(synth2::readRenderingCoreWords(processor,voice,0,words) && words[0] && words[1]==static_cast<uint32_t>(note))return words;
+                if(synth1x::readRenderingCoreWords(processor,voice,0,words) && words[0] && words[1]==static_cast<uint32_t>(note))return words;
             ADD_FAILURE()<<"Missing active note "<<note;return std::array<uint32_t,16>{};
         };
         const auto first=current(60);ASSERT_GT(first[7],2u);
@@ -1345,7 +1345,7 @@ TEST(PlaybackBehavior, StaticPanFollowsNonlinearEffectsWithRandomLfo)
             Stereo audio{};EXPECT_TRUE(processor.process(audio[0].data(),audio[1].data(),64,120));
             if(n==0)
             {
-                synth2::RenderControls mapped;EXPECT_TRUE(synth2::readMappedSynthParams(processor,mapped));
+                synth1x::RenderControls mapped;EXPECT_TRUE(synth1x::readMappedSynthParams(processor,mapped));
                 EXPECT_FALSE(((mapped.lfo1.on && mapped.lfo1.dest==6) || (mapped.lfo2.on && mapped.lfo2.dest==6)));
                 EXPECT_EQ(mapped.nativeMultiEffectType,2);EXPECT_FLOAT_EQ(mapped.pan,pan==64 ? 0.f : -.5f);
             }
@@ -1389,7 +1389,7 @@ TEST(PlaybackBehavior, MidCallbackToneControlCannotChangeEarlierOutput)
         EXPECT_TRUE(processor.enqueueMidi(7,0x90,60,100));
         Stereo audio{};
         for(int n=0;n<32;++n)EXPECT_TRUE(processor.process(audio[0].data(),audio[1].data(),64,120));
-        synth2::RenderControls mapped;EXPECT_TRUE(synth2::readMappedSynthParams(processor,mapped));
+        synth1x::RenderControls mapped;EXPECT_TRUE(synth1x::readMappedSynthParams(processor,mapped));
         EXPECT_FALSE(((mapped.lfo1.on && mapped.lfo1.dest==6) || (mapped.lfo2.on && mapped.lfo2.dest==6)));
         const auto& routes=processor.engineForInspection().getRenderHistory().controllerRoutes;
         EXPECT_EQ(routes[0].source,45057);EXPECT_EQ(routes[0].destination,60);EXPECT_EQ(routes[0].sensitivity,1);
@@ -1446,9 +1446,9 @@ TEST(PlaybackBehavior, VelocitySensitivityIsHeldUntilTheNextNoteAssignment)
         for(size_t voice=0;voice<32;++voice)
         {
             std::array<uint32_t,16> words{};std::array<uint32_t,22> floats{};
-            if(synth2::readRenderingCoreWords(processor,voice,0,words) && words[0] && words[1]==72)
+            if(synth1x::readRenderingCoreWords(processor,voice,0,words) && words[0] && words[1]==72)
             {
-                EXPECT_TRUE(synth2::readRenderingCoreFloatWords(processor,voice,0,floats));
+                EXPECT_TRUE(synth1x::readRenderingCoreFloatWords(processor,voice,0,floats));
                 std::memcpy(&result.assignedReference,&floats[3],sizeof(float));found=true;break;
             }
         }
@@ -1490,10 +1490,10 @@ TEST(PlaybackBehavior, FirstKeyResetsRequestedClocksAndRandomTargetsAfterHistory
         const auto counter=[&]{return processor.engineForInspection().getNativeLfoClock(0).counter;};
         const auto random=[&]{return processor.engineForInspection().getNativeRandomLfos().random.state;};
         for(int n=0;n<8;++n)process();
-        synth2::MappedSynthSnapshot controls;ASSERT_TRUE(synth2::readMappedSynthParams(processor,controls));
+        synth1x::MappedSynthSnapshot controls;ASSERT_TRUE(synth1x::readMappedSynthParams(processor,controls));
         ASSERT_FALSE(controls.nativeRandomLfoHistoryValid);ASSERT_TRUE(controls.lfo1.keySync);
         ASSERT_GT(counter(),1);
-        std::array<uint32_t,9> words{};ASSERT_TRUE(synth2::readNativeRandomLfoWords(processor,0,words));
+        std::array<uint32_t,9> words{};ASSERT_TRUE(synth1x::readNativeRandomLfoWords(processor,0,words));
         ASSERT_NE(words[3],words[4]);const auto before=random();
         ASSERT_TRUE(processor.enqueueMidi(63,0x90,60,100));process();
         EXPECT_LE(counter(),1);EXPECT_NE(random(),before);const auto firstDraw=random();
@@ -1539,7 +1539,7 @@ TEST(PlaybackBehavior, ActiveRandomPeriodsKeepDrawsAcrossCallbackSizesAfterHisto
             EXPECT_EQ(p.saveState(),state);
         };
         for(int n=0;n<128;++n)for(auto* p:{&whole,&split})process(*p,256);
-        synth2::MappedSynthSnapshot controls;ASSERT_TRUE(synth2::readMappedSynthParams(whole,controls));
+        synth1x::MappedSynthSnapshot controls;ASSERT_TRUE(synth1x::readMappedSynthParams(whole,controls));
         ASSERT_FALSE(controls.nativeRandomLfoHistoryValid);
         ASSERT_TRUE(controls.lfo1.on);ASSERT_EQ(controls.lfo1.wave,4);
         const auto& clock=whole.engineForInspection().getNativeLfoClock(0);
@@ -1552,7 +1552,7 @@ TEST(PlaybackBehavior, ActiveRandomPeriodsKeepDrawsAcrossCallbackSizesAfterHisto
         process(whole,period*3);
         for(int n=0;n<3;++n)process(split,period);
         std::array<uint32_t,9> a{},b{};
-        ASSERT_TRUE(synth2::readNativeRandomLfoWords(whole,0,a));ASSERT_TRUE(synth2::readNativeRandomLfoWords(split,0,b));
+        ASSERT_TRUE(synth1x::readNativeRandomLfoWords(whole,0,a));ASSERT_TRUE(synth1x::readNativeRandomLfoWords(split,0,b));
         EXPECT_EQ(a,b);
         EXPECT_EQ(whole.engineForInspection().getNativeLfoClock(0).counter,split.engineForInspection().getNativeLfoClock(0).counter);
         EXPECT_FALSE(whole.engineForInspection().nativeRandomHistoryValid());

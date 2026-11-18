@@ -6,7 +6,7 @@
 #include "patch/PatchFormat.h"
 #include "patch/PatchLoader.h"
 #include <fstream>
-using namespace synth2::host;
+using namespace synth1x::host;
 namespace fs = std::filesystem;
 namespace
 {
@@ -192,7 +192,7 @@ TEST(PresetFiles, SavesCurrentFormatWithoutLosingFractionalControlsOrMasterGain)
     ASSERT_TRUE(recalled.loadPatch(text, error)) << error;
     EXPECT_NEAR(processor.normalizedValue(19), recalled.normalizedValue(19), 1e-7);
     EXPECT_NEAR(processor.normalizedValue(128), recalled.normalizedValue(128), 1e-7);
-    EXPECT_TRUE(synth2::isContinuousPatch(text));
+    EXPECT_TRUE(synth1x::isContinuousPatch(text));
 }
 TEST(PresetFiles, SessionV2AndLegacyV1RestoreTransactionally)
 {
@@ -262,15 +262,15 @@ TEST(PresetFiles, InstancesKeepSeparateBrowserStateAndScanningDoesNotChangeSound
 }
 
 TEST(PresetFiles, MultipleSelectedTagsSurviveSessionRecallAndLegacyTagStillLoads) {
-    synth2::host::ProcessorBridge source,restored;
-    synth2::host::PresetBrowserState browser;browser.capture(source);
+    synth1x::host::ProcessorBridge source,restored;
+    synth1x::host::PresetBrowserState browser;browser.capture(source);
     browser.selectedTags={"Pad","FM","My own"};
-    const auto bytes=synth2::host::savePresetSession(source,browser);
-    synth2::host::PresetBrowserState recalled;
-    ASSERT_GT(synth2::host::restorePresetSession(bytes.data(),static_cast<int>(bytes.size()),restored,recalled),0);
+    const auto bytes=synth1x::host::savePresetSession(source,browser);
+    synth1x::host::PresetBrowserState recalled;
+    ASSERT_GT(synth1x::host::restorePresetSession(bytes.data(),static_cast<int>(bytes.size()),restored,recalled),0);
     EXPECT_EQ(recalled.selectedTags,browser.selectedTags);
     EXPECT_EQ(recalled.tag,"Pad"); // Compatibility hint for older readers.
     browser.selectedTags.clear();browser.tag="Old tag";
-    ASSERT_TRUE(synth2::host::PresetBrowserState::deserialize(browser.serialize(),recalled));
+    ASSERT_TRUE(synth1x::host::PresetBrowserState::deserialize(browser.serialize(),recalled));
     EXPECT_EQ(recalled.tag,"Old tag");EXPECT_TRUE(recalled.selectedTags.empty());
 }

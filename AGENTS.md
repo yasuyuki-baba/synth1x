@@ -21,9 +21,9 @@
   All three platforms use the same pinned development branch of iPlug2;
   see the desktop build guide. Official macOS builds target
   Apple Silicon arm64 only; keep the iPlug2 universal build option disabled.
-  Use the iPlug2OOS layout in `projects/Synth2`; keep JUCE out of production,
+  Use the iPlug2OOS layout in `projects/Synth1X`; keep JUCE out of production,
   tools and the portable build graph. Keep all product source there; the portable
-  core lives in `projects/Synth2/src` and remains independent of iPlug2 headers.
+  core lives in `projects/Synth1X/src` and remains independent of iPlug2 headers.
   Public tests use the actual portable bridge with self-authored inputs and
   public product requirements. Tests must be self-contained and must not require
   another repository or recorded original-engine output. See
@@ -47,7 +47,7 @@
   Synth1's original functional groups and separators as layout references.
   Allocate panel space by control density and keep ordinary knobs similar in size;
   do not force every column into identical row heights at the expense of spacing.
-  Keep Synth2's own identity and give
+  Keep Synth1X's own identity and give
   high-use controls visual priority; keep oversampling as a quiet footer selector
   beside Keyboard; use shared readable type sizes across Synth/MIDI/Library,
   reserving room for labels and values rather than shrinking choice text.
@@ -126,7 +126,7 @@
   is separate; diagnostic snapshots must not become Voice or Engine parameters.
 - Give DSP components narrow settings, caller-owned state and read-only control
   views. Do not make them depend on the full render aggregate, Voice, Engine,
-  APVTS or patch documents. Adapt aggregate settings in `projects/Synth2/src/render`.
+  APVTS or patch documents. Adapt aggregate settings in `projects/Synth1X/src/render`.
 - SharedModulationRuntime is Engine-owned. Keep its blocks/clocks read-only for
   consumers and preserve the ARP binding to the same native CRT stream. History
   setters, receiver queries and advances have distinct native ordering contracts.
@@ -258,7 +258,7 @@
   Silent input does not imply an empty effect tail or permit skipping gain
   advancement. Shared LFO views are read-only throughout the output pipeline.
 - Preserve loading support for all accepted legacy source versions (1–113) and
-  named unversioned files when changing conversion or mapper classes. Synth2
+  named unversioned files when changing conversion or mapper classes. Synth1X
   patches use version 200 with resolved fractional dials; keep that codec and its
   direct mapping separate from Synth1 integer source conversion.
 
@@ -275,9 +275,9 @@ See [source strategies](docs/architecture/source-conversion.md),
   the host's global locale or tightening legacy state spellings to patch syntax.
   Keep historical family-model corrections in the legacy typed-import adapter;
   resolved native control decoding must not apply those corrections again.
-- Keep SDK-independent presentation in src/editor under synth2::editor. Native
-  drawing controls and library/menu/dialog adapters belong to projects/Synth2/editor;
-  Synth2Editor coordinates layout and lifetime. Preserve shared control tags,
+- Keep SDK-independent presentation in src/editor under synth1x::editor. Native
+  drawing controls and library/menu/dialog adapters belong to projects/Synth1X/editor;
+  Synth1XEditor coordinates layout and lifetime. Preserve shared control tags,
   catalog/selection ownership and weak dialog-lifetime guards when splitting files.
   Audit presentation headers against host/engine/SDK dependencies.
 

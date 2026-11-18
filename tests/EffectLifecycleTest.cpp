@@ -6,7 +6,7 @@
 
 namespace
 {
-using synth2::dsp::DelayKernel;
+using synth1x::dsp::DelayKernel;
 auto delay(int rate=48000)
 {
     auto result=std::make_unique<DelayKernel>();
@@ -71,13 +71,13 @@ TEST(EffectLifecycle, ExplicitRateReconfigurationAndResetMatchAFreshDelay)
 
 TEST(EffectLifecycle, OutputGainAdvancesThroughSilenceAndRespectsRequestedRegion)
 {
-    using namespace synth2::dsp;
+    using namespace synth1x::dsp;
     auto silent=std::make_unique<OutputPipeline>(),audible=std::make_unique<OutputPipeline>();
     silent->prepareGain(48000,false); audible->prepareGain(48000,false);
     OutputPipelineSettings settings;
     OutputProcessContext context;
     context.sampleRate=48000; context.gainBlockCapacity=64; context.bypassEffects=true;
-    synth2::audio::AudioBuffer<float> zero(2,80),signal(2,80);
+    synth1x::audio::AudioBuffer<float> zero(2,80),signal(2,80);
     for (int channel=0;channel<2;++channel) for (int i=0;i<80;++i)
     {
         zero.setSample(channel,i,(i<8 || i>=72) ? 7.f : 0.f);

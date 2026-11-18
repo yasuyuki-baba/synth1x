@@ -1,6 +1,6 @@
 # Built-plugin audio smoke tests
 
-`Synth2AudioSmoke` loads the actual build-tree VST3/CLAP modules on Linux,
+`Synth1XAudioSmoke` loads the actual build-tree VST3/CLAP modules on Linux,
 Windows and macOS, plus AUv2 on macOS. It creates no editor, audio device or DAW.
 Each adapter uses the public format's module lifecycle, state restoration,
 MIDI/event delivery and stereo Float32 rendering APIs. AU's factory is read
@@ -44,8 +44,8 @@ After preparing the pinned native SDKs, enable the test in the normal native
 build, for example:
 
 ```sh
-cmake --preset linux -DSYNTH2_BUILD_NATIVE_SMOKE=ON
-cmake --build build-oos-linux --target Synth2AudioSmoke --parallel 4
+cmake --preset linux -DSYNTH1X_BUILD_NATIVE_SMOKE=ON
+cmake --build build-oos-linux --target Synth1XAudioSmoke --parallel 4
 ctest --test-dir build-oos-linux -C Release -L native --output-on-failure --no-tests=error
 ```
 

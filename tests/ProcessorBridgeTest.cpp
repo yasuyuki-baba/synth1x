@@ -6,15 +6,15 @@
 #include <map>
 #include <cstring>
 
-using synth2::host::ProcessorBridge;
+using synth1x::host::ProcessorBridge;
 namespace
 {
-void processAtTempo(ProcessorBridge& p,synth2::audio::AudioBuffer<float>& audio,const synth2::audio::MidiBuffer& midi,double tempo) {
+void processAtTempo(ProcessorBridge& p,synth1x::audio::AudioBuffer<float>& audio,const synth1x::audio::MidiBuffer& midi,double tempo) {
     for(const auto& e:midi){const auto* bytes=e.getMessage().getRawData();ASSERT_TRUE(p.enqueueMidi(e.samplePosition,bytes[0],bytes[1],bytes[2]));}
     ASSERT_TRUE(p.process(audio.getWritePointer(0),audio.getWritePointer(1),audio.getNumSamples(),tempo));
 }
 
-void forward(ProcessorBridge& bridge, const synth2::audio::MidiBuffer& midi)
+void forward(ProcessorBridge& bridge, const synth1x::audio::MidiBuffer& midi)
 {
     for (const auto metadata : midi)
     {
@@ -24,7 +24,7 @@ void forward(ProcessorBridge& bridge, const synth2::audio::MidiBuffer& midi)
                                       message.getRawDataSize() == 3 ? bytes[2] : 0));
     }
 }
-void equal(const synth2::audio::AudioBuffer<float>& direct, const synth2::audio::AudioBuffer<float>& bridged)
+void equal(const synth1x::audio::AudioBuffer<float>& direct, const synth1x::audio::AudioBuffer<float>& bridged)
 {
     for (int channel=0; channel<2; ++channel)
         EXPECT_EQ(std::memcmp(direct.getReadPointer(channel), bridged.getReadPointer(channel),
@@ -49,9 +49,9 @@ TEST(ProcessorBridge, RecallAndSameValueEditsRetainLoadingHistory)
         {
             direct->setNormalizedValue(index,direct->normalizedValue(index));bridge.setNormalizedValue(index,bridge.normalizedValue(index));
         }
-        synth2::audio::AudioBuffer<float> a(2,frames),b(2,frames); synth2::audio::MidiBuffer midi;
-        midi.addEvent(synth2::audio::MidiMessage::noteOn(1,60,static_cast<uint8_t>(100)),0);
-        midi.addEvent(synth2::audio::MidiMessage::pitchWheel(1,10000),frames-1);
+        synth1x::audio::AudioBuffer<float> a(2,frames),b(2,frames); synth1x::audio::MidiBuffer midi;
+        midi.addEvent(synth1x::audio::MidiMessage::noteOn(1,60,static_cast<uint8_t>(100)),0);
+        midi.addEvent(synth1x::audio::MidiMessage::pitchWheel(1,10000),frames-1);
         forward(bridge,midi); hostvalidation::process(*direct,a,midi);
         ASSERT_TRUE(bridge.process(b.getWritePointer(0),b.getWritePointer(1),frames,120)); equal(a,b);
     }
@@ -66,7 +66,7 @@ TEST(ProcessorBridge, DoubleOutputWidensFloatAndTempoIsForwarded)
     direct->prepare(48000,64); bridge.prepare(48000,64);
     for (int block=0; block<100; ++block)
     {
-        synth2::audio::AudioBuffer<float> a(2,64); synth2::audio::MidiBuffer midi;
+        synth1x::audio::AudioBuffer<float> a(2,64); synth1x::audio::MidiBuffer midi;
         if (block==0) hostvalidation::notes(midi,3);
         forward(bridge,midi); processAtTempo(*direct,a,midi,137.);
         std::array<double,64> left{},right{};

@@ -2,7 +2,7 @@
 #include "host/ProcessorBridge.h"
 #include <array>
 #include <sstream>
-using synth2::host::ProcessorBridge;
+using synth1x::host::ProcessorBridge;
 
 TEST(ProcessorContracts, RecallEditsAndRejectedInputsPreserveState)
 {

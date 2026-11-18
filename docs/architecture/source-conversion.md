@@ -28,7 +28,7 @@ outside the accepted range and invalid fields before mutating processor state. S
 limits, public host ranges and DSP limits are independent; preserving a source
 integer does not require expanding host automation ranges.
 
-The parser/model lives in `projects/Synth2/src/patch/core`. Conversion strategies
+The parser/model lives in `projects/Synth1X/src/patch/core`. Conversion strategies
 are standard-library code with no SDK or runtime voice/clock ownership.
 See [patch loading](../contracts/patch-loading.md) for required behavior and tests.
 

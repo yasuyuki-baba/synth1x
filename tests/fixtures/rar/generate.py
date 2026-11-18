@@ -2,7 +2,7 @@
 
 Usage: python3 generate.py /path/to/rar-6.24
 RAR 6.24 is used because it can write both RAR4 and RAR5 archives.
-The encoder is a development tool only and is not redistributed with Synth2.
+The encoder is a development tool only and is not redistributed with Synth1X.
 """
 from pathlib import Path
 import subprocess

@@ -15,7 +15,7 @@
 #include <array>
 #include <utility>
 
-using namespace synth2::editor;
+using namespace synth1x::editor;
 
 TEST(EditorLibraryStatus, FirstLoadDoesNotAppearEmptyAndFailureIsDistinctFromSuccess)
 {
@@ -68,7 +68,7 @@ TEST(EditorLibraryStatus, ImportAndSaveActivityEndsWhenTheJobFinishes)
 
 namespace
 {
-using synth2::host::ProcessorBridge;
+using synth1x::host::ProcessorBridge;
 void submitSource(ProcessorBridge& processor,int parameter,double source)
 {
     if(parameter==87 || parameter==89) {
@@ -87,7 +87,7 @@ double sourceValue(ProcessorBridge& processor,int parameter)
 
 TEST(EditorInteraction, EveryPopupSelectionWritesItsSourceWordToOnlyTheBoundParameter)
 {
-    using namespace synth2::host;
+    using namespace synth1x::host;
     ProcessorBridge processor;
     for(int parameter=0;parameter<99;++parameter)
     {
@@ -110,7 +110,7 @@ TEST(EditorInteraction, EveryPopupSelectionWritesItsSourceWordToOnlyTheBoundPara
 
 TEST(EditorInteraction, CancelledOrInvalidPopupSelectionsHaveNoSourceValue)
 {
-    using namespace synth2::host;
+    using namespace synth1x::host;
     for(int parameter=0;parameter<99;++parameter)
     {
         const auto choices=editorChoices(parameter);
@@ -122,7 +122,7 @@ TEST(EditorInteraction, CancelledOrInvalidPopupSelectionsHaveNoSourceValue)
 
 TEST(EditorInteraction, EveryToggleHandlesHostCustomValuesAndCyclesOffOnOff)
 {
-    using namespace synth2::host;
+    using namespace synth1x::host;
     ProcessorBridge processor;
     for(int parameter=0;parameter<99;++parameter) if(editorToggle(parameter))
     {
@@ -139,7 +139,7 @@ TEST(EditorInteraction, EveryToggleHandlesHostCustomValuesAndCyclesOffOnOff)
 
 TEST(EditorInteraction, HostAutomationAndStateRecallReachChoiceAndNumericPresentation)
 {
-    using namespace synth2::host;
+    using namespace synth1x::host;
     ProcessorBridge processor,restored;
     submitSource(processor,64,4); // Chorus menu ordinal 2 is source word 4.
     submitSource(processor,9,-12);
@@ -154,7 +154,7 @@ TEST(EditorInteraction, HostAutomationAndStateRecallReachChoiceAndNumericPresent
 
 TEST(EditorInteraction, EditingStepsDistinguishSelectorsCountsAndContinuousDials)
 {
-    using namespace synth2::host;
+    using namespace synth1x::host;
     for(int parameter : {0,1,4,14,31,33,35,38,40,64,86,87,88,89,93,94,96,126})
     { SCOPED_TRACE(parameter); EXPECT_TRUE(parameterUsesIntegerSteps(parameter)); }
     for(int parameter : {5,8,15,19,20,25,29,43,52,61,62,63,75,50,51,90,128})
@@ -176,7 +176,7 @@ TEST(EditorInteraction, EditingStepsDistinguishSelectorsCountsAndContinuousDials
 
 TEST(EditorInteraction, ContinuousUnitReadoutsKeepFractionalPositions)
 {
-    using namespace synth2::host;
+    using namespace synth1x::host;
     // Midpoint positions give geometric means for the logarithmic scales.
     EXPECT_EQ(editorValueDisplay(25,63.5),"118.3 ms");
     EXPECT_EQ(editorValueDisplay(28,63.5),"774.6 ms");
@@ -188,7 +188,7 @@ TEST(EditorInteraction, ContinuousUnitReadoutsKeepFractionalPositions)
 
 TEST(EditorLibraryNavigation, EmptyClampedAndPagedMovementNeverWraps)
 {
-    using namespace synth2::editor;using A=LibraryNavigation;
+    using namespace synth1x::editor;using A=LibraryNavigation;
     EXPECT_FALSE(editorLibraryNavigation(0,16,{},0,A::next));
     EXPECT_EQ(editorLibraryNavigation(40,16,{},0,A::next),0u);
     EXPECT_EQ(editorLibraryNavigation(40,16,{},16,A::previous),16u);
@@ -380,7 +380,7 @@ TEST(EditorInteraction, MidiAssignmentsReachRenderingAndSurvivePatchAndProjectRe
         EXPECT_EQ(project.midiDestination(0),-1);
         EXPECT_EQ(project.midiDestination(1),44);
         const auto patch=processor.savePatch();
-        EXPECT_EQ(synth2::parseContinuousPatch(patch).values[87],-1);
+        EXPECT_EQ(synth1x::parseContinuousPatch(patch).values[87],-1);
         ProcessorBridge file;
         ASSERT_TRUE(file.loadPatch(patch,error))<<error;
         EXPECT_EQ(file.midiDestination(0),-1);
@@ -411,7 +411,7 @@ TEST(EditorInteraction, ImportedDisabledDestinationHasANameAndExportsWithoutBeco
         EXPECT_EQ(editorChoiceDisplay(false,processor.midiDestination(route),editorChoices(87+route*2)),"None");
     }
     EXPECT_EQ(processor.saveState(),before); // Displaying the editor does not edit the patch.
-    const auto exported=synth2::parseContinuousPatch(processor.savePatch());
+    const auto exported=synth1x::parseContinuousPatch(processor.savePatch());
     EXPECT_EQ(exported.values[87],-1);
     EXPECT_EQ(exported.values[89],-1);
 }

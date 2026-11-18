@@ -216,11 +216,11 @@ public:
             {
                 ParameterInfo info{};
                 if(controller->getParameterInfo(i, info) == kResultOk &&
-                    info.id <= synth2::host::processorParameterCount)
+                    info.id <= synth1x::host::processorParameterCount)
                     parameterEcho.points.emplace_back(info.id, controller->getParamNormalized(info.id));
             }
             controller->release();
-            require(parameterEcho.points.size() == synth2::host::processorParameterCount + 1,
+            require(parameterEcho.points.size() == synth1x::host::processorParameterCount + 1,
                 "Incomplete VST3 parameter readback");
         }
     }

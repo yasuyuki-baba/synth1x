@@ -9,11 +9,11 @@
 #include <filesystem>
 #include <fstream>
 #include <cstring>
-using synth2::host::PatchLibrary;
+using synth1x::host::PatchLibrary;
 namespace {
 struct TemporaryFile {
     std::filesystem::path path;
-    explicit TemporaryFile(const char* extension){static std::atomic<unsigned> next{};path=std::filesystem::temp_directory_path()/("synth2-bank-"+std::to_string(std::chrono::steady_clock::now().time_since_epoch().count())+"-"+std::to_string(next++)+extension);}
+    explicit TemporaryFile(const char* extension){static std::atomic<unsigned> next{};path=std::filesystem::temp_directory_path()/("synth1x-bank-"+std::to_string(std::chrono::steady_clock::now().time_since_epoch().count())+"-"+std::to_string(next++)+extension);}
     ~TemporaryFile(){std::error_code error;std::filesystem::remove(path,error);}
     bool write(const std::string& data){std::ofstream out(path,std::ios::binary);out.write(data.data(),data.size());return static_cast<bool>(out);}
 };
@@ -26,7 +26,7 @@ TEST(PatchLibrary, ImportedBankRetainsSourceBytesAndLoadedStates) {
     mz_zip_archive zip{};const auto path=input.path.string();ASSERT_TRUE(mz_zip_reader_init_file(&zip,path.c_str(),0));
     for(const auto& patch:library.patches()) {
         const auto filename=patch.name.substr(0,patch.name.find("  -  "));size_t size=0;void* data=mz_zip_reader_extract_file_to_heap(&zip,filename.c_str(),&size,0);ASSERT_NE(data,nullptr);EXPECT_EQ(patch.text,std::string(static_cast<const char*>(data),size));mz_free(data);
-        synth2::host::ProcessorBridge direct,restored;ASSERT_TRUE(direct.loadPatch(patch.text,error));const auto state=direct.saveState();restored.restoreState(state.data(),state.size());EXPECT_EQ(state,restored.saveState());
+        synth1x::host::ProcessorBridge direct,restored;ASSERT_TRUE(direct.loadPatch(patch.text,error));const auto state=direct.saveState();restored.restoreState(state.data(),state.size());EXPECT_EQ(state,restored.saveState());
     }mz_zip_reader_end(&zip);
 }
 TEST(PatchLibrary, DirectPatchRetainsUtf8TitleCrLfAndSignedValues) {
@@ -50,12 +50,12 @@ TEST(PatchLibrary, EmptyAndOversizedZipPatchesDoNotReplaceTheBank) {
     for(const auto& file:{noPatches.path,empty.path,large.path}){EXPECT_FALSE(library.openFile(file.string(),error));EXPECT_FALSE(error.empty());EXPECT_EQ(library.patches().size(),128u);}
 }
 TEST(PatchLibrary, SelectedPatchStateRestoresWithoutTheSourceFile) {
-    TemporaryFile file(".zip");ASSERT_TRUE(writeZip(file.path,{{"Owned.sy1",ownedPatch}}));PatchLibrary library;std::string error;ASSERT_TRUE(library.openFile(file.path.string(),error));synth2::host::ProcessorBridge loaded,recalled;
+    TemporaryFile file(".zip");ASSERT_TRUE(writeZip(file.path,{{"Owned.sy1",ownedPatch}}));PatchLibrary library;std::string error;ASSERT_TRUE(library.openFile(file.path.string(),error));synth1x::host::ProcessorBridge loaded,recalled;
     ASSERT_TRUE(loaded.loadProgram(library.patches()[0].text,0,error,library.patches()[0].name));const auto displayName=library.patches()[0].name;const auto state=loaded.saveState();ASSERT_TRUE(std::filesystem::remove(file.path));recalled.restoreState(state.data(),state.size());EXPECT_EQ(recalled.currentPatchName(),displayName);loaded.prepare(48000,64);recalled.prepare(48000,64);
     std::array<float,64> l{},r{},otherL{},otherR{};ASSERT_TRUE(loaded.enqueueMidi(7,0x90,60,100));ASSERT_TRUE(recalled.enqueueMidi(7,0x90,60,100));for(int block=0;block<100;++block){ASSERT_TRUE(loaded.process(l.data(),r.data(),64,120));ASSERT_TRUE(recalled.process(otherL.data(),otherR.data(),64,120));EXPECT_EQ(l,otherL);EXPECT_EQ(r,otherR);}
 }
-TEST(PatchLibrary, Synth2ContinuousPatchLoadsWithItsNameAndFractionalValues) {
-    synth2::host::ProcessorBridge source,loaded;std::string error;
+TEST(PatchLibrary, Synth1XContinuousPatchLoadsWithItsNameAndFractionalValues) {
+    synth1x::host::ProcessorBridge source,loaded;std::string error;
     source.setNormalizedValue(19,37.25/127.0);
     TemporaryFile file(".sy1");ASSERT_TRUE(file.write(source.savePatch()));
     PatchLibrary library;ASSERT_TRUE(library.openFile(file.path.string(),error))<<error;
@@ -65,13 +65,13 @@ TEST(PatchLibrary, Synth2ContinuousPatchLoadsWithItsNameAndFractionalValues) {
     EXPECT_EQ(loaded.savePatch(),source.savePatch());
 }
 TEST(PatchLibrary, InvalidSourcePatchDoesNotChangeTheSoundingState) {
-    synth2::host::ProcessorBridge bridge;std::string error;ASSERT_TRUE(bridge.loadPatch(ownedPatch,error));const auto before=bridge.saveState();TemporaryFile file(".sy1");ASSERT_TRUE(file.write("Invalid\nver=999\n0,0\n"));PatchLibrary library;ASSERT_TRUE(library.openFile(file.path.string(),error));EXPECT_FALSE(bridge.loadPatch(library.patches()[0].text,error));EXPECT_FALSE(error.empty());EXPECT_EQ(bridge.saveState(),before);
+    synth1x::host::ProcessorBridge bridge;std::string error;ASSERT_TRUE(bridge.loadPatch(ownedPatch,error));const auto before=bridge.saveState();TemporaryFile file(".sy1");ASSERT_TRUE(file.write("Invalid\nver=999\n0,0\n"));PatchLibrary library;ASSERT_TRUE(library.openFile(file.path.string(),error));EXPECT_FALSE(bridge.loadPatch(library.patches()[0].text,error));EXPECT_FALSE(error.empty());EXPECT_EQ(bridge.saveState(),before);
 }
 TEST(PatchLibrary, LongZipFilenameIsNotTruncated) {
     TemporaryFile file(".zip");const std::string name=std::string(700,'a')+".sy1";ASSERT_TRUE(writeZip(file.path,{{name,ownedPatch}}));PatchLibrary library;std::string error;ASSERT_TRUE(library.openFile(file.path.string(),error))<<error;ASSERT_EQ(library.patches().size(),1u);EXPECT_TRUE(library.patches()[0].name.starts_with(name+"  -  "));EXPECT_EQ(library.patches()[0].text,ownedPatch);
 }
 TEST(EditorPages, SoundParametersAppearOnceAndMetadataIsHidden) {
-    std::array<int,128> seen{};for(const auto& page:synth2::editor::editorPages()){EXPECT_FALSE(page.parameters.empty());EXPECT_LE(page.parameters.size(),30u);for(int i:page.parameters){ASSERT_GE(i,0);ASSERT_LT(i,128);++seen[i];}}for(int i=0;i<128;++i)EXPECT_EQ(seen[i],i<99 ? 1 : 0)<<i;
+    std::array<int,128> seen{};for(const auto& page:synth1x::editor::editorPages()){EXPECT_FALSE(page.parameters.empty());EXPECT_LE(page.parameters.size(),30u);for(int i:page.parameters){ASSERT_GE(i,0);ASSERT_LT(i,128);++seen[i];}}for(int i=0;i<128;++i)EXPECT_EQ(seen[i],i<99 ? 1 : 0)<<i;
 }
 
 TEST(PatchLibrary, CommaTitleIsRetainedInDisplayName) {

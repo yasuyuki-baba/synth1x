@@ -6,8 +6,8 @@ from pathlib import Path
 
 p=argparse.ArgumentParser();p.add_argument('root',type=Path);p.add_argument('output',type=Path);a=p.parse_args()
 a.output.mkdir(parents=True,exist_ok=True)
-header='#pragma once\n#include <cstddef>\nnamespace synth2::resources {\n'
-source='#include "CoreResources.h"\nnamespace synth2::resources {\n'
+header='#pragma once\n#include <cstddef>\nnamespace synth1x::resources {\n'
+source='#include "CoreResources.h"\nnamespace synth1x::resources {\n'
 for symbol,name in [('initPatch','init.sy1')]:
  data=(a.root/'resources'/name).read_bytes()
  header+=f'extern const unsigned char {symbol}[];\nextern const std::size_t {symbol}Size;\n'

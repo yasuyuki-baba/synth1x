@@ -5,7 +5,7 @@ import math
 import struct
 
 
-OUTPUT = Path(__file__).resolve().parents[1] / 'projects/Synth2/src/dsp'
+OUTPUT = Path(__file__).resolve().parents[1] / 'projects/Synth1X/src/dsp'
 
 
 def f32(value):
@@ -18,7 +18,7 @@ def literal(value):
 
 def header(description):
     return ['#pragma once', '#include <array>', '', '// ' + description,
-            'namespace synth2::dsp', '{']
+            'namespace synth1x::dsp', '{']
 
 
 def float_array(lines, name, values):

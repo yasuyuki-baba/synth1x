@@ -69,7 +69,7 @@ FORBIDDEN = ('/SynthEngine.h', '/SynthVoice.h', '/RenderControls.h', '/patch/',
 
 
 def compile_arguments(build):
-    source = ROOT / 'projects/Synth2/src/dsp/SharedModulationRuntime.cpp'
+    source = ROOT / 'projects/Synth1X/src/dsp/SharedModulationRuntime.cpp'
     database = build / 'compile_commands.json'
     if database.is_file():
         for entry in json.loads(database.read_text()):
@@ -82,7 +82,7 @@ def compile_arguments(build):
         raise RuntimeError('Use a Ninja build or configure CMAKE_EXPORT_COMPILE_COMMANDS=ON')
     commands = subprocess.check_output(
         ['ninja', '-C', str(build), '-t', 'commands',
-         'CMakeFiles/Synth2Core.dir/projects/Synth2/src/dsp/SharedModulationRuntime.cpp.o'], text=True)
+         'CMakeFiles/Synth1XCore.dir/projects/Synth1X/src/dsp/SharedModulationRuntime.cpp.o'], text=True)
     command = next(line for line in commands.splitlines()
                    if ' -c ' in line and str(source) in line)
     args = shlex.split(command)
@@ -110,10 +110,10 @@ def audit(build, compiler):
         clean.append(arg)
         i += 1
     component_text, standard_text = header_source(COMPONENT_HEADERS), header_source(STANDARD_HEADERS)
-    with tempfile.TemporaryDirectory(prefix='synth2-dsp-header-audit-') as temporary:
+    with tempfile.TemporaryDirectory(prefix='synth1x-dsp-header-audit-') as temporary:
         component = Path(temporary) / 'components.cpp'
         component.write_text(component_text)
-        command = clean + ['-I' + str(ROOT / 'projects/Synth2/src'), str(component)]
+        command = clean + ['-I' + str(ROOT / 'projects/Synth1X/src'), str(component)]
         subprocess.run(command + ['-fsyntax-only'], cwd=directory, check=True)
         dependencies = subprocess.check_output(command + ['-MM'], cwd=directory, text=True).replace('\\', '/')
         for forbidden in FORBIDDEN:
@@ -122,7 +122,7 @@ def audit(build, compiler):
         for index,(header,forbidden_paths) in enumerate(ISOLATED_HEADERS.items()):
             isolated = Path(temporary) / f'isolated-{index}.cpp'
             isolated.write_text(f'#include "{header}"\nint main() {{}}\n')
-            isolated_command = clean + ['-I' + str(ROOT / 'projects/Synth2/src'), str(isolated)]
+            isolated_command = clean + ['-I' + str(ROOT / 'projects/Synth1X/src'), str(isolated)]
             subprocess.run(isolated_command + ['-fsyntax-only'], cwd=directory, check=True)
             dependencies = subprocess.check_output(isolated_command + ['-MM'], cwd=directory, text=True).replace('\\', '/')
             for forbidden in forbidden_paths:
@@ -130,11 +130,11 @@ def audit(build, compiler):
                     raise RuntimeError(f'{header} depends on forbidden boundary: {forbidden}')
         standard = Path(temporary) / 'standard.cpp'
         standard.write_text(standard_text)
-        subprocess.run([compiler, '-std=c++17', '-I' + str(ROOT / 'projects/Synth2/src'),
+        subprocess.run([compiler, '-std=c++17', '-I' + str(ROOT / 'projects/Synth1X/src'),
                         '-fsyntax-only', str(standard)], check=True)
     return {
-        'component_headers': ['projects/Synth2/src/dsp/' + name for name in COMPONENT_HEADERS],
-        'standard_library_headers': ['projects/Synth2/src/dsp/' + name for name in STANDARD_HEADERS],
+        'component_headers': ['projects/Synth1X/src/dsp/' + name for name in COMPONENT_HEADERS],
+        'standard_library_headers': ['projects/Synth1X/src/dsp/' + name for name in STANDARD_HEADERS],
         'no_engine_voice_aggregate_patch_or_apvts_dependencies': True,
         'source_sha256': hashlib.sha256(component_text.encode()).hexdigest(),
         'pure_source_sha256': hashlib.sha256(standard_text.encode()).hexdigest(),

@@ -10,7 +10,7 @@
 namespace testfiles {
 struct Directory {
     std::filesystem::path path;
-    Directory(){static std::atomic<unsigned> next{};path=std::filesystem::temp_directory_path()/("synth2-tests-"+std::to_string(std::chrono::steady_clock::now().time_since_epoch().count())+"-"+std::to_string(next++));if(!std::filesystem::create_directory(path))throw std::runtime_error("Cannot create test directory");}
+    Directory(){static std::atomic<unsigned> next{};path=std::filesystem::temp_directory_path()/("synth1x-tests-"+std::to_string(std::chrono::steady_clock::now().time_since_epoch().count())+"-"+std::to_string(next++));if(!std::filesystem::create_directory(path))throw std::runtime_error("Cannot create test directory");}
     ~Directory(){std::error_code e;std::filesystem::remove_all(path,e);}
 };
 inline bool zip(const std::filesystem::path& path,const std::vector<std::pair<std::string,std::string>>& files) {

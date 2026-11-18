@@ -22,7 +22,7 @@ struct ScopedCommaLocale
     ScopedCommaLocale(){std::locale::global(std::locale(previous,new CommaDecimal));}
     ~ScopedCommaLocale(){std::locale::global(previous);}
 };
-using synth2::host::ProcessorBridge;
+using synth1x::host::ProcessorBridge;
 using Stereo=std::array<std::array<float,64>,2>;
 Stereo render(ProcessorBridge& p,int block)
 {
@@ -34,16 +34,16 @@ Stereo render(ProcessorBridge& p,int block)
 
 TEST(PatchFormat, Version200PreservesEveryFloatAndEscapedNameExactly)
 {
-    ProcessorBridge processor;auto patch=synth2::parseContinuousPatch(processor.savePatch());
+    ProcessorBridge processor;auto patch=synth1x::parseContinuousPatch(processor.savePatch());
     patch.name=R"(Owned #1; "quoted" \ patch, 日本語)";
     for(int i=0;i<129;++i)if(i!=126)
     {
         const auto& info=processor.parameter(i);
         patch.values[i]=static_cast<float>(info.minimum+(info.maximum-info.minimum)*0.371234567);
     }
-    const auto text=synth2::formatContinuousPatch(patch);
+    const auto text=synth1x::formatContinuousPatch(patch);
     EXPECT_TRUE(text.starts_with("ver=200\n"));
-    const auto decoded=synth2::parseContinuousPatch(text);
+    const auto decoded=synth1x::parseContinuousPatch(text);
     EXPECT_EQ(decoded.name,patch.name);
     for(int i=0;i<129;++i)if(i!=126)
         EXPECT_EQ(std::bit_cast<uint32_t>(decoded.values[i]),std::bit_cast<uint32_t>(patch.values[i]))<<i;
@@ -71,7 +71,7 @@ TEST(PatchFormat, DecimalParsingIsLocaleIndependentAndRejectsInvalidRanges)
         {".5",.5f},{"5.",5.f},{"1.25e+1",12.5f},{"1.25E-1",.125f},
         {"1.40129846e-45",std::numeric_limits<float>::denorm_min()},{"-0",-0.f}}})
     {
-        const auto patch=synth2::parseContinuousPatch(withValue(token));
+        const auto patch=synth1x::parseContinuousPatch(withValue(token));
         EXPECT_EQ(std::bit_cast<uint32_t>(patch.values[19]),std::bit_cast<uint32_t>(expected))<<token;
     }
     const auto before=processor.saveState();
@@ -85,9 +85,9 @@ TEST(PatchFormat, DecimalParsingIsLocaleIndependentAndRejectsInvalidRanges)
 
 TEST(PatchFormat, FractionalDialsBypassLegacyConversionAndSurviveStateRecall)
 {
-    ProcessorBridge source;auto patch=synth2::parseContinuousPatch(source.savePatch());
+    ProcessorBridge source;auto patch=synth1x::parseContinuousPatch(source.savePatch());
     patch.values[16]=64.25f;patch.values[19]=37.25f;patch.values[52]=0.125f;
-    std::string error;ASSERT_TRUE(source.loadPatch(synth2::formatContinuousPatch(patch),error))<<error;
+    std::string error;ASSERT_TRUE(source.loadPatch(synth1x::formatContinuousPatch(patch),error))<<error;
     const auto state=source.saveState();
     EXPECT_EQ(stateinspection::attribute(*stateinspection::document(state),"stateVersion"),"3");
     EXPECT_EQ(stateinspection::attribute(*stateinspection::document(state),"patchFormat"),"200");
@@ -95,7 +95,7 @@ TEST(PatchFormat, FractionalDialsBypassLegacyConversionAndSurviveStateRecall)
     EXPECT_EQ(restored.saveState(),state);EXPECT_EQ(restored.savePatch(),source.savePatch());
     source.prepare(44100,64);restored.prepare(44100,64);
     for(int i=0;i<700;++i)EXPECT_EQ(render(source,i),render(restored,i))<<i;
-    synth2::RenderControls mapped;ASSERT_TRUE(synth2::readMappedSynthParams(source,mapped));
+    synth1x::RenderControls mapped;ASSERT_TRUE(synth1x::readMappedSynthParams(source,mapped));
     EXPECT_FLOAT_EQ(mapped.cutoffIndex,(37.25f/127.0f)*1023.0f);
     EXPECT_FLOAT_EQ(mapped.chorus.time,0.125f/127.0f);
     EXPECT_FLOAT_EQ(mapped.filterEnv.decaySec,0.01f*std::pow(6000.f,64.25f/127.f));
@@ -140,11 +140,11 @@ TEST(PatchFormat, ContinuousFileEnablesFractionalModeAfterLegacyStateRestore)
     legacy->RootElement()->DeleteAttribute("nativeSource");
     const auto bytes=stateinspection::bytes(*legacy);p.restoreState(bytes.data(),static_cast<int>(bytes.size()));
     ASSERT_EQ(stateinspection::attribute(*stateinspection::document(p),"stateVersion"),"2");
-    auto patch=synth2::parseContinuousPatch(p.savePatch());patch.values[19]=37.25f;
-    std::string error;ASSERT_TRUE(p.loadPatch(synth2::formatContinuousPatch(patch),error))<<error;
+    auto patch=synth1x::parseContinuousPatch(p.savePatch());patch.values[19]=37.25f;
+    std::string error;ASSERT_TRUE(p.loadPatch(synth1x::formatContinuousPatch(patch),error))<<error;
     EXPECT_EQ(stateinspection::attribute(*stateinspection::document(p),"stateVersion"),"3");
-    p.prepare(44100,64);render(p,0);synth2::RenderControls mapped;
-    ASSERT_TRUE(synth2::readMappedSynthParams(p,mapped));
+    p.prepare(44100,64);render(p,0);synth1x::RenderControls mapped;
+    ASSERT_TRUE(synth1x::readMappedSynthParams(p,mapped));
     EXPECT_FLOAT_EQ(mapped.cutoffIndex,(37.25f/127.f)*1023.f);
 }
 
@@ -153,22 +153,22 @@ TEST(PatchFormat, MetadataSurvivesEditsExportAndProjectRecall)
     ProcessorBridge source;std::string error;
     const std::string legacy="Owned metadata patch\nver=113\ncolor=cyan\nfuture=opaque # literal; value\nfuture=second\n19,64\n";
     ASSERT_TRUE(source.loadPatch(legacy,error))<<error;
-    const auto expected=synth2::readPatchMetadata(legacy);
+    const auto expected=synth1x::readPatchMetadata(legacy);
     source.setNormalizedValue(19,37.25/127.0);
-    auto exported=synth2::parseContinuousPatch(source.savePatch());
+    auto exported=synth1x::parseContinuousPatch(source.savePatch());
     EXPECT_EQ(exported.metadata,expected);
-    EXPECT_EQ(synth2::patchColor(exported.metadata),0x00ffffu);
+    EXPECT_EQ(synth1x::patchColor(exported.metadata),0x00ffffu);
     ProcessorBridge restored;
     const auto state=source.saveState();
     restored.restoreState(state.data(),static_cast<int>(state.size()));
     EXPECT_EQ(restored.savePatch(),source.savePatch());
     exported.name="Renamed # patch";
-    ASSERT_TRUE(restored.loadPatch(synth2::formatContinuousPatch(exported),error))<<error;
-    EXPECT_EQ(synth2::parseContinuousPatch(restored.savePatch()).metadata,expected);
-    EXPECT_EQ(synth2::parseContinuousPatch(restored.savePatch()).name,exported.name);
+    ASSERT_TRUE(restored.loadPatch(synth1x::formatContinuousPatch(exported),error))<<error;
+    EXPECT_EQ(synth1x::parseContinuousPatch(restored.savePatch()).metadata,expected);
+    EXPECT_EQ(synth1x::parseContinuousPatch(restored.savePatch()).name,exported.name);
     ProcessorBridge plain;
     ASSERT_TRUE(restored.loadPatch(plain.savePatch(),error))<<error;
-    EXPECT_TRUE(synth2::parseContinuousPatch(restored.savePatch()).metadata.empty());
+    EXPECT_TRUE(synth1x::parseContinuousPatch(restored.savePatch()).metadata.empty());
 }
 
 TEST(PatchFormat, NamedColorsAndOpaqueUnknownValues)
@@ -176,17 +176,17 @@ TEST(PatchFormat, NamedColorsAndOpaqueUnknownValues)
     const std::vector<std::string> names{"red","green","blue","yellow","magenta","cyan"};
     const unsigned expected[]{0xff0000,0x00ff00,0x0000ff,0xffff00,0xff00ff,0x00ffff};
     for(std::size_t i=0;i<names.size();++i)
-        EXPECT_EQ(synth2::patchColor({"color="+names[i]}),expected[i]);
+        EXPECT_EQ(synth1x::patchColor({"color="+names[i]}),expected[i]);
     for(const auto* value:{"default","unknown","16711680",""})
-        EXPECT_FALSE(synth2::patchColor({std::string("color=")+value}));
+        EXPECT_FALSE(synth1x::patchColor({std::string("color=")+value}));
     ProcessorBridge processor;
-    auto patch=synth2::parseContinuousPatch(processor.savePatch());
+    auto patch=synth1x::parseContinuousPatch(processor.savePatch());
     patch.metadata={"color=unknown","custom=value","custom=another"};
-    EXPECT_EQ(synth2::parseContinuousPatch(synth2::formatContinuousPatch(patch)).metadata,patch.metadata);
+    EXPECT_EQ(synth1x::parseContinuousPatch(synth1x::formatContinuousPatch(patch)).metadata,patch.metadata);
     for(const auto* line:{"ver=113","name=duplicate","color=red\n19,1"})
     {
         patch.metadata={line};
-        EXPECT_THROW(synth2::formatContinuousPatch(patch),std::runtime_error);
+        EXPECT_THROW(synth1x::formatContinuousPatch(patch),std::runtime_error);
     }
 }
 
@@ -196,8 +196,8 @@ TEST(PatchFormat, HeadersDoNotChangeLoadedControlsOrAudio)
     const std::string body="ver=113\n19,64\n29,80\n";
     ASSERT_TRUE(plain.loadPatch("Owned\n"+body,error))<<error;
     ASSERT_TRUE(colored.loadPatch("Owned\n"+body+"color=green\nfuture=opaque\n",error))<<error;
-    EXPECT_EQ(synth2::parseContinuousPatch(plain.savePatch()).values,
-              synth2::parseContinuousPatch(colored.savePatch()).values);
+    EXPECT_EQ(synth1x::parseContinuousPatch(plain.savePatch()).values,
+              synth1x::parseContinuousPatch(colored.savePatch()).values);
     plain.prepare(44100,64);colored.prepare(44100,64);
     for(int block=0;block<450;++block)EXPECT_EQ(render(plain,block),render(colored,block));
 }

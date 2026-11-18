@@ -1,4 +1,4 @@
-#include "Synth2.h"
+#include "Synth1X.h"
 #include "patch/PatchFormat.h"
 #include "public.sdk/source/vst/hosting/parameterchanges.h"
 #include <array>
@@ -8,10 +8,10 @@
 
 // UI callbacks are outside this test. The constructor, state/parameter methods,
 // patch notification, processor and VST3 host API are the production code.
-void Synth2::OnIdle() {}
-void Synth2::OnUIOpen() {}
-void Synth2::OnUIClose() {}
-void Synth2::OnParentWindowResize(int,int) {}
+void Synth1X::OnIdle() {}
+void Synth1X::OnUIOpen() {}
+void Synth1X::OnUIClose() {}
+void Synth1X::OnParentWindowResize(int,int) {}
 
 namespace
 {
@@ -21,7 +21,7 @@ void require(bool condition,const char* message)
 }
 struct Host final : Steinberg::Vst::IComponentHandler
 {
-    Synth2* plugin{};
+    Synth1X* plugin{};
     unsigned reads=0,mismatches=0,latencyChanges=0;
     Steinberg::tresult PLUGIN_API queryInterface(const Steinberg::TUID iid,void** result) override
     {
@@ -49,7 +49,7 @@ struct Host final : Steinberg::Vst::IComponentHandler
 };
 }
 
-struct Synth2Vst3PatchTest
+struct Synth1XVst3PatchTest
 {
     static void checkHostEcho()
     {
@@ -57,7 +57,7 @@ struct Synth2Vst3PatchTest
         // returning all of the values it just read from the controller.
         const std::string patch="Legacy host echo\nver=100\n0,1\n1,1\n19,110\n20,8\n21,72\n"
             "25,44\n26,96\n27,127\n28,48\n29,52\n30,90\n65,0\n66,0\n57,0\n58,0\n59,0\n73,0\n77,0\n";
-        Synth2 baseline{iplug::InstanceInfo{}},echoed{iplug::InstanceInfo{}};
+        Synth1X baseline{iplug::InstanceInfo{}},echoed{iplug::InstanceInfo{}};
         for(auto* plugin:{&baseline,&echoed})
         {
             require(plugin->initialize(nullptr)==Steinberg::kResultOk,"Echo initialize failed");
@@ -94,7 +94,7 @@ struct Synth2Vst3PatchTest
         for(auto* plugin:{&baseline,&echoed}){plugin->setActive(false);plugin->terminate();}
         std::cout<<"Legacy host parameter echo: state and audio unchanged\n";
     }
-    static double energy(Synth2& plugin)
+    static double energy(Synth1X& plugin)
     {
         iplug::IMidiMsg note;note.MakeNoteOnMsg(60,100,0);plugin.ProcessMidiMsg(note);
         std::array<iplug::sample,128> left{},right{};
@@ -111,9 +111,9 @@ struct Synth2Vst3PatchTest
         // Use the same public queue as IVKeyboardControl, then the real VST3
         // process callback. No editor-to-core note-ownership path is involved.
         Host host;
-        Synth2 plugin {iplug::InstanceInfo{}};host.plugin=&plugin;
+        Synth1X plugin {iplug::InstanceInfo{}};host.plugin=&plugin;
         require(plugin.initialize(&host)==Steinberg::kResultOk,"UI MIDI VST3 initialize failed");
-        synth2::host::ProcessorBridge reference;
+        synth1x::host::ProcessorBridge reference;
         std::string error;
         require(plugin.processor.loadProgram(patch,0,error),"UI MIDI patch load failed");
         require(reference.loadProgram(patch,0,error),"Reference MIDI patch load failed");
@@ -161,7 +161,7 @@ struct Synth2Vst3PatchTest
     {
         checkHostEcho();
         Host host;
-        Synth2 plugin {iplug::InstanceInfo{}};host.plugin=&plugin;
+        Synth1X plugin {iplug::InstanceInfo{}};host.plugin=&plugin;
         require(plugin.initialize(&host)==Steinberg::kResultOk,"VST3 initialize failed");
         plugin.setComponentHandler(&host);
         Steinberg::Vst::ProcessSetup setup {};
@@ -203,9 +203,9 @@ struct Synth2Vst3PatchTest
         require(host.mismatches==0,"VST3 exposed stale values during patch notification");
         // Discrete SDK presentation must not round fractional recalled bridge
         // controls back into the engine while publishing a patch.
-        auto fractional=synth2::parseContinuousPatch(plugin.processor.savePatch());
+        auto fractional=synth1x::parseContinuousPatch(plugin.processor.savePatch());
         fractional.values[64]=2.25f;fractional.values[19]=63.75f;
-        require(plugin.processor.loadProgram(synth2::formatContinuousPatch(fractional),2,error),"Fractional patch load failed");
+        require(plugin.processor.loadProgram(synth1x::formatContinuousPatch(fractional),2,error),"Fractional patch load failed");
         const auto fractionalBefore=plugin.processor.saveState();
         plugin.notifyHostOfPatch();
         require(plugin.processor.saveState()==fractionalBefore,"Notification rounded fractional recalled values");
@@ -282,6 +282,6 @@ struct Synth2Vst3PatchTest
 };
 int main()
 {
-    try { Synth2Vst3PatchTest::run(); }
+    try { Synth1XVst3PatchTest::run(); }
     catch(const std::exception& e) { std::cerr<<e.what()<<'\n';return 1; }
 }

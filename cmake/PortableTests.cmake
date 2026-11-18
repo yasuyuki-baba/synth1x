@@ -10,7 +10,7 @@ if(MSVC)
     endif()
 endif()
 FetchContent_MakeAvailable(googletest)
-add_executable(Synth2PatchTests
+add_executable(Synth1XPatchTests
     tests/RenderPolicyTest.cpp
     tests/StateRepresentationTest.cpp
     tests/BankBoundaryTest.cpp
@@ -55,12 +55,12 @@ add_executable(Synth2PatchTests
     tests/OutputTonePrecisionTest.cpp
     tests/EqualizerBehaviorTest.cpp
 )
-target_link_libraries(Synth2PatchTests PRIVATE Synth2Core Synth2Zip Synth2Xml Synth2Resources GTest::gtest_main)
-target_include_directories(Synth2PatchTests PRIVATE projects/Synth2/src tests)
-add_test(NAME PatchCompatibilityTests COMMAND Synth2PatchTests)
+target_link_libraries(Synth1XPatchTests PRIVATE Synth1XCore Synth1XZip Synth1XXml Synth1XResources GTest::gtest_main)
+target_include_directories(Synth1XPatchTests PRIVATE projects/Synth1X/src tests)
+add_test(NAME PatchCompatibilityTests COMMAND Synth1XPatchTests)
 set_tests_properties(PatchCompatibilityTests PROPERTIES LABELS "portable;cpp")
 
-target_compile_definitions(Synth2PatchTests PRIVATE SYNTH2_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
+target_compile_definitions(Synth1XPatchTests PRIVATE SYNTH1X_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
 
 find_package(Python3 REQUIRED COMPONENTS Interpreter)
 add_test(NAME NamingLint
@@ -68,7 +68,7 @@ add_test(NAME NamingLint
 add_test(NAME NamingLintTests
     COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/tests/test_lint_naming.py -v)
 set_tests_properties(NamingLint NamingLintTests PROPERTIES LABELS "portable;python;lint" TIMEOUT 60)
-if(synth2_header_audit_supported)
+if(synth1x_header_audit_supported)
     add_test(NAME HeaderBoundaryAudit
         COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/tools/audit_dsp_headers.py
             --build-dir ${CMAKE_BINARY_DIR} --compiler ${CMAKE_CXX_COMPILER})
@@ -80,13 +80,13 @@ add_test(
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
 )
 set_tests_properties(GainRegressionTests PROPERTIES
-    ENVIRONMENT "SYNTH2_PROBE_BIN=$<TARGET_FILE:Synth2Probe>"
+    ENVIRONMENT "SYNTH1X_PROBE_BIN=$<TARGET_FILE:Synth1XProbe>"
     TIMEOUT 120
 )
 add_test(NAME WaveComparisonTests
     COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/tests/test_compare_waves.py -v)
 set_tests_properties(WaveComparisonTests PROPERTIES
-    ENVIRONMENT "SYNTH2_COMPARE_BIN=$<TARGET_FILE:CompareWaves>;SYNTH2_PROBE_BIN=$<TARGET_FILE:Synth2Probe>"
+    ENVIRONMENT "SYNTH1X_COMPARE_BIN=$<TARGET_FILE:CompareWaves>;SYNTH1X_PROBE_BIN=$<TARGET_FILE:Synth1XProbe>"
     TIMEOUT 60)
 
 
@@ -104,22 +104,22 @@ set_tests_properties(GainRegressionTests WaveComparisonTests MeasurementToolsTes
 set_tests_properties(PatchCompatibilityTests PROPERTIES LABELS "portable;cpp")
 
 # Heap interception is isolated so it cannot affect the ordinary test executable.
-add_executable(Synth2RealtimeTests tests/RealtimeBehaviorTest.cpp tests/support/HeapActivity.cpp)
-target_include_directories(Synth2RealtimeTests PRIVATE tests)
-target_link_libraries(Synth2RealtimeTests PRIVATE Synth2Core GTest::gtest_main)
-add_test(NAME RealtimeBehaviorTests COMMAND Synth2RealtimeTests)
+add_executable(Synth1XRealtimeTests tests/RealtimeBehaviorTest.cpp tests/support/HeapActivity.cpp)
+target_include_directories(Synth1XRealtimeTests PRIVATE tests)
+target_link_libraries(Synth1XRealtimeTests PRIVATE Synth1XCore GTest::gtest_main)
+add_test(NAME RealtimeBehaviorTests COMMAND Synth1XRealtimeTests)
 set_tests_properties(RealtimeBehaviorTests PROPERTIES LABELS "portable;cpp;realtime" TIMEOUT 120)
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
-    target_compile_definitions(Synth2RealtimeTests PRIVATE SYNTH2_TEST_WRAP_C_HEAP=1)
-    target_link_options(Synth2RealtimeTests PRIVATE
+    target_compile_definitions(Synth1XRealtimeTests PRIVATE SYNTH1X_TEST_WRAP_C_HEAP=1)
+    target_link_options(Synth1XRealtimeTests PRIVATE
         -Wl,--wrap=malloc -Wl,--wrap=calloc -Wl,--wrap=realloc -Wl,--wrap=free)
 endif()
 
-set_target_properties(Synth2PatchTests Synth2RealtimeTests PROPERTIES CXX_EXTENSIONS OFF)
+set_target_properties(Synth1XPatchTests Synth1XRealtimeTests PROPERTIES CXX_EXTENSIONS OFF)
 
 add_test(NAME RenderDiagnosticsTests
-    COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/tests/test_render_diagnostics.py $<TARGET_FILE:Synth2Probe>)
+    COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/tests/test_render_diagnostics.py $<TARGET_FILE:Synth1XProbe>)
 set_tests_properties(RenderDiagnosticsTests PROPERTIES LABELS "portable;python" TIMEOUT 30)
 
 add_test(NAME BuildVersionTests
@@ -129,6 +129,6 @@ set_tests_properties(BuildVersionTests PROPERTIES LABELS "portable;python" TIMEO
 
 add_test(NAME TagReportTests COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/tests/test_tag_reports.py -v)
 set_tests_properties(TagReportTests PROPERTIES LABELS "portable;python" TIMEOUT 60)
-if(SYNTH2_BUILD_TOOLS)
-    set_tests_properties(TagReportTests PROPERTIES ENVIRONMENT "SYNTH2_TAG_PROBE_BIN=$<TARGET_FILE:Synth2TagProbe>")
+if(SYNTH1X_BUILD_TOOLS)
+    set_tests_properties(TagReportTests PROPERTIES ENVIRONMENT "SYNTH1X_TAG_PROBE_BIN=$<TARGET_FILE:Synth1XTagProbe>")
 endif()

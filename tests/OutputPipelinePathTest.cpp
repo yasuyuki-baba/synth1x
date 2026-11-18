@@ -5,18 +5,18 @@
 
 namespace
 {
-synth2::dsp::OutputGain settleGain(synth2::dsp::OutputPipeline& pipeline,float rate)
+synth1x::dsp::OutputGain settleGain(synth1x::dsp::OutputPipeline& pipeline,float rate)
 {
     pipeline.prepareGain(rate,false);
-    synth2::dsp::OutputGain reference;reference.prepare(rate);
-    synth2::dsp::OutputPipelineSettings settings;synth2::dsp::OutputProcessContext context;
+    synth1x::dsp::OutputGain reference;reference.prepare(rate);
+    synth1x::dsp::OutputPipelineSettings settings;synth1x::dsp::OutputProcessContext context;
     context.sampleRate=rate;context.bypassEffects=true;
-    synth2::audio::AudioBuffer<float> zero(2,64);zero.clear();
+    synth1x::audio::AudioBuffer<float> zero(2,64);zero.clear();
     for(int i=0;i<512;++i)
     {
         pipeline.process(zero,0,64,settings,context,{});
-        for(int word=0;word<128;++word)reference.next(synth2::dsp::OutputGain::defaultTarget);
-        reference.finish(synth2::dsp::OutputGain::defaultTarget);
+        for(int word=0;word<128;++word)reference.next(synth1x::dsp::OutputGain::defaultTarget);
+        reference.finish(synth1x::dsp::OutputGain::defaultTarget);
     }
     return reference;
 }
@@ -26,20 +26,20 @@ TEST(OutputPipelinePath, WetProcessingAlwaysUsesTheCurrentKernelWithinItsRateDom
 {
     for(float rate:{10000.f,44100.f,48000.25f,384000.f})for(int channels:{1,2})
     {
-        auto pipeline=std::make_unique<synth2::dsp::OutputPipeline>();
-        auto reference=std::make_unique<synth2::dsp::EffectPair>();
+        auto pipeline=std::make_unique<synth1x::dsp::OutputPipeline>();
+        auto reference=std::make_unique<synth1x::dsp::EffectPair>();
         pipeline->prepareEffects({rate,64,static_cast<uint32_t>(channels)},false,false);pipeline->prepareProcessors(rate,false);
         reference->prepare(rate);
         settleGain(*pipeline,rate);
-        synth2::dsp::Equalizer eq;eq.prepare(rate);
-        synth2::dsp::OutputPipelineSettings settings;
+        synth1x::dsp::Equalizer eq;eq.prepare(rate);
+        synth1x::dsp::OutputPipelineSettings settings;
         settings.delay.enable=true;settings.delay.time=0;settings.delay.level=1;
         settings.delay.feedback=settings.delay.spread=settings.delay.tone=64.f/127;
         settings.chorus.enabled=true;settings.chorus.type=2;settings.chorus.level=.5f;
         reference->setParams(settings.delay,settings.chorus,120);
         eq.setParams(settings.eq);
-        synth2::dsp::OutputProcessContext context;context.sampleRate=rate;
-        synth2::audio::AudioBuffer<float> actual(channels,528),expected(channels,528);
+        synth1x::dsp::OutputProcessContext context;context.sampleRate=rate;
+        synth1x::audio::AudioBuffer<float> actual(channels,528),expected(channels,528);
         for(int c=0;c<channels;++c)for(int i=0;i<528;++i)
         {
             const float sample=i<8 || i>=520 ? 7.f : i==8 ? .25f : 0.f;
@@ -61,20 +61,20 @@ TEST(OutputPipelinePath, UnsupportedWetRatesBypassWithoutSelectingAnotherAlgorit
 {
     for(float rate:{8000.f,9999.f,384001.f})
     {
-        auto pipeline=std::make_unique<synth2::dsp::OutputPipeline>();
+        auto pipeline=std::make_unique<synth1x::dsp::OutputPipeline>();
         pipeline->prepareEffects({rate,64,2},false,false);pipeline->prepareProcessors(rate,false);
         auto gain=settleGain(*pipeline,rate);
-        synth2::dsp::OutputPipelineSettings settings;
+        synth1x::dsp::OutputPipelineSettings settings;
         settings.delay.enable=true;settings.delay.time=0;settings.delay.level=1;
         settings.chorus.enabled=true;settings.chorus.level=1;
-        synth2::dsp::OutputProcessContext context;context.sampleRate=rate;
-        synth2::audio::AudioBuffer<float> audio(2,80);
+        synth1x::dsp::OutputProcessContext context;context.sampleRate=rate;
+        synth1x::audio::AudioBuffer<float> audio(2,80);
         for(int c=0;c<2;++c)for(int i=0;i<80;++i)audio.setSample(c,i,static_cast<float>(i-40)/80);
-        synth2::audio::AudioBuffer<float> expected(audio);
-        synth2::dsp::Equalizer eq;eq.prepare(rate);eq.setParams(settings.eq);
+        synth1x::audio::AudioBuffer<float> expected(audio);
+        synth1x::dsp::Equalizer eq;eq.prepare(rate);eq.setParams(settings.eq);
         for(int c=0;c<2;++c)for(int i=8;i<72;++i)expected.setSample(c,i,eq.processSample(expected.getSample(c,i),c));
         for(int i=8;i<72;++i)for(int c=0;c<2;++c)
-            expected.setSample(c,i,expected.getSample(c,i)*(gain.next(synth2::dsp::OutputGain::defaultTarget)/synth2::dsp::OutputGain::defaultTarget));
+            expected.setSample(c,i,expected.getSample(c,i)*(gain.next(synth1x::dsp::OutputGain::defaultTarget)/synth1x::dsp::OutputGain::defaultTarget));
         pipeline->process(audio,8,64,settings,context,{});
         for(int c=0;c<2;++c)for(int i=0;i<80;++i)EXPECT_EQ(audio.getSample(c,i),expected.getSample(c,i));
     }
@@ -82,14 +82,14 @@ TEST(OutputPipelinePath, UnsupportedWetRatesBypassWithoutSelectingAnotherAlgorit
 
 TEST(OutputPipelinePath, ReleaseRetainsOrClearsTheCurrentEqualizerHistory)
 {
-    auto used=std::make_unique<synth2::dsp::OutputPipeline>();
-    auto held=std::make_unique<synth2::dsp::OutputPipeline>();
+    auto used=std::make_unique<synth1x::dsp::OutputPipeline>();
+    auto held=std::make_unique<synth1x::dsp::OutputPipeline>();
     for(auto* pipeline:{used.get(),held.get()})
     {pipeline->prepareEffects({44100,64,2},false,false);pipeline->prepareProcessors(44100,false);settleGain(*pipeline,44100);}
-    synth2::dsp::OutputPipelineSettings settings;
+    synth1x::dsp::OutputPipelineSettings settings;
     settings.eq.tone=32.f/127;settings.eq.level=64.f/127;
-    synth2::dsp::OutputProcessContext context;context.sampleRate=44100;
-    synth2::audio::AudioBuffer<float> first(2,64),second(2,64);
+    synth1x::dsp::OutputProcessContext context;context.sampleRate=44100;
+    synth1x::audio::AudioBuffer<float> first(2,64),second(2,64);
     first.clear();second.clear();first.setSample(0,0,.25f);second.setSample(0,0,.25f);
     used->process(first,0,64,settings,context,{});held->process(second,0,64,settings,context,{});
     used->release(true);first.clear();second.clear();
@@ -103,7 +103,7 @@ TEST(OutputPipelinePath, ReleaseRetainsOrClearsTheCurrentEqualizerHistory)
 }
 TEST(PanInputs, CubicPanRunsAfterNonlinearEffectsForEverySourceHistory)
 {
-    using namespace synth2::dsp;
+    using namespace synth1x::dsp;
     auto actual=std::make_unique<OutputPipeline>(),reference=std::make_unique<OutputPipeline>(),wrongOrder=std::make_unique<OutputPipeline>();
     for(auto* pipeline:{actual.get(),reference.get(),wrongOrder.get()})
     {pipeline->prepareEffects({44100,64,2},false,false);pipeline->prepareProcessors(44100,false);settleGain(*pipeline,44100);}
@@ -111,7 +111,7 @@ TEST(PanInputs, CubicPanRunsAfterNonlinearEffectsForEverySourceHistory)
     settings.nativeMultiEffectDials={100,64,64};settings.chorus.enabled=false;settings.delay.enable=false;
     OutputPipelineSettings withoutPan=settings;withoutPan.panLfo=false;withoutPan.pan=0;
     OutputProcessContext context;context.sampleRate=44100;
-    synth2::audio::AudioBuffer<float> got(2,64),expected(2,64),wrong(2,64);
+    synth1x::audio::AudioBuffer<float> got(2,64),expected(2,64),wrong(2,64);
     for(int channel=0;channel<2;++channel)for(int i=0;i<64;++i)
     {const float sample=static_cast<float>((i*17+channel*7)%31-15)/16;got.setSample(channel,i,sample);expected.setSample(channel,i,sample);wrong.setSample(channel,i,sample);}
     VoiceControlBuffer control{};control.fill(32);
@@ -132,18 +132,18 @@ TEST(PanInputs, CubicPanRunsAfterNonlinearEffectsForEverySourceHistory)
 #include "render/OutputConfiguration.h"
 TEST(StaticPanInputs, GlobalBalanceFollowsDriveForMonoAndStereo)
 {
-    using namespace synth2::dsp;
+    using namespace synth1x::dsp;
     for(int channels:{1,2})
     {
         auto actual=std::make_unique<OutputPipeline>(),reference=std::make_unique<OutputPipeline>(),wrongOrder=std::make_unique<OutputPipeline>();
         for(auto* pipeline:{actual.get(),reference.get(),wrongOrder.get()})
         {pipeline->prepareEffects({44100,64,static_cast<uint32_t>(channels)},false,false);pipeline->prepareProcessors(44100,false);settleGain(*pipeline,44100);}
-        synth2::RenderControls p;p.pan=.5f;p.nativeMultiEffectType=0;
+        synth1x::RenderControls p;p.pan=.5f;p.nativeMultiEffectType=0;
         p.nativeMultiEffectDials={100,64,64};p.chorus.enabled=false;p.delay.enable=false;
-        const auto settings=synth2::render::outputSettings(p);
+        const auto settings=synth1x::render::outputSettings(p);
         auto withoutPan=settings;withoutPan.pan=0;
         OutputProcessContext context;context.sampleRate=44100;
-        synth2::audio::AudioBuffer<float> got(channels,80),expected(channels,80),wrong(channels,80);
+        synth1x::audio::AudioBuffer<float> got(channels,80),expected(channels,80),wrong(channels,80);
         for(int channel=0;channel<channels;++channel)for(int i=0;i<80;++i)
         {
             const float sample=i<8 || i>=72 ? 7.f : static_cast<float>((i*17+channel*7)%31-15)/16;

@@ -15,23 +15,23 @@ class RenderDiagnosticsTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             clean = {key: value for key, value in os.environ.items()
-                     if not key.startswith(('SYNTH1_', 'SYNTH2_', 'SYNTH_OSC1_'))}
+                     if not key.startswith(('SYNTH1_', 'SYNTH1X_', 'SYNTH_OSC1_'))}
             def render(name, env):
                 path = root / name
                 subprocess.run([str(PROBE), str(path), '60', '0.2', '--float-wav'],
                                env=env, check=True, capture_output=True)
                 return path.read_bytes()
             expected = render('normal.wav', clean)
-            altered = dict(clean, SYNTH2_BYPASS_ENV='1', SYNTH2_BYPASS_FILTER='1',
-                           SYNTH2_BYPASS_FX='1')
+            altered = dict(clean, SYNTH1X_BYPASS_ENV='1', SYNTH1X_BYPASS_FILTER='1',
+                           SYNTH1X_BYPASS_FX='1')
             self.assertEqual(expected, render('environment.wav', altered))
 
     def test_controller_trace_contains_only_active_state_columns(self):
         with tempfile.TemporaryDirectory() as directory:
             root=Path(directory);trace=root/'controllers.tsv'
             env={key:value for key,value in os.environ.items()
-                 if not key.startswith(('SYNTH1_', 'SYNTH2_', 'SYNTH_OSC1_'))}
-            env.update(SYNTH2_PROBE_CONTROLLER_TRACE=str(trace),SYNTH2_PROBE_BLOCK_SIZE='64')
+                 if not key.startswith(('SYNTH1_', 'SYNTH1X_', 'SYNTH_OSC1_'))}
+            env.update(SYNTH1X_PROBE_CONTROLLER_TRACE=str(trace),SYNTH1X_PROBE_BLOCK_SIZE='64')
             subprocess.run([str(PROBE),str(root/'audio.wav'),'60','0.02','--float-wav'],
                            env=env,check=True,capture_output=True)
             rows=[line.split('\t') for line in trace.read_text().splitlines()]
@@ -50,7 +50,7 @@ class RenderDiagnosticsTest(unittest.TestCase):
                     result = subprocess.run([str(PROBE), str(Path(directory) / 'out.wav'),
                                              '60', '0.2', option], capture_output=True, text=True)
                     self.assertNotEqual(result.returncode, 0)
-                    self.assertIn('Synth2DiagnosticProbe', result.stderr)
+                    self.assertIn('Synth1XDiagnosticProbe', result.stderr)
 
 
 if __name__ == '__main__':

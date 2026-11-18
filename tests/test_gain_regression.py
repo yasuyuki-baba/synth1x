@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Regression tests for Synth2 amp-gain staging.
+Regression tests for Synth1X amp-gain staging.
 
 Problems fixed (and guarded by these tests):
   1. masterGain came from p78 (Effect type) instead of p29 (V1.05 Amp Gain)
@@ -13,8 +13,8 @@ Run:
     ctest -V -R GainRegressionTests                   # via CMake
 
 Environment:
-    SYNTH2_PROBE_BIN  – path to Synth2Probe binary
-                        (default: build/Synth2Probe)
+    SYNTH1X_PROBE_BIN  – path to Synth1XProbe binary
+                        (default: build/Synth1XProbe)
 """
 
 import math
@@ -32,8 +32,8 @@ import wave
 
 REPO_ROOT  = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PROBE_BIN  = os.environ.get(
-    "SYNTH2_PROBE_BIN",
-    os.path.join(REPO_ROOT, "build", "Synth2Probe"),
+    "SYNTH1X_PROBE_BIN",
+    os.path.join(REPO_ROOT, "build", "Synth1XProbe"),
 )
 
 
@@ -59,13 +59,13 @@ def sy1_amp_gain(p29: float) -> float:
 def render_wav(out_wav: str, note: int = 69, duration: float = 2.0,
                patch: str | None = None, extra_env: dict | None = None) -> float:
     """
-    Run Synth2Probe to render a WAV, return peak |x| (float 0..1).
+    Run Synth1XProbe to render a WAV, return peak |x| (float 0..1).
     Skips the test with a clear message if the binary is not found.
     """
     if not os.path.isfile(PROBE_BIN):
         raise unittest.SkipTest(
-            f"Synth2Probe not found at {PROBE_BIN!r}. "
-            "Build with: cmake --build build --target Synth2Probe"
+            f"Synth1XProbe not found at {PROBE_BIN!r}. "
+            "Build with: cmake --build build --target Synth1XProbe"
         )
 
     cmd = [PROBE_BIN, out_wav, str(note), str(duration)]
@@ -79,14 +79,14 @@ def render_wav(out_wav: str, note: int = 69, duration: float = 2.0,
     result = subprocess.run(cmd, capture_output=True, text=True, env=env)
     if result.returncode != 0:
         raise RuntimeError(
-            f"Synth2Probe failed:\nstdout={result.stdout}\nstderr={result.stderr}"
+            f"Synth1XProbe failed:\nstdout={result.stdout}\nstderr={result.stderr}"
         )
 
     # parse "peak |x| = <value>" from stderr
     for line in (result.stdout + result.stderr).splitlines():
         if "peak |x|" in line:
             return float(line.split("=")[-1].strip())
-    raise RuntimeError("Synth2Probe output did not contain 'peak |x|'")
+    raise RuntimeError("Synth1XProbe output did not contain 'peak |x|'")
 
 
 def read_peak(wav_path: str) -> float:
@@ -142,8 +142,8 @@ class TestAmpGainFormula(unittest.TestCase):
                            "Formula appears to be linear — power-law missing!")
 
 
-class TestSynth2ProbeOutput(unittest.TestCase):
-    """Integration tests that render audio with Synth2Probe."""
+class TestSynth1XProbeOutput(unittest.TestCase):
+    """Integration tests that render audio with Synth1XProbe."""
 
     # -----------------------------------------------------------------------
     # Test 1: p78 must NOT be the master gain source
@@ -162,7 +162,7 @@ class TestSynth2ProbeOutput(unittest.TestCase):
                 out, note=69, duration=1.0,
                 extra_env={
                     # Set p29 to 0 (silence per formula), p78 to max
-                    "SYNTH2_SET_PARAMS_NORM": "p29=0.0;p78=1.0",
+                    "SYNTH1X_SET_PARAMS_NORM": "p29=0.0;p78=1.0",
                 },
             )
             self.assertAlmostEqual(
@@ -195,7 +195,7 @@ class TestSynth2ProbeOutput(unittest.TestCase):
             try:
                 peaks[p29] = render_wav(
                     out, note=69, duration=1.5,
-                    extra_env={"SYNTH2_SET_PARAMS_NORM": f"p29={norm:.6f}"},
+                    extra_env={"SYNTH1X_SET_PARAMS_NORM": f"p29={norm:.6f}"},
                 )
             finally:
                 if os.path.exists(out):
@@ -257,7 +257,7 @@ class TestSynth2ProbeOutput(unittest.TestCase):
         try:
             peak = render_wav(
                 out, note=69, duration=1.0,
-                extra_env={"SYNTH2_SET_PARAMS_NORM": "p29=0.0"},
+                extra_env={"SYNTH1X_SET_PARAMS_NORM": "p29=0.0"},
             )
             self.assertAlmostEqual(
                 peak, 0.0, places=4,

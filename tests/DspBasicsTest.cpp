@@ -13,13 +13,13 @@
 
 namespace
 {
-synth2::WaveTableBank sineBank()
+synth1x::WaveTableBank sineBank()
 {
-    synth2::ShapeTables tables;
+    synth1x::ShapeTables tables;
     tables.infos.push_back({0,2048,100000});
     for(int i=0;i<2048;++i)
         tables.data.push_back(static_cast<float>(std::sin(2*std::acos(-1.0f)*i/2048)));
-    synth2::WaveTableBank bank;
+    synth1x::WaveTableBank bank;
     bank.setShapeTables(3,std::move(tables));
     return bank;
 }
@@ -32,7 +32,7 @@ TEST(OscillatorBehavior, GeneratedSineHasRequestedPitchAcrossRates)
     {
         SCOPED_TRACE(rate);
         SCOPED_TRACE(frequency);
-        synth2::dsp::Oscillator oscillator;
+        synth1x::dsp::Oscillator oscillator;
         oscillator.setSampleRate(rate); oscillator.updatePhaseIncrement(frequency);
         std::vector<float> crossings;
         float previous=0;
@@ -52,7 +52,7 @@ TEST(OscillatorBehavior, GeneratedSineHasRequestedPitchAcrossRates)
 TEST(OscillatorBehavior, OctaveFrequencyDoublesPitchAndResetRestoresPhase)
 {
     const auto bank=sineBank();
-    synth2::dsp::Oscillator low,high;
+    synth1x::dsp::Oscillator low,high;
     low.setSampleRate(48000); high.setSampleRate(48000);
     low.updatePhaseIncrement(220); high.updatePhaseIncrement(440);
     EXPECT_NEAR(float(high.getPhaseIncFixed27())/low.getPhaseIncFixed27(),2,1e-5f);
@@ -68,7 +68,7 @@ TEST(OscillatorBehavior, OctaveFrequencyDoublesPitchAndResetRestoresPhase)
 
 TEST(OscillatorBehavior, UnchangedPitchUsesTheNewSampleRateWithoutResettingPhase)
 {
-    synth2::dsp::Oscillator oscillator;
+    synth1x::dsp::Oscillator oscillator;
     oscillator.setSampleRate(48000);
     oscillator.updatePhaseIncrement(440);
     oscillator.advancePhase();
@@ -88,7 +88,7 @@ TEST(OscillatorBehavior, UnchangedPitchUsesTheNewSampleRateWithoutResettingPhase
 
 TEST(AmplitudeBehavior, AttackDecaySustainAndReleaseFollowTheirLifecycle)
 {
-    using Envelope=synth2::dsp::AmplitudeEnvelope;
+    using Envelope=synth1x::dsp::AmplitudeEnvelope;
     Envelope envelope;
     envelope.setParameters(128,256,768,256);
     envelope.noteOn();
@@ -122,7 +122,7 @@ TEST(AmplitudeBehavior, AttackDecaySustainAndReleaseFollowTheirLifecycle)
 
 TEST(AmplitudeBehavior, ResetAndZeroDurationStagesDoNotLeaveAHeldEnvelope)
 {
-    synth2::dsp::AmplitudeEnvelope envelope;
+    synth1x::dsp::AmplitudeEnvelope envelope;
     envelope.setParameters(0,0,1024,0);
     envelope.noteOn();
     std::array<float,256> gains{};
@@ -138,7 +138,7 @@ TEST(AmplitudeBehavior, ResetAndZeroDurationStagesDoNotLeaveAHeldEnvelope)
 
 TEST(FilterEnvelopeBehavior, InversionChangesSignAndSegmentsCoverRequestedFrames)
 {
-    using Envelope=synth2::dsp::FilterEnvelope;
+    using Envelope=synth1x::dsp::FilterEnvelope;
     Envelope positive,negative;
     positive.configure(128,256,1024,256,128);
     negative.configure(128,256,1024,256,128,true);
@@ -166,7 +166,7 @@ TEST(FilterEnvelopeBehavior, InversionChangesSignAndSegmentsCoverRequestedFrames
 
 TEST(AmplitudeBehavior, ConfigurationKeepsAssignedVelocityAndRunningEnvelopeOnEdits)
 {
-    using namespace synth2::dsp;
+    using namespace synth1x::dsp;
     AmplitudeEnvelope envelope;
     AmplitudeEnvelopeSettings settings{.01f,.1f,.8f,.03f,1.f,1.f};
     float reference=1;
@@ -184,69 +184,69 @@ TEST(AmplitudeBehavior, ConfigurationKeepsAssignedVelocityAndRunningEnvelopeOnEd
 
 TEST(AmplitudeBehavior, DirectVoiceUsesPhysicalVcaAndRetiresAfterItsRelease)
 {
-    synth2::RenderControls params;params.ampAttackSec=.01f;params.ampReleaseSec=.01f;
-    auto voice=std::make_unique<synth2::test::PooledTestVoice>(params);voice->prepare(44100);
+    synth1x::RenderControls params;params.ampAttackSec=.01f;params.ampReleaseSec=.01f;
+    auto voice=std::make_unique<synth1x::test::PooledTestVoice>(params);voice->prepare(44100);
     voice->startNote(60,1,nullptr,8192);
     std::array<uint32_t,16> words{};ASSERT_TRUE(voice->readRenderingCoreWords(0,words));
-    EXPECT_EQ(words[6],static_cast<uint32_t>(synth2::dsp::AmplitudeEnvelope::Phase::Attack));
-    synth2::audio::AudioBuffer<float> audio(2,64);audio.clear();voice->renderNextBlock(audio,0,64);
+    EXPECT_EQ(words[6],static_cast<uint32_t>(synth1x::dsp::AmplitudeEnvelope::Phase::Attack));
+    synth1x::audio::AudioBuffer<float> audio(2,64);audio.clear();voice->renderNextBlock(audio,0,64);
     ASSERT_TRUE(voice->readRenderingCoreWords(0,words));EXPECT_GT(words[7],0u);
     voice->stopNote(0,true);ASSERT_TRUE(voice->readRenderingCoreWords(0,words));
-    EXPECT_EQ(words[6],static_cast<uint32_t>(synth2::dsp::AmplitudeEnvelope::Phase::Release));
+    EXPECT_EQ(words[6],static_cast<uint32_t>(synth1x::dsp::AmplitudeEnvelope::Phase::Release));
     const auto releaseWords=words;voice->stopNote(0,true);ASSERT_TRUE(voice->readRenderingCoreWords(0,words));
     EXPECT_EQ(words,releaseWords);
     for(int block=0;block<200;++block){audio.clear();voice->renderNextBlock(audio,0,64);}
-    EXPECT_EQ(voice->getLifecyclePhase(),synth2::dsp::VoiceLifecycle::Phase::Idle);
+    EXPECT_EQ(voice->getLifecyclePhase(),synth1x::dsp::VoiceLifecycle::Phase::Idle);
 }
 
 TEST(AmplitudeBehavior, FullPoolReusesAReleasingCoreBeforeStealingAHeldNote)
 {
-    synth2::RenderControls params;params.polyphony=2;params.ampReleaseSec=1;
-    synth2::dsp::OscillatorPhaseRandom phase;
-    auto pool=std::make_unique<synth2::VoiceCorePool>();pool->prepare({44100,64,2},false);
-    auto held=std::make_unique<synth2::SynthVoice>(params,phase,*pool);
-    auto released=std::make_unique<synth2::SynthVoice>(params,phase,*pool);
-    auto replacement=std::make_unique<synth2::SynthVoice>(params,phase,*pool);
+    synth1x::RenderControls params;params.polyphony=2;params.ampReleaseSec=1;
+    synth1x::dsp::OscillatorPhaseRandom phase;
+    auto pool=std::make_unique<synth1x::VoiceCorePool>();pool->prepare({44100,64,2},false);
+    auto held=std::make_unique<synth1x::SynthVoice>(params,phase,*pool);
+    auto released=std::make_unique<synth1x::SynthVoice>(params,phase,*pool);
+    auto replacement=std::make_unique<synth1x::SynthVoice>(params,phase,*pool);
     for(auto* voice:{held.get(),released.get(),replacement.get()})voice->prepare(44100);
     held->startNote(60,1,nullptr,8192);released->startNote(67,1,nullptr,8192);
-    synth2::audio::AudioBuffer<float> audio(2,64);audio.clear();
+    synth1x::audio::AudioBuffer<float> audio(2,64);audio.clear();
     held->renderNextBlock(audio,0,64);released->renderNextBlock(audio,0,64);
     std::array<uint32_t,16> heldWords{},releasedWords{},nextWords{};
     ASSERT_TRUE(held->readRenderingCoreWords(0,heldWords));ASSERT_TRUE(released->readRenderingCoreWords(0,releasedWords));
     released->stopNote(0,true);replacement->startNote(72,1,nullptr,8192);
     ASSERT_TRUE(replacement->readRenderingCoreWords(0,nextWords));EXPECT_EQ(nextWords[15],releasedWords[15]);
-    EXPECT_EQ(held->getLifecyclePhase(),synth2::dsp::VoiceLifecycle::Phase::Playing);
-    EXPECT_EQ(released->getLifecyclePhase(),synth2::dsp::VoiceLifecycle::Phase::Idle);
+    EXPECT_EQ(held->getLifecyclePhase(),synth1x::dsp::VoiceLifecycle::Phase::Playing);
+    EXPECT_EQ(released->getLifecyclePhase(),synth1x::dsp::VoiceLifecycle::Phase::Idle);
     ASSERT_TRUE(held->readRenderingCoreWords(0,nextWords));EXPECT_EQ(nextWords[15],heldWords[15]);
 }
 
 TEST(EnvelopeBehavior, FilterEnvelopeAdvancesOnTheAssignedPhysicalCore)
 {
-    synth2::RenderControls p;p.cutoffIndex=256;p.filterEnvAmount=.5f;p.filterEnv.attackSec=.01f;
-    auto voice=std::make_unique<synth2::test::PooledTestVoice>(p);voice->prepare(44100);voice->startNote(60,1,nullptr,8192);
-    synth2::audio::AudioBuffer<float> audio(2,64);audio.clear();voice->renderNextBlock(audio,0,64);
+    synth1x::RenderControls p;p.cutoffIndex=256;p.filterEnvAmount=.5f;p.filterEnv.attackSec=.01f;
+    auto voice=std::make_unique<synth1x::test::PooledTestVoice>(p);voice->prepare(44100);voice->startNote(60,1,nullptr,8192);
+    synth1x::audio::AudioBuffer<float> audio(2,64);audio.clear();voice->renderNextBlock(audio,0,64);
     std::array<uint32_t,16> words{};ASSERT_TRUE(voice->readRenderingCoreWords(0,words));
     EXPECT_GT(words[10],0u);EXPECT_GT(words[11],0u);
 }
 
 TEST(EnvelopeBehavior, OscillatorEnvelopeUsesTheResolvedPitchDials)
 {
-    synth2::RenderControls on;on.modEnv.on=true;on.modEnv.dest=0;
+    synth1x::RenderControls on;on.modEnv.on=true;on.modEnv.dest=0;
     on.modEnv.amountDial=127;on.modEnv.attackDial=0;on.modEnv.decayDial=127;
     auto off=on;off.modEnv.on=false;
-    auto a=std::make_unique<synth2::test::PooledTestVoice>(on),b=std::make_unique<synth2::test::PooledTestVoice>(off);
+    auto a=std::make_unique<synth1x::test::PooledTestVoice>(on),b=std::make_unique<synth1x::test::PooledTestVoice>(off);
     for(auto* voice:{a.get(),b.get()}){voice->prepare(44100);voice->startNote(60,1,nullptr,8192);}
-    synth2::audio::AudioBuffer<float> audio(2,64);audio.clear();a->renderNextBlock(audio,0,64);b->renderNextBlock(audio,0,64);
+    synth1x::audio::AudioBuffer<float> audio(2,64);audio.clear();a->renderNextBlock(audio,0,64);b->renderNextBlock(audio,0,64);
     std::array<uint32_t,16> first{},second{};ASSERT_TRUE(a->readRenderingCoreWords(0,first));ASSERT_TRUE(b->readRenderingCoreWords(0,second));
     EXPECT_GT(first[5],second[5]*4);
 }
 
 TEST(FmBehavior, LiveStaticFmEditRetainsCurrentValueAndPhysicalCoreUntilSettled)
 {
-    synth2::RenderControls controls;controls.osc1FmAmount=32.25f/127.f;
-    auto voice=std::make_unique<synth2::test::PooledTestVoice>(controls);
+    synth1x::RenderControls controls;controls.osc1FmAmount=32.25f/127.f;
+    auto voice=std::make_unique<synth1x::test::PooledTestVoice>(controls);
     voice->prepare(44100);voice->startNote(60,1,nullptr,8192);
-    synth2::audio::AudioBuffer<float> audio(2,64);audio.clear();voice->renderNextBlock(audio,0,64);
+    synth1x::audio::AudioBuffer<float> audio(2,64);audio.clear();voice->renderNextBlock(audio,0,64);
     std::array<uint32_t,7> initial{},edited{},settled{};
     std::array<uint32_t,16> initialCore{},editedCore{};
     ASSERT_TRUE(voice->readRenderingFmWords(0,initial));
@@ -268,9 +268,9 @@ TEST(FmBehavior, LiveStaticFmEditRetainsCurrentValueAndPhysicalCoreUntilSettled)
 
 TEST(FmBehavior, SoundingRetriggerRetainsPhysicalFmSlewAndInvalidatesItsTarget)
 {
-    synth2::RenderControls controls;controls.osc1FmAmount=.1f;controls.playMode=1;
-    auto voice=std::make_unique<synth2::test::PooledTestVoice>(controls);voice->prepare(44100);voice->startNote(60,1,nullptr,8192);
-    synth2::audio::AudioBuffer<float> audio(2,64);audio.clear();voice->renderNextBlock(audio,0,64);
+    synth1x::RenderControls controls;controls.osc1FmAmount=.1f;controls.playMode=1;
+    auto voice=std::make_unique<synth1x::test::PooledTestVoice>(controls);voice->prepare(44100);voice->startNote(60,1,nullptr,8192);
+    synth1x::audio::AudioBuffer<float> audio(2,64);audio.clear();voice->renderNextBlock(audio,0,64);
     controls.osc1FmAmount=.75f;voice->setControllerDial(45);audio.clear();voice->renderNextBlock(audio,0,64);
     std::array<uint32_t,7> before{},after{};ASSERT_TRUE(voice->readRenderingFmWords(0,before));ASSERT_GT(before[2],0u);
     voice->startNote(67,1,nullptr,8192);ASSERT_TRUE(voice->readRenderingFmWords(0,after));
@@ -284,7 +284,7 @@ TEST(StereoBalance, CenterEdgesAndOutOfRangeKeepTheNearChannelAtUnity)
 {
     for(const auto values:std::array<std::array<float,3>,7>{{{-2,1,0},{-1,1,0},{-.5f,1,.5f},{0,1,1},{.5f,.5f,1},{1,0,1},{2,0,1}}})
     {
-        const auto gains=synth2::dsp::StereoBalance::gains(values[0]);
+        const auto gains=synth1x::dsp::StereoBalance::gains(values[0]);
         EXPECT_EQ(gains.left,values[1]);EXPECT_EQ(gains.right,values[2]);
     }
 }
@@ -292,26 +292,26 @@ TEST(StereoBalance, VoiceAndSmoothedPanUseTheSameStaticLawAtTheirOwnStages)
 {
     for(float position:{-.5f,0.f,.5f})
     {
-        synth2::dsp::Amplifier voice;float voiceLeft=0,voiceRight=0;
+        synth1x::dsp::Amplifier voice;float voiceLeft=0,voiceRight=0;
         voice.processSample(1,1,position,voiceLeft,voiceRight);
         const float left=position==.5f ? .5f : 1.f,right=position==-.5f ? .5f : 1.f;
-        EXPECT_EQ(voiceLeft,left*synth2::dsp::OutputGain::defaultTarget);
-        EXPECT_EQ(voiceRight,right*synth2::dsp::OutputGain::defaultTarget);
-        synth2::dsp::PanLfo pan;pan.prepare(44100);float l=1,r=1;pan.process(l,r,0,position);
+        EXPECT_EQ(voiceLeft,left*synth1x::dsp::OutputGain::defaultTarget);
+        EXPECT_EQ(voiceRight,right*synth1x::dsp::OutputGain::defaultTarget);
+        synth1x::dsp::PanLfo pan;pan.prepare(44100);float l=1,r=1;pan.process(l,r,0,position);
         EXPECT_EQ(l,left*pan.coefficient);EXPECT_EQ(r,right*pan.coefficient);
     }
 }
 TEST(PanInputs, VoiceRetainsUnisonPlacementWithoutApplyingTheGlobalPanLfo)
 {
-    synth2::RenderControls p;p.pan=.5f;p.osc1WaveIndex=1.1f;p.unisonVoices=3;p.unisonPan=.75f;
+    synth1x::RenderControls p;p.pan=.5f;p.osc1WaveIndex=1.1f;p.unisonVoices=3;p.unisonPan=.75f;
     p.lfo1.on=true;p.lfo1.dest=6;p.lfo1.amount=1;
     auto reference=p;reference.lfo1.on=false;reference.pan=0;
-    auto actual=std::make_unique<synth2::test::PooledTestVoice>(p),expected=std::make_unique<synth2::test::PooledTestVoice>(reference);
-    synth2::dsp::LfoBlock lfos;lfos.controls[0].fill(64);
+    auto actual=std::make_unique<synth1x::test::PooledTestVoice>(p),expected=std::make_unique<synth1x::test::PooledTestVoice>(reference);
+    synth1x::dsp::LfoBlock lfos;lfos.controls[0].fill(64);
     for(int frame=0;frame<256;++frame)lfos.controlRemaining[0][frame]=256-frame;
     actual->setGlobalLfoBlock(&lfos);
     for(auto* voice:{actual.get(),expected.get()}){voice->prepare(44100);voice->startNote(60,1,nullptr,8192);}
-    synth2::audio::AudioBuffer<float> first(2,64),second(2,64);first.clear();second.clear();
+    synth1x::audio::AudioBuffer<float> first(2,64),second(2,64);first.clear();second.clear();
     actual->renderNextBlock(first,0,64);expected->renderNextBlock(second,0,64);
     float energy=0;
     for(int channel=0;channel<2;++channel)for(int frame=0;frame<64;++frame)
@@ -320,14 +320,14 @@ TEST(PanInputs, VoiceRetainsUnisonPlacementWithoutApplyingTheGlobalPanLfo)
 }
 TEST(PanInputs, OversizeUnknownHistoryCallbacksKeepEveryChunkAndSurroundingSamples)
 {
-    auto engine=std::make_unique<synth2::SynthEngine>();auto& p=engine->getParams();
+    auto engine=std::make_unique<synth1x::SynthEngine>();auto& p=engine->getParams();
     p.osc1WaveIndex=1.1f;p.lfo1.on=true;p.lfo1.dest=6;p.lfo1.amount=.5f;
 
     engine->prepareToPlay(44100,64);
-    synth2::audio::AudioBuffer<float> audio(2,1040);audio.clear();
+    synth1x::audio::AudioBuffer<float> audio(2,1040);audio.clear();
     for(int channel=0;channel<2;++channel)for(int frame=0;frame<1040;++frame)
         if(frame<8 || frame>=1032)audio.setSample(channel,frame,7);
-    synth2::audio::MidiBuffer midi;midi.addEvent(synth2::audio::MidiMessage::noteOn(1,60,uint8_t{100}),8);
+    synth1x::audio::MidiBuffer midi;midi.addEvent(synth1x::audio::MidiMessage::noteOn(1,60,uint8_t{100}),8);
     engine->render(audio,midi,8,1024);
     for(int chunk=0;chunk<4;++chunk)
     {
@@ -343,11 +343,11 @@ TEST(StaticPanInputs, VoiceCorePlacementIsIndependentOfGlobalBalance)
 {
     for(int cores:{1,3})for(float pan:{-1.f,.5f,1.f})
     {
-        synth2::RenderControls p;p.pan=pan;p.osc1WaveIndex=1.1f;p.unisonVoices=cores;p.unisonPan=.75f;
+        synth1x::RenderControls p;p.pan=pan;p.osc1WaveIndex=1.1f;p.unisonVoices=cores;p.unisonPan=.75f;
         auto centered=p;centered.pan=0;
-        auto actual=std::make_unique<synth2::test::PooledTestVoice>(p),reference=std::make_unique<synth2::test::PooledTestVoice>(centered);
+        auto actual=std::make_unique<synth1x::test::PooledTestVoice>(p),reference=std::make_unique<synth1x::test::PooledTestVoice>(centered);
         for(auto* voice:{actual.get(),reference.get()}){voice->prepare(44100);voice->startNote(60,1,nullptr,8192);}
-        synth2::audio::AudioBuffer<float> got(2,64),expected(2,64);got.clear();expected.clear();
+        synth1x::audio::AudioBuffer<float> got(2,64),expected(2,64);got.clear();expected.clear();
         actual->renderNextBlock(got,0,64);reference->renderNextBlock(expected,0,64);
         float energy=0;
         for(int channel=0;channel<2;++channel)for(int frame=0;frame<64;++frame)
@@ -358,18 +358,18 @@ TEST(StaticPanInputs, VoiceCorePlacementIsIndependentOfGlobalBalance)
 
 TEST(TuningBehavior, OneNoteCoarseAndFineCalculationPreservesFractionalControls)
 {
-    synth2::dsp::VoiceTuningSettings config;
+    synth1x::dsp::VoiceTuningSettings config;
     config.secondTracksKeyboard=true;config.secondPitch=12;
-    synth2::dsp::VoiceTuning integral(config,69);
+    synth1x::dsp::VoiceTuning integral(config,69);
     const auto base=integral.prepareCore(0);
     EXPECT_EQ(base.first,440);EXPECT_EQ(base.second,880);
     config.fine=.375f;config.secondFine=.25f;
-    synth2::dsp::VoiceTuning fractional(config,69);
+    synth1x::dsp::VoiceTuning fractional(config,69);
     const auto tuned=fractional.prepareCore(.125f);
     EXPECT_NEAR(tuned.first,440*std::pow(2.f,.5f/1200),.0001f);
     EXPECT_NEAR(tuned.second,tuned.first*std::pow(2.f,12.f/12+.25f/1200),.0002f);
     config.secondTracksKeyboard=false;
-    synth2::dsp::VoiceTuning fixedLow(config,36),fixedHigh(config,96);
+    synth1x::dsp::VoiceTuning fixedLow(config,36),fixedHigh(config,96);
     EXPECT_EQ(fixedLow.prepareCore(.125f).second,fixedHigh.prepareCore(.125f).second);
     EXPECT_NE(fixedLow.prepareCore(.125f).first,fixedHigh.prepareCore(.125f).first);
     EXPECT_NEAR(fixedLow.prepareCore(.125f).second,440*std::pow(2.f,.75f/1200),.0001f);
@@ -379,12 +379,12 @@ TEST(TuningBehavior, ChannelBendUsesThirtyTwoFramePartitionsAcrossCallbacks)
 {
     for(int target:{8320,16383})
     {
-        synth2::SynthEngine whole,split;
+        synth1x::SynthEngine whole,split;
         for(auto* engine:{&whole,&split}){engine->getParams().pitchBendRange=12;engine->prepareToPlay(44100,128);}
-        synth2::audio::MidiBuffer midi,empty;
-        midi.addEvent(synth2::audio::MidiMessage::pitchWheel(1,target),0);
-        midi.addEvent(synth2::audio::MidiMessage::noteOn(1,69,1.f),0);
-        synth2::audio::AudioBuffer<float> a(2,128),b(2,128);a.clear();b.clear();
+        synth1x::audio::MidiBuffer midi,empty;
+        midi.addEvent(synth1x::audio::MidiMessage::pitchWheel(1,target),0);
+        midi.addEvent(synth1x::audio::MidiMessage::noteOn(1,69,1.f),0);
+        synth1x::audio::AudioBuffer<float> a(2,128),b(2,128);a.clear();b.clear();
         whole.render(a,midi,0,128);split.render(b,midi,0,32);
         if(target==8320)split.render(b,empty,32,96);
         else for(int start=32;start<128;start+=32)split.render(b,empty,start,32);
@@ -397,12 +397,12 @@ TEST(TuningBehavior, ChannelBendUsesThirtyTwoFramePartitionsAcrossCallbacks)
 
 TEST(TuningBehavior, GlideRetainsThePhysicalReceiverAcrossLegato)
 {
-    synth2::RenderControls p;p.sourcePortamentoDial=64;p.portamentoAuto=true;
-    auto voice=std::make_unique<synth2::test::PooledTestVoice>(p);voice->prepare(44100);
-    synth2::audio::AudioBuffer<float> audio(2,32);audio.clear();
+    synth1x::RenderControls p;p.sourcePortamentoDial=64;p.portamentoAuto=true;
+    auto voice=std::make_unique<synth1x::test::PooledTestVoice>(p);voice->prepare(44100);
+    synth1x::audio::AudioBuffer<float> audio(2,32);audio.clear();
     voice->startNote(69,1,nullptr,8192);voice->renderNextBlock(audio,0,32);
     EXPECT_NEAR(voice->getCurrentFrequency(),440,.001f);
-    voice->setNextTransition({synth2::dsp::NoteTransitionKind::Legato,true});
+    voice->setNextTransition({synth1x::dsp::NoteTransitionKind::Legato,true});
     voice->startNote(81,1,nullptr,8192);audio.clear();voice->renderNextBlock(audio,0,32);
     EXPECT_NEAR(voice->getCurrentFrequency(),440,.001f); // Initial held receiver span.
     for(int i=0;i<1000;++i){audio.clear();voice->renderNextBlock(audio,0,32);}
@@ -412,7 +412,7 @@ TEST(TuningBehavior, GlideRetainsThePhysicalReceiverAcrossLegato)
 
 TEST(AmplitudeBehavior, AttackDurationEditsRetainProgressAndFractionalLevel)
 {
-    synth2::dsp::AmplitudeEnvelope envelope;
+    synth1x::dsp::AmplitudeEnvelope envelope;
     envelope.setParameters(100,441,496,480);envelope.noteOn();
     std::array<float,64> gain{};envelope.render(gain.data(),25);
     EXPECT_EQ(envelope.getCounter(),25);EXPECT_EQ(envelope.getLevel(),512);

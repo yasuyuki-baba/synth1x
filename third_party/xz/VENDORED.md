@@ -8,9 +8,9 @@ The subset retains the root CMakeLists.txt, COPYING, COPYING.0BSD,
 COPYING.LGPLv2.1, AUTHORS and README; cmake; src/common; src/liblzma; and lib.
 The last directory contains the GNU getopt replacement that upstream CMake
 configures on Windows even with all tools disabled. It is not linked into any
-Synth2 product; its LGPL source license is retained in this directory.
+Synth1X product; its LGPL source license is retained in this directory.
 
-`cmake/Synth2Archives.cmake` builds static, single-threaded liblzma decoders.
+`cmake/Synth1XArchives.cmake` builds static, single-threaded liblzma decoders.
 Encoders, tools, translations and documentation are disabled. The upstream
 test tree is omitted. The vendored target supplies the archive reader directly,
 without system-library discovery, CMake downloads or a runtime decompressor.

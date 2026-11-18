@@ -1,1 +1,1 @@
-Self-authored Synth2 test bank.
+Self-authored Synth1X test bank.

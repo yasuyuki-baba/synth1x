@@ -3,7 +3,7 @@
 #include <string_view>
 #include <vector>
 
-using synth2::editor::ComputerKeyboard;
+using synth1x::editor::ComputerKeyboard;
 
 TEST(EditorKeyboard, MatchesCheapSynthKeysAndIgnoresRepeatAndShortcutPresses) {
     ComputerKeyboard keyboard;std::vector<std::pair<int,int>> events;

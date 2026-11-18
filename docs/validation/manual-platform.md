@@ -141,10 +141,10 @@ random-history validity. Same-value setters, loads and recall publish revisions;
 history notifications, pending filter edits, phase resets and master volume remain
 callback-visible. PlaybackBehavior compares cached callbacks with explicit refresh.
 
-For non-gating DSP profiling, build `Synth2RenderProfile` and run:
+For non-gating DSP profiling, build `Synth1XRenderProfile` and run:
 
 ```sh
-./build-oos-core/Synth2RenderProfile render-profile.csv --blocks 1024 --rounds 3
+./build-oos-core/Synth1XRenderProfile render-profile.csv --blocks 1024 --rounds 3
 ```
 
 The CSV records thread CPU/wall means and a final-block hash. These offline

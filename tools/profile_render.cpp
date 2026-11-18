@@ -38,8 +38,8 @@ class PerfControl
 public:
     PerfControl()
     {
-        const auto* c=std::getenv("SYNTH2_PERF_CONTROL");
-        const auto* a=std::getenv("SYNTH2_PERF_ACK");
+        const auto* c=std::getenv("SYNTH1X_PERF_CONTROL");
+        const auto* a=std::getenv("SYNTH1X_PERF_ACK");
         if(!c && !a)return;
 #if defined(__linux__)
         if(!c || !a)throw std::runtime_error("Both perf FIFO paths are required");
@@ -132,11 +132,11 @@ int main(int argc,char** argv) try
     {
         const auto& c=cases[(at+round*17)%cases.size()];
         auto p=hostvalidation::processor();hostvalidation::load(*p,stimulus(c,version));p->prepare(48000,64);
-        synth2::audio::AudioBuffer<float> audio(2,64);synth2::audio::MidiBuffer midi;hostvalidation::notes(midi,c.notes);
+        synth1x::audio::AudioBuffer<float> audio(2,64);synth1x::audio::MidiBuffer midi;hostvalidation::notes(midi,c.notes);
         hostvalidation::process(*p,audio,midi);midi.clear();
         for(int i=0;i<128;++i)hostvalidation::process(*p,audio,midi);
-        synth2::RenderControls mapped;
-        if(!synth2::readMappedSynthParams(*p,mapped) || mapped.filterType!=c.mode
+        synth1x::RenderControls mapped;
+        if(!synth1x::readMappedSynthParams(*p,mapped) || mapped.filterType!=c.mode
             || std::abs(mapped.resonanceNorm-c.resonance/127.f)>1e-6f || mapped.unisonVoices!=c.unison
             || mapped.lfo1.on!=c.lfo || (c.lfo && mapped.lfo1.dest!=2))throw std::runtime_error("Unexpected mapped controls");
         const int cores=hostvalidation::activeCores(*p);

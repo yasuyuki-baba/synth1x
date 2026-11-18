@@ -13,7 +13,7 @@ int32_t offset(uint32_t word) {return static_cast<int32_t>(word);}
 
 TEST(FmPhaseCorrection, DisabledPathPreservesCompatiblePhaseAdvancement)
 {
-    synth2::dsp::FmPhaseCorrection correction;
+    synth1x::dsp::FmPhaseCorrection correction;
     uint32_t phase=12345;
     for(int i=0;i<1000;++i)
     {
@@ -28,7 +28,7 @@ TEST(FmPhaseCorrection, DisabledPathPreservesCompatiblePhaseAdvancement)
 
 TEST(FmPhaseCorrection, ConstantCoefficientDoesNotAccumulateQuantizationDrift)
 {
-    synth2::dsp::FmPhaseCorrection correction;
+    synth1x::dsp::FmPhaseCorrection correction;
     uint32_t phase=0;int64_t difference=0;
     constexpr float depth=123456.75f,source=.3f;
     const int32_t native=static_cast<int32_t>(depth*source);
@@ -46,8 +46,8 @@ TEST(FmPhaseCorrection, ConstantCoefficientDoesNotAccumulateQuantizationDrift)
 
 TEST(FmPhaseCorrection, ReferenceClockPreservesSynchronizedNoiseHistory)
 {
-    synth2::dsp::FmPhaseCorrection correction;
-    synth2::dsp::NoiseGenerator nativeNoise,correctedNoise;
+    synth1x::dsp::FmPhaseCorrection correction;
+    synth1x::dsp::NoiseGenerator nativeNoise,correctedNoise;
     uint32_t nativePhase=0,phase=0;bool differs=false;
     for(int i=0;i<20000;++i)
     {
@@ -69,7 +69,7 @@ TEST(FmPhaseCorrection, ReferenceClockPreservesSynchronizedNoiseHistory)
 
 TEST(FmPhaseCorrection, OscillatorUsesReferencePhaseForNoiseSync)
 {
-    synth2::dsp::OscillatorSection native,corrected;
+    synth1x::dsp::OscillatorSection native,corrected;
     for(auto* oscillator:{&native,&corrected})
     {
         oscillator->prepare({44100,64,2});
@@ -98,7 +98,7 @@ TEST(FmPhaseCorrection, CoefficientStepsTurnsAndJumpsRemainUnfiltered)
         600000,600000,0,0,120000,540000,30000,210000};
     for(float source:{-.5f,.5f})
     {
-        synth2::dsp::FmPhaseCorrection correction;uint32_t phase=0,reference=0;
+        synth1x::dsp::FmPhaseCorrection correction;uint32_t phase=0,reference=0;
         for(int frame=0;frame<8192;++frame)
         {
             const float depth=depths[static_cast<size_t>(frame/64)%depths.size()];
@@ -118,7 +118,7 @@ TEST(FmPhaseCorrection, FractionalProductsHaveCompatibilityBoundAndReturnAfterSe
 {
     for(float sign:{-1.f,1.f})
     {
-        synth2::dsp::FmPhaseCorrection correction;uint32_t phase=0;
+        synth1x::dsp::FmPhaseCorrection correction;uint32_t phase=0;
         int64_t difference=0;bool fractionalProductRetained=false;
         for(int frame=0;frame<8192;++frame)
         {
@@ -139,7 +139,7 @@ TEST(FmPhaseCorrection, FractionalProductsHaveCompatibilityBoundAndReturnAfterSe
 
 TEST(FmPhaseCorrection, ControlChangesRetainTheReferenceAndOutstandingCorrection)
 {
-    synth2::dsp::FmPhaseCorrection correction;uint32_t phase=0;
+    synth1x::dsp::FmPhaseCorrection correction;uint32_t phase=0;
     auto step=[&](float depth) {
         const auto result=correction.advance(depth,1,400000,phase,true);
         phase=(phase+400000+result.audibleOffset)&mask;return result;
@@ -159,7 +159,7 @@ TEST(FmPhaseCorrection, ControlChangesRetainTheReferenceAndOutstandingCorrection
 
 TEST(FmPhaseCorrection, ResetExternalPhaseAndDisableDiscardStaleCorrection)
 {
-    synth2::dsp::FmPhaseCorrection correction;uint32_t phase=0;
+    synth1x::dsp::FmPhaseCorrection correction;uint32_t phase=0;
     auto step=[&](float depth,bool enabled=true) {
         const auto result=correction.advance(depth,1,400000,phase,enabled);
         phase=(phase+400000+result.audibleOffset)&mask;return result;
@@ -179,7 +179,7 @@ TEST(FmPhaseCorrection, ResetExternalPhaseAndDisableDiscardStaleCorrection)
 
 TEST(FmPhaseCorrection, PhaseCorrectionIsEnabledAcrossWaveformsAndEnvelopeDestinations)
 {
-    synth2::RenderControls settings;
+    synth1x::RenderControls settings;
     settings.lfo1.on=settings.lfo2.on=true;
     settings.lfo1.dest=settings.lfo2.dest=5;
     for(int first=0;first<6;++first)for(int second=0;second<6;++second)
@@ -187,21 +187,21 @@ TEST(FmPhaseCorrection, PhaseCorrectionIsEnabledAcrossWaveformsAndEnvelopeDestin
         {
             settings.lfo1.wave=first;settings.lfo2.wave=second;
             settings.modEnv.on=envelope;
-            const auto config=synth2::render::oscillatorAudio(settings,false);
+            const auto config=synth1x::render::oscillatorAudio(settings,false);
             EXPECT_TRUE(config.correctFmPhase);
-            EXPECT_FALSE(synth2::render::oscillatorAudio(settings,true).correctFmPhase);
+            EXPECT_FALSE(synth1x::render::oscillatorAudio(settings,true).correctFmPhase);
         }
     settings.lfo1.on=settings.lfo2.on=false;
     for(int destination:{0,2,3})
     {
         settings.modEnv.on=true;settings.modEnv.dest=destination;
-        EXPECT_TRUE(synth2::render::oscillatorAudio(settings,false).correctFmPhase);
+        EXPECT_TRUE(synth1x::render::oscillatorAudio(settings,false).correctFmPhase);
     }
 }
 
 TEST(FmPhaseCorrection, NativeRingDispatchBypassesFmCorrection)
 {
-    synth2::dsp::OscillatorSection native,corrected;
+    synth1x::dsp::OscillatorSection native,corrected;
     for(auto* oscillator:{&native,&corrected})
     {
         oscillator->prepare({44100,64,2});
@@ -227,30 +227,30 @@ TEST(FmPhaseCorrection, StaticMappingPreservesKnotsAndFractionalEdits)
     };
     for(int dial=0;dial<=127;++dial)
     {
-        EXPECT_DOUBLE_EQ(synth2::float01ToFmTarget(dial/127.f),static_cast<float>(knot(dial)));
-        EXPECT_DOUBLE_EQ(synth2::float01ToFmTarget(dial*(1.f/127.f)),static_cast<float>(knot(dial)));
+        EXPECT_DOUBLE_EQ(synth1x::float01ToFmTarget(dial/127.f),static_cast<float>(knot(dial)));
+        EXPECT_DOUBLE_EQ(synth1x::float01ToFmTarget(dial*(1.f/127.f)),static_cast<float>(knot(dial)));
     }
-    double previous=synth2::float01ToFmTarget(64.f/127.f);
+    double previous=synth1x::float01ToFmTarget(64.f/127.f);
     for(float dial:{64.1f,64.25f,64.49f,64.51f,64.75f})
     {
-        const double value=synth2::float01ToFmTarget(dial/127.f);
+        const double value=synth1x::float01ToFmTarget(dial/127.f);
         EXPECT_GT(value,previous);EXPECT_LT(value,knot(65));previous=value;
     }
 }
 
 TEST(FmPhaseCorrection, AudioAdapterUsesFloatDepthWithCompatibleSyncReference)
 {
-    synth2::dsp::OscillatorSection adapted,wide,narrow;
+    synth1x::dsp::OscillatorSection adapted,wide,narrow;
     for(auto* oscillator:{&adapted,&wide,&narrow})
     {
         oscillator->prepare({44100,64,2});
         oscillator->params.osc1Wave=3;oscillator->params.osc2Wave=4;
     }
-    synth2::dsp::OscillatorAudioInput input{};
+    synth1x::dsp::OscillatorAudioInput input{};
     input.firstFrequency=input.secondFrequency=261.625f;
     input.pulseWidth=.5f;input.mix=1;input.sync=true;// This coordinate spans distinct float-product knots at wide depth.
     input.fmDepth=67108861.25;
-    synth2::dsp::OscillatorAudioSettings config{};config.correctFmPhase=true;
+    synth1x::dsp::OscillatorAudioSettings config{};config.correctFmPhase=true;
     config.subOctave=0;
     bool phaseDiffers=false;
     for(int frame=0;frame<4096;++frame)
@@ -259,7 +259,7 @@ TEST(FmPhaseCorrection, AudioAdapterUsesFloatDepthWithCompatibleSyncReference)
             return oscillator.processSample(261.625f,261.625f,.5f,1,depth,true,false,
                 0,0,0,nullptr,-1,0,0,false,true);
         };
-        const double output=synth2::dsp::OscillatorAudioRenderer::process(adapted,config,input,{},0,nullptr);
+        const double output=synth1x::dsp::OscillatorAudioRenderer::process(adapted,config,input,{},0,nullptr);
         EXPECT_EQ(output,render(wide,input.fmDepth));
         EXPECT_EQ(output,render(narrow,static_cast<float>(input.fmDepth)));
         EXPECT_EQ(adapted.getOsc1Phase(),wide.getOsc1Phase());
@@ -272,7 +272,7 @@ TEST(FmPhaseCorrection, IntegerDepthKnotsKeepFractionalSourceNativeIncrements)
 {
     for(double depth:{0.,1.,12345.,67108863.})for(float source:{-.731f,-.123f,.123f,.731f})
     {
-        synth2::dsp::FmPhaseCorrection state;uint32_t phase=1234;
+        synth1x::dsp::FmPhaseCorrection state;uint32_t phase=1234;
         const auto native=static_cast<uint32_t>(static_cast<int32_t>(static_cast<float>(depth)*source));
         for(int i=0;i<128;++i){auto result=state.advance(depth,source,400000,phase,true);
             EXPECT_EQ(result.audibleOffset,native);EXPECT_EQ(result.referenceOffset,native);
@@ -288,7 +288,7 @@ TEST(FmPhaseCorrection, FractionalDepthInterpolatesAdjacentIntegerProductKnots)
         const double second=static_cast<int32_t>(static_cast<float>(low+1)*source);
         const double target=first+(second-first)*(depth-low);
         const int native=static_cast<int32_t>(static_cast<float>(depth)*source);
-        synth2::dsp::FmPhaseCorrection state;uint32_t phase=0;int64_t delta=0;
+        synth1x::dsp::FmPhaseCorrection state;uint32_t phase=0;int64_t delta=0;
         for(int i=0;i<1024;++i){auto result=state.advance(depth,source,400000,phase,true);
             delta+=offset(result.audibleOffset)-offset(result.referenceOffset);
             phase=(phase+400000+result.audibleOffset)&mask;}

@@ -4,12 +4,12 @@
 #include <cmath>
 
 namespace {
-synth2::WaveTableBank generatedBank()
+synth1x::WaveTableBank generatedBank()
 {
-    synth2::WaveTableBank bank;
+    synth1x::WaveTableBank bank;
     for(int shape:{0,2,3,5})
     {
-        synth2::ShapeTables table;table.infos.push_back({0,2048,100000});
+        synth1x::ShapeTables table;table.infos.push_back({0,2048,100000});
         for(int i=0;i<2048;++i)
         {
             const double phase=i/2048.;
@@ -30,7 +30,7 @@ TEST(OscillatorRead, EveryTableReadUsesAdjacentSamplesWithoutAdvancingPhase)
         const auto bank=generatedBank();
         for(int shape:{0,2,3})for(float frequency:{55.f,261.625f,4000.f})
         {
-            synth2::dsp::Oscillator oscillator;oscillator.setSampleRate(rate);
+            synth1x::dsp::Oscillator oscillator;oscillator.setSampleRate(rate);
             oscillator.updatePhaseIncrement(frequency);
             for(unsigned bin:{0u,31u,511u,1023u,2047u})
             {
@@ -53,18 +53,18 @@ TEST(OscillatorRead, EveryTableReadUsesAdjacentSamplesWithoutAdvancingPhase)
 TEST(OscillatorRead, DefaultVoiceAdapterAndDirectOscillatorUseTheSameReader)
 {
     const auto bank=generatedBank();
-    synth2::dsp::OscillatorSection adapted,direct;
+    synth1x::dsp::OscillatorSection adapted,direct;
     for(auto* oscillator:{&adapted,&direct})
     {
         oscillator->prepare({44100,64,2});
         oscillator->params.osc1Wave=0;oscillator->params.osc2Wave=2;
     }
-    synth2::dsp::OscillatorAudioSettings config;
-    synth2::dsp::OscillatorAudioInput input;
+    synth1x::dsp::OscillatorAudioSettings config;
+    synth1x::dsp::OscillatorAudioInput input;
     input.firstFrequency=220;input.secondFrequency=330;input.pulseWidth=input.mix=.5f;
     for(int frame=0;frame<2048;++frame)
     {
-        const double actual=synth2::dsp::OscillatorAudioRenderer::process(adapted,config,input,{},0,&bank);
+        const double actual=synth1x::dsp::OscillatorAudioRenderer::process(adapted,config,input,{},0,&bank);
         EXPECT_EQ(actual,direct.processSample(220,330,.5f,.5f,0,false,false,0,0,-1,&bank));
         EXPECT_EQ(adapted.readPhaseWords(),direct.readPhaseWords());
     }
@@ -75,9 +75,9 @@ TEST(OscillatorRead, RingAlwaysUsesProductMixAndSuppressesFmPhaseOffsets)
     const auto bank=generatedBank();
     for(int shape:{0,1,2,3,4})for(float mix:{0.f,.25f,1.f})for(float depth:{0.,16384.5})
     {
-        synth2::dsp::OscillatorSection ring;
+        synth1x::dsp::OscillatorSection ring;
         ring.prepare({44100,64,2});ring.params.osc1Wave=3;ring.params.osc2Wave=shape;
-        synth2::dsp::Oscillator first,second;first.setSampleRate(44100);second.setSampleRate(44100);
+        synth1x::dsp::Oscillator first,second;first.setSampleRate(44100);second.setSampleRate(44100);
         first.updatePhaseIncrement(220);second.updatePhaseIncrement(330);
         for(int i=0;i<256;++i)
         {
@@ -100,7 +100,7 @@ TEST(OscillatorRead, SubKeepsSharedPhaseAcrossMuteAndFractionalLevelEdits)
     for(int octave:{-1,0})for(float stack:{0.f,7.f})for(bool ring:{false,true})
     for(float level:{.00001f,.25f,1.f})
     {
-        synth2::dsp::OscillatorSection audible,muted;
+        synth1x::dsp::OscillatorSection audible,muted;
         for(auto* oscillator:{&audible,&muted})
         {
             oscillator->prepare({44100,64,2});oscillator->params.osc1Wave=3;oscillator->params.osc2Wave=2;
@@ -111,7 +111,7 @@ TEST(OscillatorRead, SubKeepsSharedPhaseAcrossMuteAndFractionalLevelEdits)
             const double a=audible.processSample(440,330,.5f,.25f,16384.5,false,ring,level,3,octave,&bank);
             const double b=muted.processSample(440,330,.5f,.25f,16384.5,false,ring,frame<2048 ? 0.f : level,3,octave,&bank);
             EXPECT_EQ(audible.subSharedPhase,muted.subSharedPhase);
-            EXPECT_EQ(audible.subSharedPhase&synth2::dsp::kPhaseMask27,audible.getOsc1Phase());
+            EXPECT_EQ(audible.subSharedPhase&synth1x::dsp::kPhaseMask27,audible.getOsc1Phase());
             if(frame>=2048)EXPECT_EQ(a,b);
         }
     }
@@ -120,17 +120,17 @@ TEST(OscillatorRead, SubKeepsSharedPhaseAcrossMuteAndFractionalLevelEdits)
 TEST(OscillatorRead, PulseReceiverComposesSharedEnvelopeAndRemainingControlOnce)
 {
     const auto bank=generatedBank();
-    synth2::dsp::OscillatorSection actual,reference;
+    synth1x::dsp::OscillatorSection actual,reference;
     for(auto* oscillator:{&actual,&reference}){oscillator->prepare({44100,64,2});oscillator->params.osc1Wave=oscillator->params.osc2Wave=1;}
-    synth2::dsp::OscillatorAudioSettings config;config.pulseReceiver=config.pulseEnvelope=true;config.pulseWidth=.5f;
-    synth2::dsp::OscillatorAudioInput input;input.firstFrequency=input.secondFrequency=440;input.pulseWidth=.5f;
+    synth1x::dsp::OscillatorAudioSettings config;config.pulseReceiver=config.pulseEnvelope=true;config.pulseWidth=.5f;
+    synth1x::dsp::OscillatorAudioInput input;input.firstFrequency=input.secondFrequency=440;input.pulseWidth=.5f;
     input.fmDepth=1234.5;input.envelope=8.25;input.pulseControl=4.5;
-    synth2::dsp::VoiceControlBuffer control{};control.fill(16.125);
-    synth2::dsp::ReceiverLfoView view;view.available=true;view.receivers[0]={true,4};view.values[0]=control.data();
-    const double bins=synth2::dsp::ModulationEnvelope::pulseWidthForDial(synth2::dsp::fractionalDial(.5f),28.875);
+    synth1x::dsp::VoiceControlBuffer control{};control.fill(16.125);
+    synth1x::dsp::ReceiverLfoView view;view.available=true;view.receivers[0]={true,4};view.values[0]=control.data();
+    const double bins=synth1x::dsp::ModulationEnvelope::pulseWidthForDial(synth1x::dsp::fractionalDial(.5f),28.875);
     for(int frame=0;frame<256;++frame)
     {
-        EXPECT_EQ(synth2::dsp::OscillatorAudioRenderer::process(actual,config,input,view,frame,&bank),
+        EXPECT_EQ(synth1x::dsp::OscillatorAudioRenderer::process(actual,config,input,view,frame,&bank),
             reference.processSample(440,440,.5f,0,input.fmDepth,false,false,0,0,-1,&bank,bins));
         EXPECT_EQ(actual.readPhaseWords(),reference.readPhaseWords());
     }
@@ -140,13 +140,13 @@ TEST(OscillatorRead, OscillatorTwoPitchEnvelopeUsesTheCommonOneOctaveControl)
 {
     for(bool receiver:{false,true})
     {
-        synth2::dsp::OscillatorSection actual,reference;
+        synth1x::dsp::OscillatorSection actual,reference;
         for(auto* oscillator:{&actual,&reference})oscillator->prepare({44100,64,2});
-        synth2::dsp::OscillatorAudioSettings config;config.pitchEnvelope=true;config.pitchReceiver=receiver;
-        synth2::dsp::OscillatorAudioInput input;input.firstFrequency=220;input.secondFrequency=330;input.pulseWidth=.5f;input.envelope=128;
+        synth1x::dsp::OscillatorAudioSettings config;config.pitchEnvelope=true;config.pitchReceiver=receiver;
+        synth1x::dsp::OscillatorAudioInput input;input.firstFrequency=220;input.secondFrequency=330;input.pulseWidth=.5f;input.envelope=128;
         for(int frame=0;frame<256;++frame)
         {
-            synth2::dsp::OscillatorAudioRenderer::process(actual,config,input,{},0,nullptr);
+            synth1x::dsp::OscillatorAudioRenderer::process(actual,config,input,{},0,nullptr);
             reference.processSample(220,660,.5f,0,0,false,false,0,0,-1,nullptr);
             EXPECT_EQ(actual.readPhaseWords(),reference.readPhaseWords());
         }
@@ -167,8 +167,8 @@ TEST(OscillatorRead, ScalarFrequenciesUseFixedCeilingAtEverySampleRate)
                 SCOPED_TRACE(requested);
                 SCOPED_TRACE(index);
                 SCOPED_TRACE(tables);
-                synth2::dsp::OscillatorSection actual,reference;
-                synth2::dsp::Oscillator phaseReference;
+                synth1x::dsp::OscillatorSection actual,reference;
+                synth1x::dsp::Oscillator phaseReference;
                 phaseReference.setSampleRate(rate);phaseReference.updatePhaseIncrement(expected);
                 for(auto* section:{&actual,&reference}) {
                     section->prepare({static_cast<float>(rate),64,2});section->params={0,2};
@@ -191,7 +191,7 @@ TEST(OscillatorRead, CeilingPrecedesFmRingSyncStackAndSubDispatch)
     auto bank=generatedBank();
     // Different bands make an uncapped table lookup observable even if only the
     // phase increment were capped. Inputs are self-authored, not reference PCM.
-    synth2::ShapeTables bands;
+    synth1x::ShapeTables bands;
     for(float border:{22050.f,100000.f}) {
         bands.infos.push_back({bands.data.size(),2048,border});
         for(int i=0;i<2048;++i)
@@ -200,7 +200,7 @@ TEST(OscillatorRead, CeilingPrecedesFmRingSyncStackAndSubDispatch)
     bank.setShapeTables(2,std::move(bands));
     for(int mode=0;mode<6;++mode) {
         SCOPED_TRACE(mode);
-        synth2::dsp::OscillatorSection actual,reference;
+        synth1x::dsp::OscillatorSection actual,reference;
         for(auto* section:{&actual,&reference}) {
             section->prepare({44100,64,2});section->params={0,2};
             section->stackDial=mode==4 ? 32.f : 0.f;
@@ -222,7 +222,7 @@ TEST(OscillatorRead, CeilingAppliesAfterPitchModulation)
     const auto bank=generatedBank();
     struct Input {float base;int control;float expected;};
     for(const auto input:{Input{40000,-128,20000},Input{20000,128,22000},Input{30000,0,22000}}) {
-        synth2::dsp::OscillatorSection actual,reference;
+        synth1x::dsp::OscillatorSection actual,reference;
         for(auto* section:{&actual,&reference}){section->prepare({44100,64,2});section->params={0,2};}
         for(int frame=0;frame<128;++frame) {
             const auto a=actual.processSample(440,input.base,.5f,.5f,0,false,false,0,0,-1,&bank,-1,0,input.control,true);
@@ -238,7 +238,7 @@ TEST(OscillatorRead, FineFramesPreserveBaseTrajectoryAcrossWaveformsAndControlCh
     for(double rate:{44100.,48000.})for(int factor:{2,4,8,16})
     for(int first:{0,1,2,3})for(int second:{0,1,2,3,4})for(int mode:{0,1,2,3})
     {
-        synth2::dsp::OscillatorSection base,fine;
+        synth1x::dsp::OscillatorSection base,fine;
         for(auto* o:{&base,&fine}){o->prepare({static_cast<float>(rate),64,2});o->params={first,second};o->resetPhase(.87f);}
         for(int frame=0;frame<96;++frame)
         {
@@ -267,10 +267,10 @@ TEST(OscillatorRead, FineFrameFollowsSignedFmAdvanceIncludingMoreThanHalfACycle)
     // of feedback. Check analytic intermediate sine values, not another renderer.
     for(float source:{-1.f,1.f})for(int factor:{2,4,8,16})
     {
-        auto bank=generatedBank();synth2::ShapeTables constant;
+        auto bank=generatedBank();synth1x::ShapeTables constant;
         constant.infos.push_back({0,2048,100000});constant.data.assign(2048,source);
         bank.setShapeTables(2,std::move(constant));
-        synth2::dsp::OscillatorSection o;o.prepare({48000,64,2});o.params={3,2};
+        synth1x::dsp::OscillatorSection o;o.prepare({48000,64,2});o.params={3,2};
         o.osc1.setPhaseFixed27(0x07000000);o.osc2.setPhaseFixed27(0);
         std::array<float,16> values{};
         o.processFrame(values.data(),factor,22000,1000,.5f,0,67108864,true,false,0,0,-1,&bank);
@@ -286,14 +286,14 @@ TEST(OscillatorRead, FineFrameFollowsSignedFmAdvanceIncludingMoreThanHalfACycle)
 
 TEST(OscillatorRead, FineFmTrajectorySuppressesAnAboveNyquistCarrierWithoutRetuning)
 {
-    auto bank=generatedBank();synth2::ShapeTables constant;
+    auto bank=generatedBank();synth1x::ShapeTables constant;
     constant.infos.push_back({0,2048,100000});constant.data.assign(2048,1.f);
     bank.setShapeTables(2,std::move(constant));
     double reference=0;
     for(int factor:{1,2,4,8,16})
     {
-        synth2::dsp::OscillatorSection o;o.prepare({48000,64,2});o.params={3,2};
-        synth2::dsp::AudioDownsampler down;down.setFactor(factor);
+        synth1x::dsp::OscillatorSection o;o.prepare({48000,64,2});o.params={3,2};
+        synth1x::dsp::AudioDownsampler down;down.setFactor(factor);
         double re=0,im=0;
         for(int i=0;i<12288;++i)
         {
@@ -312,10 +312,10 @@ TEST(OscillatorRead, FineFmTrajectorySuppressesAnAboveNyquistCarrierWithoutRetun
 
 TEST(OscillatorRead, AudioAndFmUseTheSameFloatTableRead)
 {
-    synth2::ShapeTables table;table.infos.push_back({0,2048,100000});table.data.assign(2048,0);
+    synth1x::ShapeTables table;table.infos.push_back({0,2048,100000});table.data.assign(2048,0);
     table.data[0]=1.0;table.data[1]=std::nextafter(-1.0f,0.0f);
-    synth2::WaveTableBank bank;bank.setShapeTables(3,std::move(table));
-    synth2::dsp::Oscillator oscillator;oscillator.setSampleRate(44100);oscillator.updatePhaseIncrement(220);
+    synth1x::WaveTableBank bank;bank.setShapeTables(3,std::move(table));
+    synth1x::dsp::Oscillator oscillator;oscillator.setSampleRate(44100);oscillator.updatePhaseIncrement(220);
     oscillator.setPhaseFixed27(1u<<15);
     const auto sample=oscillator.readSample(3,.5,0,&bank);
     EXPECT_EQ(sample,0.0f);

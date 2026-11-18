@@ -107,7 +107,8 @@ class MeasurementIO(unittest.TestCase):
         self.assertEqual(read_wav(wav)[2:], ([.25, -.25], [0.]))
 
     def test_environment_cleanup_preserves_runtime_and_trust(self):
-        env = {'SYNTH1_SEED': 'bad', 'SYNTH2_NOTE_OFF_SEC': 'bad', 'SYNTH_OSC_MODE': 'bad',
+        env = {'SYNTH1_SEED': 'bad', 'SYNTH1X_NOTE_OFF_SEC': 'bad',
+               'SYNTH2_NOTE_OFF_SEC': 'bad', 'SYNTH_OSC_MODE': 'bad',
                'WINEPREFIX': '/wine prefix', 'WINELOADER': '/old/wine',
                'HTTPS_PROXY': 'http://proxy:8080', 'SSL_CERT_FILE': '/trust/ca.pem',
                'PATH': '/bin', 'SYNTH_OTHER': 'keep'}
@@ -116,7 +117,8 @@ class MeasurementIO(unittest.TestCase):
         cleaned = clean_environment(env, wine=wine)
         self.assertEqual(env, original)
         self.assertEqual(cleaned, {**{k: v for k, v in original.items()
-                                     if k not in ('SYNTH1_SEED', 'SYNTH2_NOTE_OFF_SEC', 'SYNTH_OSC_MODE')},
+                                     if k not in ('SYNTH1_SEED', 'SYNTH1X_NOTE_OFF_SEC',
+                                                  'SYNTH2_NOTE_OFF_SEC', 'SYNTH_OSC_MODE')},
                                    'WINELOADER': str(wine.resolve())})
 
 

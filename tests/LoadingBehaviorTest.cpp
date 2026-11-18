@@ -4,7 +4,7 @@
 #include "patch/PatchLoader.h"
 #include "support/StateDocument.h"
 
-using synth2::host::ProcessorBridge;
+using synth1x::host::ProcessorBridge;
 
 TEST(LoadingBehavior, EveryAcceptedVersionLoadsSelfAuthoredSourcesAndRecallsThem)
 {
@@ -30,7 +30,7 @@ TEST(LoadingBehavior, EveryAcceptedVersionLoadsSelfAuthoredSourcesAndRecallsThem
 TEST(LoadingBehavior, NamedUnversionedAndCommentedSourcesRetainSubmittedFields)
 {
     const std::string text = "# Header\r\nOwned patch\r\n 19,91 ; sustain\r\n29,73 # output\r\n";
-    const auto document = synth2::parsePatchDocument(text);
+    const auto document = synth1x::parsePatchDocument(text);
     EXPECT_EQ(document.name, "Owned patch");
     EXPECT_FALSE(document.version().has_value());
     ASSERT_EQ(document.entries.size(), 2u);
@@ -48,8 +48,8 @@ TEST(LoadingBehavior, CommasInTitlesRemainNamesWithOrWithoutVersionHeaders)
     for(const std::string header:{"", "color=blue\r\nver=112\r\n"})
     {
         const std::string text=title+"\r\n"+header+"19,91\r\n29,73\r\n";
-        EXPECT_TRUE(synth2::hasPatchTitle(text));
-        const auto document=synth2::parsePatchDocument(text);
+        EXPECT_TRUE(synth1x::hasPatchTitle(text));
+        const auto document=synth1x::parsePatchDocument(text);
         EXPECT_EQ(document.name,title);
         ProcessorBridge source,recalled;std::string error;
         ASSERT_TRUE(source.loadPatch(text,error))<<error;
@@ -60,7 +60,7 @@ TEST(LoadingBehavior, CommasInTitlesRemainNamesWithOrWithoutVersionHeaders)
         EXPECT_EQ(recalled.saveState(),state);
     }
     for(const std::string text:{"19,91\n29,73\n","19x,91\n29,73\n",",91\n29,73\n"})
-        EXPECT_FALSE(synth2::hasPatchTitle(text));
+        EXPECT_FALSE(synth1x::hasPatchTitle(text));
     ProcessorBridge source;std::string error;
     ASSERT_TRUE(source.loadPatch("19,91\n29,73\n",error))<<error;
     const auto before=source.saveState();

@@ -13,8 +13,8 @@
 
 TEST(Oversampling, FirMatchesOrderedConvolutionAcrossEveryCursorAndReset)
 {
-    synth2::dsp::OversamplingFilter filter;
-    const auto& weights=synth2::dsp::OversamplingFilter::coefficients();
+    synth1x::dsp::OversamplingFilter filter;
+    const auto& weights=synth1x::dsp::OversamplingFilter::coefficients();
     uint32_t random=1;
     for(int epoch=0;epoch<3;++epoch)
     {
@@ -41,11 +41,11 @@ TEST(Oversampling, FirMatchesOrderedConvolutionAcrossEveryCursorAndReset)
 
 TEST(Oversampling, ImpulseDelayMatchesReportedLatencyAndDCGainStaysUnity)
 {
-    for(int factor:synth2::dsp::OversamplingSettings::factors)
+    for(int factor:synth1x::dsp::OversamplingSettings::factors)
     {
         SCOPED_TRACE(factor);
-        synth2::dsp::AudioDownsampler voice;
-        synth2::dsp::StereoOversampler output;
+        synth1x::dsp::AudioDownsampler voice;
+        synth1x::dsp::StereoOversampler output;
         voice.setFactor(factor);output.setFactor(factor);
         std::vector<double> impulse(512);
         for(int frame=0;frame<512;++frame)
@@ -56,7 +56,7 @@ TEST(Oversampling, ImpulseDelayMatchesReportedLatencyAndDCGainStaysUnity)
             impulse[frame]=value[0];
         }
         const auto peak=std::max_element(impulse.begin(),impulse.end());
-        EXPECT_EQ(std::distance(impulse.begin(),peak),synth2::dsp::OversamplingSettings::latency(factor));
+        EXPECT_EQ(std::distance(impulse.begin(),peak),synth1x::dsp::OversamplingSettings::latency(factor));
         float steady=0;
         for(int frame=0;frame<1024;++frame)
         {
@@ -71,10 +71,10 @@ TEST(Oversampling, CubicShapingSuppressesFoldedThirdHarmonicAtEveryHigherFactor)
 {
     constexpr double rate=44100,frequency=12000,alias=8100,pi=3.14159265358979323846;
     double reference=0;
-    for(int factor:synth2::dsp::OversamplingSettings::factors)
+    for(int factor:synth1x::dsp::OversamplingSettings::factors)
     {
         SCOPED_TRACE(factor);
-        synth2::dsp::StereoOversampler sampler;sampler.setFactor(factor);
+        synth1x::dsp::StereoOversampler sampler;sampler.setFactor(factor);
         double re=0,im=0;
         for(int frame=0;frame<12288;++frame)
         {
@@ -95,14 +95,14 @@ TEST(Oversampling, CubicShapingSuppressesFoldedThirdHarmonicAtEveryHigherFactor)
 
 TEST(Oversampling, StateRetainsQualityWithoutChangingPatchOrParameterIdentities)
 {
-    auto p=std::make_unique<synth2::host::ProcessorBridge>();
+    auto p=std::make_unique<synth1x::host::ProcessorBridge>();
     const auto patch=p->savePatch();const auto old=p->saveState();
     EXPECT_EQ(p->oversamplingFactor(),1);EXPECT_EQ(p->latencySamples(),0);
     EXPECT_EQ(stateinspection::attribute(*stateinspection::document(*p),"oversamplingFactor"),"");
-    for(int factor:synth2::dsp::OversamplingSettings::factors)
+    for(int factor:synth1x::dsp::OversamplingSettings::factors)
     {
         ASSERT_TRUE(p->setOversamplingFactor(factor));
-        const auto bytes=p->saveState();auto restored=std::make_unique<synth2::host::ProcessorBridge>();
+        const auto bytes=p->saveState();auto restored=std::make_unique<synth1x::host::ProcessorBridge>();
         ASSERT_TRUE(restored->tryRestoreState(bytes.data(),static_cast<int>(bytes.size())));
         EXPECT_EQ(restored->oversamplingFactor(),factor);
         EXPECT_EQ(restored->savePatch(),patch);EXPECT_EQ(restored->parameterCount,129);
@@ -125,8 +125,8 @@ TEST(Oversampling, EveryFactorKeepsControlClocksAndEnvelopeTimeAtTheHostRate)
     for(int factor:{2,4,8,16})
     {
         SCOPED_TRACE(factor);
-        auto base=std::make_unique<synth2::host::ProcessorBridge>();
-        auto high=std::make_unique<synth2::host::ProcessorBridge>();
+        auto base=std::make_unique<synth1x::host::ProcessorBridge>();
+        auto high=std::make_unique<synth1x::host::ProcessorBridge>();
         const std::string patch="Quality clocks\nver=113\n0,0\n1,4\n25,60\n28,50\n57,1\n41,4\n42,5\n43,60\n44,90\n59,1\n31,2\n33,11\n34,90\n";
         std::string error;ASSERT_TRUE(base->loadPatch(patch,error));ASSERT_TRUE(high->loadPatch(patch,error));
         ASSERT_TRUE(high->setOversamplingFactor(factor));base->prepare(44100,64);high->prepare(44100,64);
@@ -157,10 +157,10 @@ TEST(Oversampling, EveryFactorKeepsControlClocksAndEnvelopeTimeAtTheHostRate)
 TEST(Oversampling, AllFactorsKeepTheAudibleFundamentalAndDrainNoteOff)
 {
     double referenceFrequency=0;
-    for(int factor:synth2::dsp::OversamplingSettings::factors)
+    for(int factor:synth1x::dsp::OversamplingSettings::factors)
     {
         SCOPED_TRACE(factor);
-        auto processor=std::make_unique<synth2::host::ProcessorBridge>();
+        auto processor=std::make_unique<synth1x::host::ProcessorBridge>();
         std::string error;
         ASSERT_TRUE(processor->loadPatch("Quality tone\nver=113\n0,0\n5,0\n25,0\n26,0\n27,127\n28,0\n19,127\n21,64\n20,0\n23,0\n57,0\n58,0\n59,0\n65,0\n66,0\n77,0\n73,0\n9,0\n",error));
         // Exercise the continuous format as well as the legacy loading adapter.
@@ -191,8 +191,8 @@ TEST(Oversampling, AllFactorsKeepTheAudibleFundamentalAndDrainNoteOff)
 
 TEST(Oversampling, FmSyncPhysicalPhasesSurviveQualityChangesAndMidiHistory)
 {
-    auto base=std::make_unique<synth2::host::ProcessorBridge>();
-    auto high=std::make_unique<synth2::host::ProcessorBridge>();
+    auto base=std::make_unique<synth1x::host::ProcessorBridge>();
+    auto high=std::make_unique<synth1x::host::ProcessorBridge>();
     const std::string patch="Phase quality\nver=113\n0,0\n1,3\n2,80\n3,64\n4,1\n45,100\n6,1\n76,80\n73,1\n74,64\n25,0\n26,0\n27,127\n28,60\n19,100\n20,50\n23,70\n77,1\n78,2\n79,90\n80,64\n81,80\n59,0\n57,0\n58,0\n65,0\n66,0\n9,0\n";
     std::string error;ASSERT_TRUE(base->loadPatch(patch,error));ASSERT_TRUE(high->loadPatch(patch,error));
     ASSERT_TRUE(high->setOversamplingFactor(16));base->prepare(48000,64);high->prepare(48000,64);

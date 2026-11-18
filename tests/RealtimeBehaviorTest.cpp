@@ -9,7 +9,7 @@
 
 namespace
 {
-struct CountedSound final : synth2::audio::Sound
+struct CountedSound final : synth1x::audio::Sound
 {
     explicit CountedSound(int& count):destroyed(count){}
     ~CountedSound() override {++destroyed;}
@@ -17,16 +17,16 @@ struct CountedSound final : synth2::audio::Sound
     bool appliesToChannel(int) override {return true;}
     int& destroyed;
 };
-struct CountedVoice final : synth2::audio::Voice
+struct CountedVoice final : synth1x::audio::Voice
 {
     explicit CountedVoice(int& count):destroyed(count){}
     ~CountedVoice() override {++destroyed;}
-    bool canPlaySound(synth2::audio::Sound*) override {return true;}
-    void startNote(int,float,synth2::audio::Sound*,int) override {}
+    bool canPlaySound(synth1x::audio::Sound*) override {return true;}
+    void startNote(int,float,synth1x::audio::Sound*,int) override {}
     void stopNote(float,bool) override {}
     void pitchWheelMoved(int) override {}
     void controllerMoved(int,int) override {}
-    void renderNextBlock(synth2::audio::AudioBuffer<float>&,int,int) override {}
+    void renderNextBlock(synth1x::audio::AudioBuffer<float>&,int,int) override {}
     int& destroyed;
 };
 }
@@ -34,7 +34,7 @@ struct CountedVoice final : synth2::audio::Voice
 TEST(VoiceOwnership, FailedContainerAllocationReleasesTransferredObjects)
 {
     int soundsDestroyed=0,voicesDestroyed=0;
-    synth2::audio::VoiceBank bank;
+    synth1x::audio::VoiceBank bank;
     auto* sound=new CountedSound(soundsDestroyed);
     bool soundFailed=false;
     testheap::failNextCppAllocation=true;
@@ -70,7 +70,7 @@ TEST(RealtimeBehavior, PreparedCallbacksAndSourceEditsDoNotUseCppHeap)
         SCOPED_TRACE(version);
         auto text=hostvalidation::patch();
         text.replace(text.find("ver=113"),7,"ver="+std::to_string(version));
-        synth2::host::ProcessorBridge processor;
+        synth1x::host::ProcessorBridge processor;
         std::string error;
         ASSERT_TRUE(processor.loadPatch(text,error))<<error;
         processor.prepare(48000,257);
@@ -105,7 +105,7 @@ TEST(RealtimeBehavior, EverySourceDialCanBeAutomatedWithoutCallbackHeapActivity)
         SCOPED_TRACE(version);
         auto text=hostvalidation::patch();
         text.replace(text.find("ver=113"),7,"ver="+std::to_string(version));
-        synth2::host::ProcessorBridge processor;
+        synth1x::host::ProcessorBridge processor;
         std::string error; ASSERT_TRUE(processor.loadPatch(text,error)); processor.prepare(48000,64);
         std::array<float,64> left{},right{};
         for(int parameter=0;parameter<129;++parameter)
@@ -127,10 +127,10 @@ TEST(RealtimeBehavior, EverySourceDialCanBeAutomatedWithoutCallbackHeapActivity)
 
 TEST(RealtimeBehavior, DoubleZeroOversizeAndOverflowCallbacksAvoidCppHeap)
 {
-    synth2::host::ProcessorBridge processor;
+    synth1x::host::ProcessorBridge processor;
     processor.prepare(44100,64);
     std::array<double,65> left{},right{};
-    for(size_t i=0;i<synth2::host::ProcessorBridge::midiCapacity;++i)
+    for(size_t i=0;i<synth1x::host::ProcessorBridge::midiCapacity;++i)
         ASSERT_TRUE(processor.enqueueMidi(0,0xb0,1,0));
     EXPECT_FALSE(processor.enqueueMidi(0,0x80,60,0));
     testheap::Counts counts;
@@ -159,7 +159,7 @@ TEST(RealtimeBehavior, AlignedArrayAndNothrowCppAllocationsAreTracked)
     }
     EXPECT_EQ(counts.allocations,4u); EXPECT_EQ(counts.deallocations,4u);
 }
-#if defined(SYNTH2_TEST_WRAP_C_HEAP)
+#if defined(SYNTH1X_TEST_WRAP_C_HEAP)
 TEST(RealtimeBehavior, StaticCHeapCallsAreTracked)
 {
     void* (*volatile allocate)(std::size_t)=std::malloc;
@@ -178,7 +178,7 @@ TEST(RealtimeBehavior, StaticCHeapCallsAreTracked)
 
 TEST(RealtimeBehavior, ParameterUpdatesAndMidiPublicationAvoidHeapActivity)
 {
-    synth2::host::ProcessorBridge processor;
+    synth1x::host::ProcessorBridge processor;
     processor.prepare(44100,64);
     std::array<float,64> left{},right{};
     testheap::Counts counts;
@@ -197,9 +197,9 @@ TEST(RealtimeBehavior, ParameterUpdatesAndMidiPublicationAvoidHeapActivity)
 
 TEST(RealtimeBehavior, SaturatedHistoryDrainAndSubsequentEditAvoidHeapActivity)
 {
-    synth2::host::ProcessorBridge processor;
+    synth1x::host::ProcessorBridge processor;
     processor.prepare(44100,64);
-    constexpr auto capacity=synth2::dsp::LfoHistory<>::capacity;
+    constexpr auto capacity=synth1x::dsp::LfoHistory<>::capacity;
     for(unsigned i=0;i<capacity+8;++i) processor.setNormalizedValue(43,(i%2)/127.);
     ASSERT_EQ(processor.historyDrops(),8u);
     std::array<float,64> left{},right{};
@@ -220,7 +220,7 @@ TEST(RealtimeBehavior, SaturatedHistoryDrainAndSubsequentEditAvoidHeapActivity)
 
 TEST(RealtimeBehavior, OversamplingAndLiveFactorChangesAvoidHeapActivity)
 {
-    synth2::host::ProcessorBridge processor;
+    synth1x::host::ProcessorBridge processor;
     std::string error;ASSERT_TRUE(processor.loadPatch(hostvalidation::patch(),error));
     processor.prepare(48000,64);
     std::array<float,64> left{},right{};
@@ -245,7 +245,7 @@ TEST(RealtimeBehavior, OversampledShortAndChunkedCallbacksRespectOutputBounds)
 {
     for(int factor:{2,16})
     {
-        synth2::host::ProcessorBridge processor;
+        synth1x::host::ProcessorBridge processor;
         processor.setOversamplingFactor(factor);processor.prepare(48000,257);
         std::array<float,259> left{},right{};
         for(int frames:{1,17,257})
