@@ -54,29 +54,29 @@ class CandidatePackages(unittest.TestCase):
         return path
 
     def test_windows_requires_all_products_and_excludes_unrelated_files(self):
-        self.binary('Synth2.vst3/Contents/x86_64-win/Synth2.vst3')
-        self.binary('Synth2.clap')
-        self.binary('Synth2.exe')
+        self.binary('Synth1X.vst3/Contents/x86_64-win/Synth1X.vst3')
+        self.binary('Synth1X.clap')
+        self.binary('Synth1X.exe')
         self.binary('unrelated.pdb')
         result = packager.package(self.root, self.build, 'windows',
                                   self.manifest, self.output)
         with zipfile.ZipFile(result) as archive:
             names = archive.namelist()
-            for name in ['Synth2/Synth2.exe', 'Synth2/Synth2.clap',
-                         'Synth2/Synth2.vst3/Contents/x86_64-win/Synth2.vst3',
-                         'Synth2/notices/iPlug2/WDL/license.txt', 'Synth2/LICENSE',
-                         'Synth2/INSTALL.md', 'Synth2/notices/miniz-LICENSE',
-                         'Synth2/notices/libarchive-COPYING', 'Synth2/notices/libarchive-NOTICES',
-                         'Synth2/notices/xz-COPYING', 'Synth2/notices/xz-COPYING.0BSD',
-                         'Synth2/notices/tinyxml2-LICENSE', 'Synth2/notices/fonts-LICENSE.txt',
-                         'Synth2/notices/iPlug2-LICENSE.txt', 'Synth2/notices/VST3-LICENSE.txt',
-                         'Synth2/notices/CLAP-LICENSE', 'Synth2/notices/CLAP-helpers-LICENSE']:
+            for name in ['Synth1X/Synth1X.exe', 'Synth1X/Synth1X.clap',
+                         'Synth1X/Synth1X.vst3/Contents/x86_64-win/Synth1X.vst3',
+                         'Synth1X/notices/iPlug2/WDL/license.txt', 'Synth1X/LICENSE',
+                         'Synth1X/INSTALL.md', 'Synth1X/notices/miniz-LICENSE',
+                         'Synth1X/notices/libarchive-COPYING', 'Synth1X/notices/libarchive-NOTICES',
+                         'Synth1X/notices/xz-COPYING', 'Synth1X/notices/xz-COPYING.0BSD',
+                         'Synth1X/notices/tinyxml2-LICENSE', 'Synth1X/notices/fonts-LICENSE.txt',
+                         'Synth1X/notices/iPlug2-LICENSE.txt', 'Synth1X/notices/VST3-LICENSE.txt',
+                         'Synth1X/notices/CLAP-LICENSE', 'Synth1X/notices/CLAP-helpers-LICENSE']:
                 self.assertIn(name, names)
-            self.assertNotIn('Synth2/unrelated.pdb', names)
-            self.assertEqual(archive.read('Synth2/INSTALL.md'),
+            self.assertNotIn('Synth1X/unrelated.pdb', names)
+            self.assertEqual(archive.read('Synth1X/INSTALL.md'),
                              (self.root / 'INSTALL.md').read_bytes())
-            self.assertIn(b'INSTALL.md', archive.read('Synth2/README.txt'))
-            self.assertEqual(archive.read('Synth2/dependencies.json'),
+            self.assertIn(b'INSTALL.md', archive.read('Synth1X/README.txt'))
+            self.assertEqual(archive.read('Synth1X/dependencies.json'),
                              self.manifest.read_bytes())
         with self.assertRaisesRegex(ValueError, 'replace'):
             packager.package(self.root, self.build, 'windows', self.manifest, self.output)
@@ -84,59 +84,59 @@ class CandidatePackages(unittest.TestCase):
     @unittest.skipIf(os.name == 'nt', 'Symlink creation requires Windows developer privileges')
     def test_macos_preserves_executable_modes_and_bundle_symlinks(self):
         for suffix in ['vst3', 'clap', 'component', 'app']:
-            self.binary(f'Synth2.{suffix}/Contents/MacOS/Synth2')
-        (self.build / 'out/Synth2.app/Contents/current').symlink_to('MacOS/Synth2')
+            self.binary(f'Synth1X.{suffix}/Contents/MacOS/Synth1X')
+        (self.build / 'out/Synth1X.app/Contents/current').symlink_to('MacOS/Synth1X')
         result = packager.package(self.root, self.build, 'macos',
                                   self.manifest, self.output)
         with tarfile.open(result) as archive:
-            link = archive.getmember('Synth2/Synth2.app/Contents/current')
+            link = archive.getmember('Synth1X/Synth1X.app/Contents/current')
             self.assertTrue(link.issym())
-            self.assertEqual(link.linkname, 'MacOS/Synth2')
-            binary = archive.getmember('Synth2/Synth2.app/Contents/MacOS/Synth2')
+            self.assertEqual(link.linkname, 'MacOS/Synth1X')
+            binary = archive.getmember('Synth1X/Synth1X.app/Contents/MacOS/Synth1X')
             self.assertEqual(binary.mode & 0o111, 0o111)
-            self.assertIsNotNone(archive.getmember('Synth2/dependencies.json'))
-            self.assertEqual(archive.extractfile('Synth2/INSTALL.md').read(),
+            self.assertIsNotNone(archive.getmember('Synth1X/dependencies.json'))
+            self.assertEqual(archive.extractfile('Synth1X/INSTALL.md').read(),
                              (self.root / 'INSTALL.md').read_bytes())
 
     @unittest.skipIf(os.name == 'nt', 'Unix archive modes and symlinks require Unix')
     def test_linux_preserves_products_resources_modes_and_symlinks(self):
-        self.binary('Synth2.vst3/Contents/x86_64-linux/Synth2.so')
-        self.binary('Synth2.clap')
-        self.binary('Synth2')
-        resource = self.binary('Synth2.clap.resources/fonts/editor.ttf')
-        self.binary('Synth2.resources/img/panel.png')
+        self.binary('Synth1X.vst3/Contents/x86_64-linux/Synth1X.so')
+        self.binary('Synth1X.clap')
+        self.binary('Synth1X')
+        resource = self.binary('Synth1X.clap.resources/fonts/editor.ttf')
+        self.binary('Synth1X.resources/img/panel.png')
         (resource.parent / 'current.ttf').symlink_to('editor.ttf')
         self.binary('unrelated.so')
         result = packager.package(self.root, self.build, 'linux',
                                   self.manifest, self.output)
-        self.assertEqual(result.name, 'Synth2-linux.tar.gz')
+        self.assertEqual(result.name, 'Synth1X-linux.tar.gz')
         with tarfile.open(result) as archive:
-            for name in ['Synth2/Synth2', 'Synth2/Synth2.clap',
-                         'Synth2/Synth2.vst3/Contents/x86_64-linux/Synth2.so']:
+            for name in ['Synth1X/Synth1X', 'Synth1X/Synth1X.clap',
+                         'Synth1X/Synth1X.vst3/Contents/x86_64-linux/Synth1X.so']:
                 self.assertEqual(archive.getmember(name).mode & 0o111, 0o111)
-            link = archive.getmember('Synth2/Synth2.clap.resources/fonts/current.ttf')
+            link = archive.getmember('Synth1X/Synth1X.clap.resources/fonts/current.ttf')
             self.assertTrue(link.issym())
             self.assertEqual(link.linkname, 'editor.ttf')
-            self.assertEqual(archive.extractfile('Synth2/Synth2.resources/img/panel.png').read(),
+            self.assertEqual(archive.extractfile('Synth1X/Synth1X.resources/img/panel.png').read(),
                              b'Self-authored binary placeholder')
-            self.assertEqual(archive.extractfile('Synth2/dependencies.json').read(),
+            self.assertEqual(archive.extractfile('Synth1X/dependencies.json').read(),
                              self.manifest.read_bytes())
-            self.assertIn('Synth2/INSTALL.md', archive.getnames())
-            self.assertIn('Synth2/notices/iPlug2/WDL/license.txt', archive.getnames())
-            self.assertNotIn('Synth2/unrelated.so', archive.getnames())
+            self.assertIn('Synth1X/INSTALL.md', archive.getnames())
+            self.assertIn('Synth1X/notices/iPlug2/WDL/license.txt', archive.getnames())
+            self.assertNotIn('Synth1X/unrelated.so', archive.getnames())
 
     def test_linux_rejects_a_missing_or_wrong_architecture_bundle(self):
-        self.binary('Synth2.clap')
-        self.binary('Synth2')
-        self.binary('Synth2.vst3/Contents/MacOS/Synth2')
+        self.binary('Synth1X.clap')
+        self.binary('Synth1X')
+        self.binary('Synth1X.vst3/Contents/MacOS/Synth1X')
         with self.assertRaisesRegex(ValueError, 'Missing native product'):
             packager.package(self.root, self.build, 'linux', self.manifest, self.output)
         self.assertFalse(self.output.exists())
 
     def test_partial_bundles_cannot_become_successful_candidates(self):
-        self.binary('Synth2.clap')
-        self.binary('Synth2.exe')
-        self.binary('Synth2.vst3/Contents/Resources/placeholder')
+        self.binary('Synth1X.clap')
+        self.binary('Synth1X.exe')
+        self.binary('Synth1X.vst3/Contents/Resources/placeholder')
         with self.assertRaisesRegex(ValueError, 'Missing native product'):
             packager.package(self.root, self.build, 'windows', self.manifest, self.output)
         self.assertFalse(self.output.exists())

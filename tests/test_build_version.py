@@ -41,13 +41,21 @@ class BuildVersion(unittest.TestCase):
         self.assertIn(f'"{display}"', header)
         word = re.search(r'SYNTH2_VERSION_HEX (0x[0-9a-f]+)', header).group(1)
         self.assertEqual(int(word, 16), packed)
-        for format in ('AU', 'CLAP', 'VST3', 'macOS'):
+        bundle_formats = {'AU': 'audiounit', 'CLAP': 'clap', 'VST3': 'vst3', 'macOS': 'app'}
+        for format, identifier in bundle_formats.items():
             data = plistlib.loads((output / f'Synth2-{format}-Info.plist').read_bytes())
+            self.assertEqual(data['CFBundleExecutable'], 'Synth1X')
+            self.assertEqual(data['CFBundleIdentifier'], f'io.github.yasuyuki-baba.{identifier}.Synth2')
             self.assertEqual(data['CFBundleVersion'], numeric)
             self.assertEqual(data['CFBundleShortVersionString'], numeric)
             self.assertIn(display, data['CFBundleGetInfoString'])
             if format == 'AU':
-                self.assertEqual(data['AudioComponents'][0]['version'], packed)
+                component = data['AudioComponents'][0]
+                self.assertEqual(component['version'], packed)
+                self.assertEqual(component['manufacturer'], 'BABA')
+                self.assertEqual(component['subtype'], 'Syn2')
+            if format == 'macOS':
+                self.assertEqual(data['NSMainNibFile'], 'Synth1X-macOS-MainMenu')
 
     def test_release_and_github_tag_use_the_same_metadata(self):
         for github in (False, True):

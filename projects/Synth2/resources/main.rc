@@ -212,7 +212,7 @@ BEGIN
             VALUE "FileVersion", SYNTH2_VERSION_STR
             VALUE "ProductVersion", SYNTH2_VERSION_STR
             VALUE "FileDescription", "Synth1X"
-            VALUE "InternalName", "Synth2"
+            VALUE "InternalName", "Synth1X"
             VALUE "ProductName", "Synth1X"
             VALUE "CompanyName", "babab"
             VALUE "LegalCopyright", "Copyright 2026 Synth2 contributors"

@@ -1,7 +1,7 @@
 # Installing Synth1X
 
 Choose the native package for your operating system:
-`Synth2-linux.tar.gz`, `Synth2-windows.zip` or `Synth2-macos.tar.gz`. GitHub's
+`Synth1X-linux.tar.gz`, `Synth1X-windows.zip` or `Synth1X-macos.tar.gz`. GitHub's
 source archives contain the files for building Synth1X. The current workflow
 uploads candidates to GitHub Actions; if a version is published under
 [Releases](https://github.com/yasuyuki-baba/synth2/releases), use its native assets.
@@ -9,16 +9,38 @@ Downloading an Actions artifact may require signing in to GitHub. An Actions
 artifact ZIP wraps the native package: extract that outer ZIP first, then extract
 the native ZIP or tar.gz inside it.
 
-The native package keeps the existing `Synth2` filenames. The extracted package
-contains a `Synth2` folder with the plugin products,
+The extracted package contains a `Synth1X` folder with the plugin products,
 standalone application, `dependencies.json`, `LICENSE` and `notices/`.
-Products are directly inside `Synth2/`, not in an `out/` subfolder.
+Products are directly inside `Synth1X/`, not in an `out/` subfolder.
 `dependencies.json` identifies the source and SDK revisions for that build.
 
 Close your DAW and Synth1X before installing or updating. Copy each complete
 product, keeping its original name and contents. When updating, replace the old
 bundle rather than merging folders. Install only formats your DAW supports.
 Keep the package's license and notice files with your downloaded distribution.
+
+## Upgrading from Synth2
+
+1. Close the DAW and standalone app. Move the old `Synth2` plugins out of your
+   DAW's scan folders and install the corresponding `Synth1X` files. The two sets
+   share plugin IDs. Rescan the plugins after replacing the files.
+2. Before opening Synth1X, copy the contents of your old Synth2 user data folder
+   into the sibling `Synth1X` folder. This brings over the default library,
+   tags, favorites, palette and standalone patch state. Keep the old folder as a
+   backup. If both folders already contain data, review overlapping files before
+   copying.
+3. If you use a custom library folder, confirm the location under **Add... →
+   Choose library folder...**. A saved absolute path still points to its original
+   folder. Re-select the location if you moved it for the upgrade.
+
+| Platform | Old user data folder | New user data folder |
+| --- | --- | --- |
+| Windows | `%APPDATA%/Synth2` | `%APPDATA%/Synth1X` |
+| macOS | `~/Library/Application Support/Synth2` | `~/Library/Application Support/Synth1X` |
+| Linux | `~/.local/share/Synth2` | `~/.local/share/Synth1X` |
+
+On Linux, use `$XDG_DATA_HOME` in place of `~/.local/share` if set. Standalone
+audio and MIDI device preferences use the SDK's existing `Synth2` settings path.
 
 ## Linux
 
@@ -33,15 +55,15 @@ JACK and PulseAudio. On Ubuntu 24.04, install missing runtime dependencies with:
 sudo apt-get install libgtk-3-0t64 libasound2t64 libjack-jackd2-0 libpulse0 libgl1
 ```
 
-| Product in `Synth2/` | Destination folder |
+| Product in `Synth1X/` | Destination folder |
 | --- | --- |
-| `Synth2.vst3` (entire bundle) | `~/.vst3/` |
-| `Synth2.clap` | `~/.clap/` |
-| `Synth2` (standalone) | A folder you own, such as `~/.local/opt/Synth2/` |
+| `Synth1X.vst3` (entire bundle) | `~/.vst3/` |
+| `Synth1X.clap` | `~/.clap/` |
+| `Synth1X` (standalone) | A folder you own, such as `~/.local/opt/Synth1X/` |
 
-Create missing folders. Keep any `Synth2.clap.resources` directory beside
-`Synth2.clap`, and any `Synth2.resources` directory beside the standalone binary.
-Keep the VST3 bundle intact, including `Contents/x86_64-linux/Synth2.so` and its
+Create missing folders. Keep any `Synth1X.clap.resources` directory beside
+`Synth1X.clap`, and any `Synth1X.resources` directory beside the standalone binary.
+Keep the VST3 bundle intact, including `Contents/x86_64-linux/Synth1X.so` and its
 resources. Run the standalone binary from its extracted folder; audio requires a
 working ALSA device or JACK server. Use the portable source build on platforms
 outside this binary baseline; see the [build guide](https://github.com/yasuyuki-baba/synth2/blob/main/docs/desktop-build.md).
@@ -53,15 +75,15 @@ Intel Macs are not supported. In Finder, choose **Go > Go to Folder…** and
 enter a destination below. `~` means your home folder. Create missing folders;
 these user-level locations do not require administrator permission.
 
-| Product in `Synth2/` | Destination folder |
+| Product in `Synth1X/` | Destination folder |
 | --- | --- |
-| `Synth2.vst3` | `~/Library/Audio/Plug-Ins/VST3/` |
-| `Synth2.clap` | `~/Library/Audio/Plug-Ins/CLAP/` |
-| `Synth2.component` (AUv2) | `~/Library/Audio/Plug-Ins/Components/` |
-| `Synth2.app` (standalone) | `~/Applications/` |
+| `Synth1X.vst3` | `~/Library/Audio/Plug-Ins/VST3/` |
+| `Synth1X.clap` | `~/Library/Audio/Plug-Ins/CLAP/` |
+| `Synth1X.component` (AUv2) | `~/Library/Audio/Plug-Ins/Components/` |
+| `Synth1X.app` (standalone) | `~/Applications/` |
 
 Copy the entire bundle into its destination. For example, the installed VST3
-should be `~/Library/Audio/Plug-Ins/VST3/Synth2.vst3`. AUv2 is for hosts such as
+should be `~/Library/Audio/Plug-Ins/VST3/Synth1X.vst3`. AUv2 is for hosts such as
 Logic Pro; VST3 and CLAP need a host that supports those formats.
 
 ### Unsigned builds
@@ -77,12 +99,12 @@ If a plugin is blocked by download quarantine and you trust the package's source
 open Terminal and run only the command for each product you installed:
 
 ```sh
-xattr -dr com.apple.quarantine "$HOME/Library/Audio/Plug-Ins/VST3/Synth2.vst3"
-xattr -dr com.apple.quarantine "$HOME/Library/Audio/Plug-Ins/CLAP/Synth2.clap"
-xattr -dr com.apple.quarantine "$HOME/Library/Audio/Plug-Ins/Components/Synth2.component"
+xattr -dr com.apple.quarantine "$HOME/Library/Audio/Plug-Ins/VST3/Synth1X.vst3"
+xattr -dr com.apple.quarantine "$HOME/Library/Audio/Plug-Ins/CLAP/Synth1X.clap"
+xattr -dr com.apple.quarantine "$HOME/Library/Audio/Plug-Ins/Components/Synth1X.component"
 ```
 
-These commands remove quarantine only from the specified Synth2 bundles. They
+These commands remove quarantine only from the specified Synth1X bundles. They
 do not sign the products or disable Gatekeeper globally. Restart your DAW and
 rescan afterward. Hosts or managed computers that require signed/notarized code
 may still reject the build; do not disable system-wide protections to install it.
@@ -92,17 +114,17 @@ may still reject the build; do not disable system-wide protections to install it
 Current Windows candidates are x64 builds. Extract the complete ZIP before
 launching or installing products. In File Explorer, copy these products:
 
-| Product in `Synth2/` | Destination folder |
+| Product in `Synth1X/` | Destination folder |
 | --- | --- |
-| `Synth2.vst3` (entire folder) | `C:\Program Files\Common Files\VST3\` |
-| `Synth2.clap` | `C:\Program Files\Common Files\CLAP\` |
+| `Synth1X.vst3` (entire folder) | `C:\Program Files\Common Files\VST3\` |
+| `Synth1X.clap` | `C:\Program Files\Common Files\CLAP\` |
 
 These shared plugin folders usually need administrator permission. Create missing
 folders as needed. Keep the complete VST3 bundle structure; do not copy only the
 binary inside `Contents/x86_64-win/`. If your DAW supports a custom scan folder,
 you can instead use a folder you own and configure it in the DAW's search paths.
 
-For standalone use, keep `Synth2.exe` and any accompanying runtime files together
+For standalone use, keep `Synth1X.exe` and any accompanying runtime files together
 in a folder you own and launch the executable. You can create a shortcut; no DAW
 is required.
 
@@ -121,13 +143,13 @@ prevent unsigned software from running.
 
 1. Restart the DAW after copying the plugins.
 2. Enable the installed format, check its scan paths and run a plugin rescan.
-   If Synth2 previously failed scanning, use the host's option to retry failed
+   If Synth1X previously failed scanning, use the host's option to retry failed
    or blocked plugins.
-3. Load **Synth2** on an instrument/MIDI track. Select the MIDI input, enable
+3. Load **Synth1X** on an instrument/MIDI track. Select the MIDI input, enable
    track monitoring and configure your audio output. In the standalone app,
    select the audio device and MIDI input in its settings.
 
-Synth2 starts with Init and an empty library. Add your own `.sy1` patches or ZIP/RAR/7z
+Synth1X starts with Init and an empty library. Add your own `.sy1` patches or ZIP/RAR/7z
 banks through the library; no factory bank is included. The default audio quality
 is 1x. Higher oversampling factors use more CPU and can change tone and level;
 reduce the factor or increase your audio buffer if playback crackles.
@@ -143,12 +165,12 @@ A successful build is not a guarantee of host/device compatibility. See the
 
 ## Uninstall
 
-Close the DAW and standalone app, then remove the Synth2 products from their
+Close the DAW and standalone app, then remove the Synth1X products from their
 installation folders. Rescan if the DAW still lists the plugin.
 
-User library/settings are stored separately in `~/.local/share/Synth2/` on Linux
-(or `$XDG_DATA_HOME/Synth2/` when configured),
-`~/Library/Application Support/Synth2/` on macOS and `%APPDATA%\Synth2\` on
+User library/settings are stored separately in `~/.local/share/Synth1X/` on Linux
+(or `$XDG_DATA_HOME/Synth1X/` when configured),
+`~/Library/Application Support/Synth1X/` on macOS and `%APPDATA%\Synth1X\` on
 Windows. Removing the products leaves those files and your original imported
 patches/banks in place. Keep your DAW projects and original patch files when
 updating or uninstalling.

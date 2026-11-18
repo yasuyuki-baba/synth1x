@@ -304,7 +304,7 @@ gets `.xml`. Replacing an existing file requires confirmation. An export failure
 keeps editing available and reports the error in the fixed-color window.
 
 Edits preview only in the owning instance. **Apply** atomically saves the palette
-in `palette.xml` in the `Synth2` user settings directory. Other instances read the
+in `palette.xml` in the `Synth1X` user settings directory. Other instances read the
 saved preference when their editors are next opened. Missing preferences restore
 the built-in appearance, including when the file was deleted while an editor was closed. Sound changes, A/B and DAW
 state recall do not change the palette or publish host parameter changes.

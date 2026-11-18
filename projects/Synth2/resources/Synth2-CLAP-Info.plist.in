@@ -5,7 +5,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>English</string>
 	<key>CFBundleExecutable</key>
-	<string>Synth2</string>
+	<string>Synth1X</string>
 	<key>CFBundleGetInfoString</key>
 	<string>Synth1X v@SYNTH2_BUILD_VERSION@ Copyright 2026 Synth2 contributors</string>
 	<key>CFBundleIdentifier</key>
