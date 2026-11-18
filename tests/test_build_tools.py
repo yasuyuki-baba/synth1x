@@ -31,6 +31,7 @@ class CandidatePackages(unittest.TestCase):
         self.manifest = self.root / 'dependencies.json'
         self.manifest.write_text(json.dumps({'product_commit': 'a' * 40,
                                              'iplug2': 'b' * 40}))
+        (self.root / 'MIGRATION.md').write_text('# Upgrading from Synth2\n')
         for name in [
             'LICENSE', 'INSTALL.md', 'third_party/miniz/LICENSE', 'third_party/tinyxml2/LICENSE',
             'third_party/libarchive/COPYING', 'third_party/libarchive/NOTICES',
@@ -75,7 +76,10 @@ class CandidatePackages(unittest.TestCase):
             self.assertNotIn('Synth1X/unrelated.pdb', names)
             self.assertEqual(archive.read('Synth1X/INSTALL.md'),
                              (self.root / 'INSTALL.md').read_bytes())
+            self.assertEqual(archive.read('Synth1X/MIGRATION.md'),
+                             (self.root / 'MIGRATION.md').read_bytes())
             self.assertIn(b'INSTALL.md', archive.read('Synth1X/README.txt'))
+            self.assertIn(b'MIGRATION.md', archive.read('Synth1X/README.txt'))
             self.assertEqual(archive.read('Synth1X/dependencies.json'),
                              self.manifest.read_bytes())
         with self.assertRaisesRegex(ValueError, 'replace'):
@@ -97,6 +101,8 @@ class CandidatePackages(unittest.TestCase):
             self.assertIsNotNone(archive.getmember('Synth1X/dependencies.json'))
             self.assertEqual(archive.extractfile('Synth1X/INSTALL.md').read(),
                              (self.root / 'INSTALL.md').read_bytes())
+            self.assertEqual(archive.extractfile('Synth1X/MIGRATION.md').read(),
+                             (self.root / 'MIGRATION.md').read_bytes())
 
     @unittest.skipIf(os.name == 'nt', 'Unix archive modes and symlinks require Unix')
     def test_linux_preserves_products_resources_modes_and_symlinks(self):
@@ -122,6 +128,8 @@ class CandidatePackages(unittest.TestCase):
             self.assertEqual(archive.extractfile('Synth1X/dependencies.json').read(),
                              self.manifest.read_bytes())
             self.assertIn('Synth1X/INSTALL.md', archive.getnames())
+            self.assertEqual(archive.extractfile('Synth1X/MIGRATION.md').read(),
+                             (self.root / 'MIGRATION.md').read_bytes())
             self.assertIn('Synth1X/notices/iPlug2/WDL/license.txt', archive.getnames())
             self.assertNotIn('Synth1X/unrelated.so', archive.getnames())
 

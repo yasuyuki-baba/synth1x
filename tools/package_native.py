@@ -52,6 +52,7 @@ def package(root, build, platform, manifest, output):
         shutil.copy2(manifest, staging / 'dependencies.json')
         shutil.copy2(root / 'LICENSE', staging / 'LICENSE')
         shutil.copy2(root / 'INSTALL.md', staging / 'INSTALL.md')
+        shutil.copy2(root / 'MIGRATION.md', staging / 'MIGRATION.md')
         for source, destination in [
             ('third_party/miniz/LICENSE', 'notices/miniz-LICENSE'),
             ('third_party/libarchive/COPYING', 'notices/libarchive-COPYING'),
@@ -81,6 +82,7 @@ def package(root, build, platform, manifest, output):
             'Synth1X native build candidate\n\n'
             'These unsigned binaries have not been certified for DAW or device use.\n'
             'Installation and unsigned-build instructions are in INSTALL.md.\n'
+            'Upgrade instructions are in MIGRATION.md.\n'
             'Build identity and SDK revisions are in dependencies.json.\n'
             'Source: https://github.com/yasuyuki-baba/synth2/tree/'
             + metadata['product_commit'] + '\n'

@@ -29,6 +29,8 @@ See [INSTALL.md](INSTALL.md) for Linux/Windows/macOS product locations, unsigned
 prompts and plugin rescanning. Source archives require building; native candidate
 packages are available from successful Actions runs.
 
+If you already use Synth2, see the [migration guide](MIGRATION.md).
+
 ## Build and test
 
 Build the portable synthesis core, tools and tests with CMake 3.25+, Ninja, a
