@@ -25,8 +25,8 @@ bundled, privileged or automatically added.
 Library work has a visible activity label and an indeterminate animated bar next
 to the filters. The first scan shows Loading library and explains that files and
 automatic tags are being prepared, rather than reporting zero matching sounds.
-Refresh keeps the existing catalog visible and usable while showing Updating
-library; its known sound count remains in the header. Adding sounds and saving
+Refresh keeps the existing catalog visible and available for audition while showing
+Updating library. Its known sound count remains in the header. Adding sounds and saving
 have their own activity labels. Activity follows the actual background job,
 independently of search/filter messages, and ends when that job is consumed.
 It does not claim a completion percentage or introduce a minimum wait.
@@ -270,8 +270,10 @@ selection, first visible row, view and edit baseline in wrapper state v2. Wrappe
 v1 remains readable and retains the processor's patch name. The existing processor
 state independently embeds the sounding source and edits. Recall never reloads a
 selected library file, so moved/deleted/replaced files cannot overwrite the saved
-sound. Sub-row scroll fractions are not saved. A scan completes before the restored result offset is clamped. A project
-restore also supersedes pending jobs' browser/baseline updates.
+sound. Sub-row scroll fractions are not saved. Project recall applies the restored
+filters to the current catalog. If the initial scan is still pending, its result
+sets the bounds for the restored scroll offset. Project recall also supersedes
+pending jobs' browser and baseline updates.
 
 Standalone APP stores the same complete session on normal teardown and restores
 it on startup. Library root configuration is a shared per-user setting; browser
