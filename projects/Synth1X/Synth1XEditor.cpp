@@ -297,7 +297,6 @@ void Synth1X::layoutEditor(IGraphics* graphics)
         showAutomaticTagMenu(caller);
     },"Auto tags...",style.WithColor(kFG,appearance.background).WithColor(kFR,appearance.background)
         .WithLabelText(text.WithSize(Typography::auxiliary).WithFGColor(appearance.muted))),4016);
-    if(!catalogLoaded)reloadCatalog();
     refreshPalette(*graphics,editorPalette);
     showPage(page);
     refreshBrowser();
@@ -463,7 +462,7 @@ void Synth1X::OnIdle()
                 libraryFilter={};libraryFilter.registeredOnly=true;libraryFilter.registeredIds=std::move(result.imported.ids);resultOffset=0;
                 browserStatus=std::to_string(result.imported.imported)+" files registered, "+std::to_string(result.imported.skipped)+" skipped, "+std::to_string(result.imported.errors.size())+" errors";
                 if(!result.imported.errors.empty())browserStatus+=" / "+result.imported.errors.front();
-            }else browserStatus=result.error;
+            }else if(result.importing || result.saving || !result.error.empty())browserStatus=result.error;
             refreshBrowser();
         }
         catch (const std::exception &e)
@@ -481,7 +480,6 @@ void Synth1X::OnIdle()
     if (stateRestored.exchange(false))
     {
         showPage(page);
-        reloadCatalog();
         refreshBrowser();
     }
     if (modified != lastModified)

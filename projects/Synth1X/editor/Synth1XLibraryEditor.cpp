@@ -367,7 +367,10 @@ void Synth1X::stepPatch(int direction)
 
 void Synth1X::loadLibraryPatch(std::size_t index)
 {
-    if (index >= catalog.patches().size() || libraryJob.valid())
+    // A scan builds a separate catalog. Audition can use the current snapshot
+    // while the worker checks the filesystem.
+    if (index >= catalog.patches().size() ||
+        (libraryJob.valid() && libraryOperation != synth1x::editor::LibraryOperation::scan))
         return;
     const auto &item = catalog.patches()[index];
     std::string error;
@@ -407,7 +410,7 @@ void Synth1X::reloadCatalog(bool queueIfBusy)
                                 return job;
                             });
     libraryOperation=synth1x::editor::LibraryOperation::scan;
-    browserStatus = "Scanning library...";
+    browserStatus.clear();
     refreshBrowser();
 }
 void Synth1X::importBank(const std::string &path)
