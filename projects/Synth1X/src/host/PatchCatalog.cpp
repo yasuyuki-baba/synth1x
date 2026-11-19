@@ -167,6 +167,7 @@ bool PatchCatalog::reload(std::string& error) {
     try {
         std::vector<CatalogPatch> next;
         std::size_t total=0;
+        TagCacheStats stats;
         if(!directory.empty() && fs::is_directory(fs::symlink_status(directory/"banks"))) {
             std::vector<fs::path> banks;
             for(const auto& bank:fs::directory_iterator(directory/"banks"))
@@ -191,7 +192,7 @@ bool PatchCatalog::reload(std::string& error) {
             }
         }
         if(!directory.empty()) {
-            PresetFiles files(directory);if(!files.scan(error,false))return false;
+            PresetFiles files(directory);if(!files.scan(error,false,&stats.reusedArchives))return false;
             for(const auto& item:files.entries()) {
                 if(next.size()>=maximumCatalogPatches || item.text.size()>maximumCatalogBytes-total)throw std::runtime_error("The library exceeds its size limit.");
                 total+=item.text.size();auto relative=item.file.lexically_relative(files.directory());
@@ -251,7 +252,7 @@ bool PatchCatalog::reload(std::string& error) {
         };
         const auto overrideFiles=discoverMetadata("tags",".tags");
         const auto favoriteFiles=discoverMetadata("favorites",".fav");
-        ProcessorBridge scratch;TagCacheStats stats;
+        ProcessorBridge scratch;
         std::ostringstream updated;updated<<cacheHeader;
         for(auto& patch:next) {
             patch.favorite=favoriteFiles.contains(metadataPathKey(favorites(directory,patch.id)));

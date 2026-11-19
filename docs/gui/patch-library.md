@@ -172,6 +172,12 @@ Only added or changed sounds are loaded and classified using an isolated bridge
 on the library worker. Removed sounds disappear from the cache. No audio is
 rendered and the sounding processor is not loaded.
 
+The disposable `.archives.cache` holds catalog entries for ZIP, RAR and 7z
+banks. A scan reads each archive's compressed bytes and compares their BLAKE2s
+digest with the cache. A match reuses the entries without decoding the archive.
+Changed banks and missing or damaged cache entries are decoded from the source.
+The cache is published atomically, pruned on scan, and bounded to 128 MiB.
+
 The disposable `.tags.cache` in the library root compares exact source bytes,
 including archive-entry contents, so same-size/same-timestamp edits are detected. The
 cache has an explicit inference/loading revision; rule or loading changes must
