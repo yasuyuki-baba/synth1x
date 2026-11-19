@@ -256,18 +256,32 @@ bool PatchLibrary::openFile(const std::string& path, std::string& error)
     try
     {
         const auto file = std::filesystem::path(std::u8string(path.begin(), path.end()));
+        auto data = readSource(file, error);
+        return !data.empty() && openSource(file, std::move(data), error);
+    }
+    catch(const std::exception& e)
+    {
+        error = e.what();
+        return false;
+    }
+}
+
+std::string PatchLibrary::readSource(const std::filesystem::path& file, std::string& error)
+{
+    try
+    {
         const auto kind = libraryFileKind(file);
         if(kind == LibraryFileKind::unsupported)
         {
             error = "Choose a .sy1 patch, ZIP, RAR or 7z bank.";
-            return false;
+            return {};
         }
         const auto size = std::filesystem::file_size(file);
         const auto limit = kind == LibraryFileKind::patch ? maximumPatchBytes : maximumBankBytes;
         if(size == 0 || size > limit)
         {
             error = "The selected file is empty or exceeds the bank size limit.";
-            return false;
+            return {};
         }
         std::ifstream input(file, std::ios::binary);
         std::string data(static_cast<std::size_t>(size), '\0');
@@ -275,6 +289,30 @@ bool PatchLibrary::openFile(const std::string& path, std::string& error)
            input.peek() != std::char_traits<char>::eof())
         {
             error = "The selected file could not be read completely.";
+            return {};
+        }
+        return data;
+    }
+    catch(const std::exception& e)
+    {
+        error = e.what();
+        return {};
+    }
+}
+
+bool PatchLibrary::openSource(const std::filesystem::path& file, std::string data, std::string& error)
+{
+    try
+    {
+        const auto kind = libraryFileKind(file);
+        if(kind == LibraryFileKind::unsupported)
+        {
+            error = "Choose a .sy1 patch, ZIP, RAR or 7z bank.";
+            return false;
+        }
+        if(data.empty() || data.size() > (kind == LibraryFileKind::patch ? maximumPatchBytes : maximumBankBytes))
+        {
+            error = "The selected file is empty or exceeds the bank size limit.";
             return false;
         }
 #ifndef _WIN32
@@ -296,7 +334,7 @@ bool PatchLibrary::openFile(const std::string& path, std::string& error)
         {
             const auto filename = file.filename().u8string();
             const std::string name(filename.begin(), filename.end());
-            if(!bank.accountPatch(size, error)) return false;
+            if(!bank.accountPatch(data.size(), error)) return false;
             bank.append(name, std::move(data), false);
         }
         else if(kind == LibraryFileKind::zip)

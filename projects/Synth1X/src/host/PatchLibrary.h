@@ -1,6 +1,7 @@
 #pragma once
 #include "patch/PatchMetadata.h"
 #include <cstddef>
+#include <filesystem>
 #include <string>
 #include <vector>
 
@@ -27,6 +28,9 @@ public:
     static constexpr std::size_t maximumPatches = 65536;
 
     bool openFile(const std::string& utf8Path, std::string& error);
+    // The catalog fingerprints the same bytes that it passes to the decoder.
+    static std::string readSource(const std::filesystem::path& file, std::string& error);
+    bool openSource(const std::filesystem::path& file, std::string data, std::string& error);
     const std::vector<LibraryPatch>& patches() const noexcept { return entries; }
 
 private:

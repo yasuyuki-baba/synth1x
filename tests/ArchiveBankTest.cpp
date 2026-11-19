@@ -132,6 +132,7 @@ TEST(ArchiveBank, DirectoryAndArchiveRegistrationPreserveStorageHierarchyAndReca
         const auto previous = catalog.patches();
         fs::remove_all(source.path);
         ASSERT_TRUE(catalog.reload(error)) << error;
+        EXPECT_EQ(catalog.tagCacheStats().reusedArchives, archived ? 1u : 0u);
         ASSERT_EQ(catalog.patches().size(), previous.size());
         for(std::size_t i = 0; i < previous.size(); ++i)
         {
@@ -140,6 +141,54 @@ TEST(ArchiveBank, DirectoryAndArchiveRegistrationPreserveStorageHierarchyAndReca
             EXPECT_EQ(catalog.patches()[i].patch.text, previous[i].patch.text);
         }
     }
+}
+
+TEST(ArchiveBank, CatalogInvalidatesChangedArchivesAndRecoversFromDamagedCache)
+{
+    testfiles::Directory directory;
+    const auto archive = directory.path / "Bank.zip";
+    const auto cache = directory.path / ".archives.cache";
+    const std::string original = "A\nver=113\n", changed = "B\nver=113\n";
+    ASSERT_TRUE(testfiles::zip(archive, {{"1.sy1", original}}));
+    PatchCatalog first(directory.path);
+    std::string error;
+    ASSERT_TRUE(first.reload(error)) << error;
+    ASSERT_TRUE(fs::is_regular_file(cache));
+    EXPECT_EQ(first.tagCacheStats().reusedArchives, 0u);
+
+    PatchCatalog reopened(directory.path);
+    ASSERT_TRUE(reopened.reload(error)) << error;
+    ASSERT_EQ(reopened.patches().size(), 1u);
+    EXPECT_EQ(reopened.tagCacheStats().reusedArchives, 1u);
+    EXPECT_EQ(reopened.patches().front().patch.text, original);
+
+    const auto stamp = fs::last_write_time(archive);
+    const auto size = fs::file_size(archive);
+    ASSERT_TRUE(testfiles::zip(archive, {{"1.sy1", changed}}));
+    ASSERT_EQ(fs::file_size(archive), size);
+    fs::last_write_time(archive, stamp);
+    ASSERT_TRUE(reopened.reload(error)) << error;
+    ASSERT_EQ(reopened.patches().size(), 1u);
+    EXPECT_EQ(reopened.tagCacheStats().reusedArchives, 0u);
+    EXPECT_EQ(reopened.patches().front().patch.text, changed);
+
+    auto corrupted = bytes(cache);
+    ASSERT_FALSE(corrupted.empty());
+    corrupted.back() ^= 1;
+    std::ofstream(cache, std::ios::binary).write(corrupted.data(), corrupted.size());
+    ASSERT_TRUE(reopened.reload(error)) << error;
+    ASSERT_EQ(reopened.patches().size(), 1u);
+    EXPECT_EQ(reopened.tagCacheStats().reusedArchives, 0u);
+    EXPECT_EQ(reopened.patches().front().patch.text, changed);
+    ASSERT_TRUE(reopened.reload(error)) << error;
+    EXPECT_EQ(reopened.tagCacheStats().reusedArchives, 1u);
+
+    fs::remove(archive);
+    ASSERT_TRUE(reopened.reload(error)) << error;
+    EXPECT_TRUE(reopened.patches().empty());
+    ASSERT_TRUE(testfiles::zip(archive, {{"1.sy1", changed}}));
+    ASSERT_TRUE(reopened.reload(error)) << error;
+    EXPECT_EQ(reopened.tagCacheStats().reusedArchives, 0u);
 }
 
 TEST(RarBank, FailedReadsKeepPreviousSnapshotAndInvalidSourcesStayVisible)

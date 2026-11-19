@@ -49,6 +49,7 @@ class MigrationScripts(unittest.TestCase):
                 source / 'Library' / 'Warm Pad.sy1': b'patch',
                 source / 'Library' / 'tags' / 'Preset.tags': b'manual tags',
                 source / 'Library' / '.synth2-tags.cache': b'cache',
+                source / 'Library' / '.archives.cache': b'archive cache',
                 source / 'preset-directory': b'custom library',
                 source / 'standalone.state': b'patch state',
                 config / 'Synth2' / 'settings.ini': b'audio and MIDI settings',
@@ -81,6 +82,7 @@ class MigrationScripts(unittest.TestCase):
                 self.assertEqual((config / 'Synth1X' / 'settings.ini').read_bytes(),
                                  b'audio and MIDI settings')
                 self.assertFalse((destination / 'Library' / '.synth2-tags.cache').exists())
+                self.assertFalse((destination / 'Library' / '.archives.cache').exists())
                 self.assertFalse((destination / 'preset-directory').exists())
                 for path, contents in files.items():
                     self.assertEqual(path.read_bytes(), contents)

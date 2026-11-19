@@ -60,7 +60,7 @@ copy_item() {
         fi
         for child in "$source"/*; do
             case "${child##*/}" in
-                .synth2-tags.cache|.tags.cache|.synth2-write-*|.patch-write-*) continue ;;
+                .synth2-tags.cache|.tags.cache|.archives.cache|.synth2-write-*|.patch-write-*) continue ;;
             esac
             if [[ "$child" == "$data_home/Synth2/preset-directory" ]]; then
                 printf 'Custom library: copy the folder and select its copy in Synth1X (see MIGRATION.md).\n'

@@ -29,7 +29,7 @@ struct CatalogFilter {
     std::vector<std::string> registeredIds;
     std::vector<std::string> selectedTags; // All selected tags must match.
 };
-struct TagCacheStats { std::size_t reused=0, rebuilt=0; };
+struct TagCacheStats { std::size_t reused=0, rebuilt=0, reusedArchives=0; };
 
 // UI-only persistent library. Filesystem work never enters ProcessorBridge or
 // the render callback. Callers supply the platform's user application-data path.

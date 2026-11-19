@@ -38,7 +38,8 @@ class PresetFiles
 {
   public:
     explicit PresetFiles(std::filesystem::path root);
-    bool scan(std::string &error, bool validateSources = true);
+    // A catalog scan supplies a counter to enable its disposable archive cache.
+    bool scan(std::string &error, bool validateSources = true, std::size_t* reusedArchives = nullptr);
     PresetImportResult import(const std::filesystem::path &source, const ResolveConflict &resolve);
     bool save(const std::filesystem::path &relative, const std::string &text, bool replace, std::string &id,
               std::string &error);

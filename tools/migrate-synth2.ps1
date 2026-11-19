@@ -37,7 +37,7 @@ function Copy-MigrationItem([string]$Source, [string]$Destination) {
         }
         foreach ($child in Get-ChildItem -LiteralPath $Source -Force) {
             if ($child.Name -like '.synth2-write-*' -or $child.Name -like '.patch-write-*' -or
-                $child.Name -in @('.synth2-tags.cache', '.tags.cache')) { continue }
+                $child.Name -in @('.synth2-tags.cache', '.tags.cache', '.archives.cache')) { continue }
             if ($Source -eq $dataFrom -and $child.Name -eq 'preset-directory') {
                 Write-Host 'Custom library: copy the folder and select its copy in Synth1X (see MIGRATION.md).'
                 continue
