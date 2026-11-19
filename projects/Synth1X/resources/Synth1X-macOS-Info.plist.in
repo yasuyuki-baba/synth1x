@@ -21,7 +21,7 @@
 	<key>CFBundleShortVersionString</key>
 	<string>@SYNTH1X_NUMERIC_VERSION@</string>
 	<key>CFBundleSignature</key>
-	<string>Syn2</string>
+	<string>Sy1X</string>
 	<key>CFBundleVersion</key>
 	<string>@SYNTH1X_NUMERIC_VERSION@</string>
 	<key>CSResourcesFileMapped</key>
