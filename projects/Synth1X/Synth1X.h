@@ -53,6 +53,7 @@ private:
     void refreshDelayTiming();
     void showOversamplingMenu(iplug::igraphics::IControl* caller);
     void requestEditorScale(float scale);
+    void reconcileEditorWindowSize();
     void refreshEditorScale();
     float editorScale=1.f;
     bool reconcileEditorScale=false;
