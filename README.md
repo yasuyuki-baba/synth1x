@@ -58,6 +58,15 @@ every run.
 
 Each dot is one patch at one pitch. The same logarithmic scale is used in all
 three panels, with smaller errors toward the left.
+
+### Waveform excerpts
+
+![Separate Synth1 DLL, Synth1X and difference waveforms for Rydeen melo A2 at C4 and Rydeen Strings 1 at C2.](docs/images/rydeen-waveforms.png)
+
+For each of the two highest-error patches, the figure shows the 20 ms window
+with the largest RMS difference in the left channel. The two source traces in
+each column share a vertical scale. The bottom row shows Synth1X minus Synth1 on
+a finer scale. The NRMSE labels use the full stereo renders.
 [Results and test conditions](docs/validation/reference-comparisons.md#rydeen-bank-comparison)
 
 ## Development
