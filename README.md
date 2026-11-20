@@ -54,19 +54,20 @@ signal had about **1/3,700** of the Synth1 reference's RMS amplitude, or
 **71 dB below** the reference RMS. The 99 compared patch controls matched in
 every run.
 
-![Stereo waveform error for 15 Rydeen patches, shown separately at C2, C4 and C6. The highest error is 0.027% for melo A2 at C4.](docs/images/rydeen-comparison.png)
+![Stereo waveform error for 15 Rydeen patches at C2, C4 and C6, plotted against the 0.5% comparison target.](docs/images/rydeen-comparison.png)
 
-Each dot is one patch at one pitch. The same logarithmic scale is used in all
-three panels, with smaller errors toward the left.
+Each dot is one patch at one pitch. The panels share a logarithmic scale, with
+smaller errors toward the left. The dashed line marks the project's
+[0.5% comparison target](docs/contracts/validation.md#precision-audio-acceptance).
 
 ### Waveform excerpts
 
 ![Separate Synth1 DLL, Synth1X and difference waveforms for Rydeen melo A2 at C4 and Rydeen Strings 1 at C2.](docs/images/rydeen-waveforms.png)
 
 For each of the two highest-error patches, the figure shows the 20 ms window
-with the largest RMS difference in the left channel. The two source traces in
-each column share a vertical scale. The bottom row shows Synth1X minus Synth1 on
-a finer scale. The NRMSE labels use the full stereo renders.
+with the largest RMS difference in the left channel. All three traces in each
+column share the same amplitude scale. The bottom row shows the difference
+between Synth1X and Synth1. The NRMSE labels use the full stereo renders.
 [Results and test conditions](docs/validation/reference-comparisons.md#rydeen-bank-comparison)
 
 ## Development
