@@ -97,6 +97,8 @@ private:
     void notifyHostOfPatch();
     bool selectComparison(int slot);
     bool copyComparison(int source);
+    enum class ComparisonAction { select, copy };
+    bool changeComparison(int slot, ComparisonAction action);
     void savePreset(bool saveAs);
     void showSaveMenu(iplug::igraphics::IControl*);
     void writePreset(const std::filesystem::path&, bool confirm, const std::string& title = {});
