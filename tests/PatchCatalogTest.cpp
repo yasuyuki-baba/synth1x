@@ -232,6 +232,38 @@ TEST(PatchCatalog, FailedRegistrationReloadKeepsThePreviousCatalogSnapshot) {
     ASSERT_EQ(catalog.patches().size(),1u);EXPECT_EQ(catalog.patches()[0].id,original);
 }
 
+TEST(PatchCatalog, WritesRefreshTheCatalogWithCachedArchivesAndKeepImportErrors) {
+    CatalogFiles files;
+    PatchCatalog catalog(files.dir/"Library");
+    const auto original = files.bank("Original.zip", {{"1.sy1", warm}});
+    const auto mixed = files.bank("Mixed.zip", {{"2.sy1", bass}, {"3.sy1", "Bad\nver=999\n0,0\n"}});
+    const auto keep = [](const auto&) { return ConflictChoice{}; };
+    PresetImportResult result;
+    ASSERT_TRUE(catalog.registerFiles(original.string(), keep, result));
+
+    EXPECT_FALSE(catalog.registerFiles(mixed.string(), keep, result));
+    EXPECT_TRUE(result.catalogReady);
+    EXPECT_EQ(result.imported, 1u);
+    EXPECT_EQ(catalog.tagCacheStats().reusedArchives, 1u);
+    ASSERT_EQ(result.errors.size(), 1u);
+    EXPECT_TRUE(result.errors.front().starts_with("Mixed.zip / 3.sy1: "));
+    ASSERT_EQ(result.ids.size(), 2u);
+    CatalogFilter filter;
+    filter.registeredOnly = true;
+    filter.registeredIds = result.ids;
+    const auto matches = catalog.search(filter);
+    ASSERT_EQ(matches.size(), 2u);
+    for (const auto index : matches)
+        EXPECT_EQ(catalog.patches()[index].file.filename(), "Mixed.zip");
+
+    std::string id, error;
+    ASSERT_TRUE(catalog.saveFile("Saved.sy1", warm, false, id, error)) << error;
+    EXPECT_EQ(catalog.tagCacheStats().reusedArchives, 2u);
+    ASSERT_EQ(catalog.patches().size(), 4u);
+    EXPECT_TRUE(std::any_of(catalog.patches().begin(), catalog.patches().end(),
+                            [&](const auto& entry) { return entry.id == id && entry.error.empty(); }));
+}
+
 TEST(PatchCatalog, RefreshDiscoversDroppedZipsInsideOrdinaryAndFormerStorageFolders) {
     CatalogFiles files;const auto root=files.dir/"Library";PatchCatalog catalog(root);std::string error;
     ASSERT_TRUE(catalog.reload(error));ProcessorBridge sounding;const auto before=sounding.saveState();

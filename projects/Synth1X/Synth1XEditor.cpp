@@ -414,68 +414,8 @@ void Synth1X::OnIdle()
     refreshDelayTiming();
     if(displayedOversampling!=processor.oversamplingFactor())refreshOversampling();
     updateKeyboardInput();
-    if (importPrompt && !conflictShown && GetUI())
-    {
-        std::unique_lock lock(importPrompt->mutex);
-        if (importPrompt->alive && importPrompt->pending && !importPrompt->answered)
-        {
-            conflictShown = true;
-            auto prompt = importPrompt;
-            auto filename = prompt->path.filename().u8string();
-            lock.unlock();
-            browserStatus = "File already exists: " + std::string(filename.begin(), filename.end());
-            conflictMenu = std::make_unique<IPopupMenu>("File already exists");
-            for (auto text : {"Replace", "Keep both", "Skip", "Replace all", "Keep both for all", "Skip all"})
-                conflictMenu->AddItem(text);
-            conflictMenu->SetFunction(
-                [this, prompt](IPopupMenu *menu)
-                {
-                    int i = menu->GetChosenItemIdx();
-                    {
-                        std::lock_guard lock(prompt->mutex);
-                        prompt->choice = {i < 0 ? synth1x::host::FileConflict::skip
-                                                : static_cast<synth1x::host::FileConflict>(i % 3),
-                                          i < 0 || i >= 3};
-                        prompt->answered = true;
-                        prompt->pending = false;
-                    }
-                    prompt->changed.notify_all();
-                    conflictShown = false;
-                });
-            if (auto *caller = GetUI()->GetControlWithTag(bankTag))
-                GetUI()->CreatePopupMenu(*caller, *conflictMenu, caller->GetRECT());
-            refreshBrowser();
-        }
-    }
-    if (libraryJob.valid() && libraryJob.wait_for(std::chrono::seconds(0)) == std::future_status::ready)
-    {
-        try
-        {
-            auto result=libraryJob.get();
-            if(result.error.empty() && (!result.importing || result.imported.catalogReady)){catalog=std::move(result.catalog);catalogLoaded=true;}
-            if(result.generation==browserGeneration.load() && result.saving && result.error.empty()) {
-                selectedPatchId=result.savedId;currentPatch=result.savedName;browser.baseline=result.savedBaseline;
-                libraryFilter={};resultOffset=0;browserStatus="Preset saved.";
-                const auto matches=catalog.search(libraryFilter);for(std::size_t n=0;n<matches.size();++n)if(catalog.patches()[matches[n]].id==selectedPatchId)resultOffset=synth1x::editor::editorLibraryReveal(matches.size(),visibleRows,resultOffset,n);
-                showPage(synth1x::editor::editorLibraryView);
-            } else if(result.generation==browserGeneration.load() && result.importing) {
-                libraryFilter={};libraryFilter.registeredOnly=true;libraryFilter.registeredIds=std::move(result.imported.ids);resultOffset=0;
-                browserStatus=std::to_string(result.imported.imported)+" files registered, "+std::to_string(result.imported.skipped)+" skipped, "+std::to_string(result.imported.errors.size())+" errors";
-                if(!result.imported.errors.empty())browserStatus+=" / "+result.imported.errors.front();
-            }else if(result.importing || result.saving || !result.error.empty())browserStatus=result.error;
-            refreshBrowser();
-        }
-        catch (const std::exception &e)
-        {
-            browserStatus = e.what();
-            refreshBrowser();
-        }
-    }
-    if(catalogReloadPending && !libraryJob.valid())
-    {
-        catalogReloadPending=false;
-        reloadCatalog();
-    }
+    showImportConflict();
+    pollLibraryJob();
     const bool modified = browser.modified(processor);
     if (stateRestored.exchange(false))
     {

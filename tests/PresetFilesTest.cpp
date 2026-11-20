@@ -1,4 +1,5 @@
 #include "host/PresetFiles.h"
+#include "host/PresetSession.h"
 #include "host/PatchCatalog.h"
 #include <algorithm>
 #include "support/BankFiles.h"

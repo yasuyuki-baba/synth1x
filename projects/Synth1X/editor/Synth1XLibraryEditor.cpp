@@ -394,6 +394,124 @@ void Synth1X::loadLibraryPatch(std::size_t index)
     notifyHostOfPatch();
     refreshBrowser();
 }
+void Synth1X::showImportConflict()
+{
+    if (importPrompt && !conflictShown && GetUI())
+    {
+        std::unique_lock lock(importPrompt->mutex);
+        if (importPrompt->alive && importPrompt->pending && !importPrompt->answered)
+        {
+            conflictShown = true;
+            auto prompt = importPrompt;
+            auto filename = prompt->path.filename().u8string();
+            lock.unlock();
+            browserStatus = "File already exists: " + std::string(filename.begin(), filename.end());
+            conflictMenu = std::make_unique<IPopupMenu>("File already exists");
+            for (auto text : {"Replace", "Keep both", "Skip", "Replace all", "Keep both for all", "Skip all"})
+                conflictMenu->AddItem(text);
+            conflictMenu->SetFunction(
+                [this, prompt](IPopupMenu *menu)
+                {
+                    int i = menu->GetChosenItemIdx();
+                    {
+                        std::lock_guard lock(prompt->mutex);
+                        prompt->choice = {i < 0 ? synth1x::host::FileConflict::skip
+                                                : static_cast<synth1x::host::FileConflict>(i % 3),
+                                          i < 0 || i >= 3};
+                        prompt->answered = true;
+                        prompt->pending = false;
+                    }
+                    prompt->changed.notify_all();
+                    conflictShown = false;
+                });
+            if (auto *caller = GetUI()->GetControlWithTag(bankTag))
+                GetUI()->CreatePopupMenu(*caller, *conflictMenu, caller->GetRECT());
+            refreshBrowser();
+        }
+    }
+}
+
+void Synth1X::pollLibraryJob()
+{
+    if (libraryJob.valid() && libraryJob.wait_for(std::chrono::seconds(0)) == std::future_status::ready)
+    {
+        try
+        {
+            applyLibraryJob(libraryJob.get());
+        }
+        catch (const std::exception &e)
+        {
+            browserStatus = e.what();
+        }
+        refreshBrowser();
+    }
+    if (catalogReloadPending && !libraryJob.valid())
+    {
+        catalogReloadPending = false;
+        reloadCatalog();
+    }
+}
+
+void Synth1X::applyLibraryJob(LibraryJob result)
+{
+    using synth1x::editor::LibraryOperation;
+    const auto operation = libraryOperation;
+    const bool current = result.generation == browserGeneration.load();
+    const bool succeeded = result.error.empty() &&
+        (operation != LibraryOperation::addSounds || result.imported.catalogReady);
+    if (succeeded)
+    {
+        catalog = std::move(result.catalog);
+        catalogLoaded = true;
+    }
+    switch (operation)
+    {
+        case LibraryOperation::scan:
+            if (!succeeded)
+                browserStatus = result.error;
+            break;
+        case LibraryOperation::addSounds:
+            if (current)
+            {
+                libraryFilter = {};
+                libraryFilter.registeredOnly = true;
+                libraryFilter.registeredIds = std::move(result.imported.ids);
+                resultOffset = 0;
+                browserStatus = std::to_string(result.imported.imported) + " files registered, " +
+                    std::to_string(result.imported.skipped) + " skipped, " +
+                    std::to_string(result.imported.errors.size()) + " errors";
+                if (!result.imported.errors.empty())
+                    browserStatus += " / " + result.imported.errors.front();
+            }
+            else
+                browserStatus = result.error;
+            break;
+        case LibraryOperation::saveSound:
+            if (!current || !succeeded)
+            {
+                browserStatus = result.error;
+                break;
+            }
+            selectedPatchId = result.savedId;
+            currentPatch = result.savedName;
+            browser.baseline = result.savedBaseline;
+            libraryFilter = {};
+            resultOffset = 0;
+            browserStatus = "Preset saved.";
+            {
+                const auto matches = catalog.search(libraryFilter);
+                for (std::size_t i = 0; i < matches.size(); ++i)
+                    if (catalog.patches()[matches[i]].id == selectedPatchId)
+                    {
+                        resultOffset = synth1x::editor::editorLibraryReveal(matches.size(), visibleRows, resultOffset, i);
+                        break;
+                    }
+            }
+            showPage(synth1x::editor::editorLibraryView);
+            break;
+    }
+}
+
 void Synth1X::reloadCatalog(bool queueIfBusy)
 {
     if (libraryJob.valid())
@@ -430,7 +548,6 @@ void Synth1X::importBank(const std::string &path)
         [root, path, prompt, generation]
         {
             LibraryJob job{synth1x::host::PatchCatalog(root)};
-            job.importing = true;
             job.generation = generation;
             job.catalog.registerFiles(
                 path,
@@ -628,7 +745,6 @@ void Synth1X::writePreset(const std::filesystem::path &destination, bool confirm
                                     [root, relative, text, name, snapshot, generation]
                                     {
                                         LibraryJob job{synth1x::host::PatchCatalog(root)};
-                                        job.saving = true;
                                         job.generation = generation;
                                         job.savedName = name;
                                         job.savedBaseline = snapshot.baseline;

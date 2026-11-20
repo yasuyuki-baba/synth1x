@@ -2,6 +2,7 @@
 #include "host/PatchLibrary.h"
 #include "host/PatchTagInference.h"
 #include "host/PresetFiles.h"
+#include "host/ProcessorBridge.h"
 #include "patch/PatchFormat.h"
 #include <filesystem>
 #include <iostream>

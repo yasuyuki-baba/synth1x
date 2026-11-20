@@ -1,5 +1,5 @@
 #include "SmokeHost.h"
-#include "host/PresetFiles.h"
+#include "host/PresetSession.h"
 #include "host/PatchComparison.h"
 #include "host/ProcessorBridge.h"
 #include "patch/PatchFormat.h"

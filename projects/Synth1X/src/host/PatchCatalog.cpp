@@ -288,15 +288,28 @@ bool PatchCatalog::reload(std::string& error) {
 
 bool PatchCatalog::registerFiles(const std::string& path,const ResolveConflict& resolve,PresetImportResult& result) {
     try {
-        requireRoot(directory);PresetFiles files(directory);result=files.import(fs::path(std::u8string(path.begin(),path.end())),resolve);
-        std::string error;result.catalogReady=reload(error);if(!result.catalogReady)result.errors.push_back(error);
+        requireRoot(directory);
+        result = {};
+        PresetFiles files(directory);
+        const auto registered = files.copySources(fs::path(std::u8string(path.begin(), path.end())), resolve, result);
+        std::string error;
+        result.catalogReady = reload(error);
+        if (!result.catalogReady) {
+            result.errors.push_back(error);
+            return false;
+        }
+        for (const auto& entry : entries) {
+            if (!registered.contains(entry.file)) continue;
+            result.ids.push_back(entry.id);
+            if (!entry.error.empty()) result.errors.push_back(entry.location + ": " + entry.error);
+        }
         return result.errors.empty();
     }catch(const std::exception& e){result={};result.errors.push_back(e.what());return false;}
 }
 
 bool PatchCatalog::saveFile(const fs::path& relative,const std::string& text,bool replace,std::string& id,std::string& error) {
     try {
-        requireRoot(directory);PresetFiles files(directory);if(!files.save(relative,text,replace,id,error))return false;
+        requireRoot(directory);PresetFiles files(directory);if(!files.writePreset(relative,text,replace,id,error))return false;
         return reload(error);
     }catch(const std::exception& e){error=e.what();return false;}
 }

@@ -40,7 +40,8 @@ set(synth1x_core_sources
     projects/Synth1X/src/render/RenderPolicy.cpp projects/Synth1X/src/patch/PatchLoader.cpp projects/Synth1X/src/patch/PatchMapper.cpp projects/Synth1X/src/patch/Synth1PatchMapper.cpp
     projects/Synth1X/src/patch/PatchFormat.cpp
     projects/Synth1X/src/host/ProcessorBridge.cpp projects/Synth1X/src/host/ProcessorState.cpp projects/Synth1X/src/host/PatchLibrary.cpp
-    projects/Synth1X/src/host/EditorPaletteStore.cpp projects/Synth1X/src/host/PatchComparison.cpp projects/Synth1X/src/host/PatchTagInference.cpp projects/Synth1X/src/host/PatchCatalog.cpp projects/Synth1X/src/host/PresetFiles.cpp)
+    projects/Synth1X/src/host/EditorPaletteStore.cpp projects/Synth1X/src/host/PatchComparison.cpp projects/Synth1X/src/host/PatchTagInference.cpp projects/Synth1X/src/host/PatchCatalog.cpp projects/Synth1X/src/host/PresetFiles.cpp
+    projects/Synth1X/src/host/PresetSession.cpp)
 function(synth1x_add_core target)
     add_library(${target} STATIC ${ARGN} ${synth1x_core_sources})
     target_include_directories(${target} PUBLIC projects/Synth1X/src projects/Synth1X/src/host)

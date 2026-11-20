@@ -76,6 +76,8 @@ private:
     void showImportMenu(iplug::igraphics::IControl* caller);
     void importBank(const std::string& path);
     void reloadCatalog(bool queueIfBusy = false);
+    void showImportConflict();
+    void pollLibraryJob();
     void stepBank(int direction);
     void selectBank(const std::string& id);
     void toggleTagFilter(const std::string& tag);
@@ -114,11 +116,11 @@ private:
         synth1x::host::PatchCatalog catalog;
         synth1x::host::PresetImportResult imported;
         std::string error;
-        bool importing = false, saving = false;
         uint64_t generation = 0;
         std::string savedId, savedName;
         std::array<double,synth1x::host::ProcessorBridge::parameterCount> savedBaseline{};
     };
+    void applyLibraryJob(LibraryJob result);
     std::future<LibraryJob> libraryJob;
     synth1x::editor::LibraryOperation libraryOperation=synth1x::editor::LibraryOperation::scan;
     std::shared_ptr<ImportPrompt> importPrompt;
