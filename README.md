@@ -49,8 +49,10 @@ See the [migration guide](MIGRATION.md) before upgrading.
 
 All 15 patches in the official Rydeen bank were rendered with Synth1 and
 Synth1X at C2, C4 and C6. Across the 45 comparisons, the largest normalized
-stereo waveform error (NRMSE) was **0.027%**. The 99 compared patch controls
-matched in every run.
+stereo waveform error (NRMSE) was **0.027%**. Even in that case, the difference
+signal had about **1/3,700** of the Synth1 reference's RMS amplitude, or
+**71 dB below** the reference RMS. The 99 compared patch controls matched in
+every run.
 
 ![Stereo waveform error for 15 Rydeen patches, shown separately at C2, C4 and C6. The highest error is 0.027% for melo A2 at C4.](docs/images/rydeen-comparison.png)
 
