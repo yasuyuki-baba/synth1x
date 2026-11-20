@@ -387,7 +387,7 @@ TEST(AmplitudeInputs, GainHorizonRetainsProgressAndCanBeInterruptedByANewTarget)
     const auto render=[](int block)
     {
         synth1x::dsp::AmplitudeEnvelope state(true);
-        state.setParameters(0,0,2048,64);state.setGainScale(.35f);state.noteOn();
+        state.setParameters(0,0,2048,64);state.setGainFactors(1.0f,.35f);state.noteOn();
         std::vector<float> gains(512);
         const std::array<int,5> edges{{0,113,197,259,512}};
         for(size_t section=0;section+1<edges.size();++section)
@@ -450,7 +450,7 @@ TEST(ModulationBehavior, ArpGainRampsSurviveHostFragmentsWithoutAmplitudeModulat
 TEST(AmplitudeInputs, RepeatedGainSpansStopAtTheDeclaredEventBoundary)
 {
     synth1x::dsp::AmplitudeEnvelope actual(true);
-    actual.setParameters(0,0,2048,10000);actual.setGainScale(.4f);actual.noteOn();
+    actual.setParameters(0,0,2048,10000);actual.setGainFactors(1.0f,.4f);actual.noteOn();
     alignas(16) std::array<float,64> warm{};actual.render(warm.data(),64);actual.noteOff();
     auto expected=actual;
     alignas(16) std::array<float,100> got{},want{};

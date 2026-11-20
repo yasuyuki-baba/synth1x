@@ -1,3 +1,4 @@
+#include "support/MidiMessages.h"
 #include "support/PooledTestVoice.h"
 #include <gtest/gtest.h>
 #include "../tools/host_scenarios.h"
@@ -221,7 +222,7 @@ TEST(PerformanceBehavior, BendUsesOneReceiverWithChannelIsolationAndNativeOmniIn
         engine.prepareToPlay(44100,64);
         synth1x::audio::AudioBuffer<float> output(2,64);
         synth1x::audio::MidiBuffer midi;
-        midi.addEvent(synth1x::audio::MidiMessage::pitchWheel(2,16383),0);
+        midi.addEvent(synth1x::test::pitchWheel(2,16383),0);
         engine.render(output,midi,0,64);
         const int channel=omni ? 1 : 2;
         EXPECT_EQ(engine.pitchBendWords(channel),(std::array<int,4>{2,63,1,4}));
@@ -256,7 +257,7 @@ TEST(PerformanceBehavior, OrdinaryBendAdvancesWithoutAnLfoProvider)
     auto* voice=new synth1x::test::PooledTestVoice(controls);voice->prepare(44100);dispatcher.addVoice(voice);
     synth1x::audio::AudioBuffer<float> audio(2,64);audio.clear();
     synth1x::audio::MidiBuffer midi;
-    midi.addEvent(synth1x::audio::MidiMessage::pitchWheel(2,16383),0);
+    midi.addEvent(synth1x::test::pitchWheel(2,16383),0);
     midi.addEvent(synth1x::audio::MidiMessage::noteOn(2,69,1.f),0);
     dispatcher.renderRegion(audio,midi,0,64);
     EXPECT_NEAR(voice->getCurrentFrequency(),440*std::pow(2.,4./128),.001);

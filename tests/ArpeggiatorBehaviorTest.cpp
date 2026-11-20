@@ -1,3 +1,4 @@
+#include "support/MidiMessages.h"
 #include "render/SharedModulationConfiguration.h"
 #include <gtest/gtest.h>
 #include "midi/Arpeggiator.h"
@@ -63,7 +64,7 @@ TEST(Arpeggiator, TimingIsIndependentOfBlocksAndInputSubregionOffsets)
 {
     auto midi = held ({60, 64, 67}, 113);
     midi.addEvent (synth1x::audio::MidiMessage::noteOff (1, 64), 997);
-    midi.addEvent (synth1x::audio::MidiMessage::pitchWheel (1, 12288), 512);
+    midi.addEvent (synth1x::test::pitchWheel (1, 12288), 512);
     midi.addEvent (synth1x::audio::MidiMessage::allNotesOff (1), 90001);
     auto p = defaults(); p.beat = 13;
     const auto expected = render (p, midi, 64, 100000, 44100, 137);
@@ -82,7 +83,7 @@ TEST(Arpeggiator, SameSampleChordIsSortedBeforeTheFirstGeneratedNote)
 TEST(Arpeggiator, DisabledProcessingPreservesMidiAndTracksHeldKeysForEnabling)
 {
     auto p = defaults(); p.enabled = false;
-    auto midi = held(); midi.addEvent (synth1x::audio::MidiMessage::pitchWheel(1, 9000), 20);
+    auto midi = held(); midi.addEvent (synth1x::test::pitchWheel(1, 9000), 20);
     Events expected;
     for (auto event : midi) capture (expected, event.getMessage(), event.samplePosition);
     EXPECT_EQ(render(p, midi, 64, 500), expected);

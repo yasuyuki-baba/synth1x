@@ -20,7 +20,6 @@ public:
     static MidiMessage controllerEvent(int c,int id,int value){return {0xb0+c-1,id,value};}
     static MidiMessage allSoundOff(int c){return controllerEvent(c,120,0);}
     static MidiMessage allNotesOff(int c){return controllerEvent(c,123,0);}
-    static MidiMessage pitchWheel(int c,int value){return {0xe0+c-1,value&127,(value>>7)&127};}
     static float getMidiNoteInHertz(int note,float reference=440.f){return reference*std::pow(2.f,(note-69)*(1.f/12.f));}
     int getChannel()const{return (bytes[0]&15)+1;}
     int getNoteNumber()const{return bytes[1];}

@@ -113,14 +113,25 @@ TEST(PwmPrecision, CommonReadPreservesIntegralOffsetsAndWrapsWithoutAdvancingPha
     oscillator.setSampleRate(44100);oscillator.updatePhaseIncrement(220);
     oscillator.setPhaseFixed27(0x07ff8000u);
     const auto phase=oscillator.getPhaseFixed27();
+    const auto [saw, size] = bank.getNativeTableFor(5, 220.f);
+    ASSERT_NE(saw, nullptr);
+    ASSERT_EQ(size, 2048u);
+    const auto readSaw = [&](uint32_t position) {
+        const auto index = (position >> 16) % size;
+        const float fraction = static_cast<float>(position & 0xffffu) / 65536.f;
+        return saw[index] + fraction * (saw[(index + 1) % size] - saw[index]);
+    };
+    const auto pulseAtOffset = [&](uint32_t offset) {
+        return .5f * (readSaw(phase) - readSaw(phase + (offset << 16)));
+    };
     for(float bins:{10.f,10.25f,516.f,516.25f,2037.f})
     {
         const auto sample=[](uint32_t offset){return static_cast<float>(offset*offset);};
         const auto low=static_cast<uint32_t>(bins);
         const float expected=static_cast<float>(sample(low))+(sample(low+1)-sample(low))*static_cast<float>(bins-low);
         EXPECT_EQ(synth1x::dsp::PulseWidthRead::interpolate(bins,sample),expected);
-        const float a=oscillator.renderPhaseDiffSawNoAdvance(low<<16,&bank,0,5);
-        const float b=oscillator.renderPhaseDiffSawNoAdvance((low+1)<<16,&bank,0,5);
+        const float a=pulseAtOffset(low);
+        const float b=pulseAtOffset(low+1);
         EXPECT_EQ(oscillator.renderSample(1,.5f,0,&bank,bins),a+(b-a)*static_cast<float>(bins-low));
         EXPECT_EQ(oscillator.getPhaseFixed27(),phase);
     }

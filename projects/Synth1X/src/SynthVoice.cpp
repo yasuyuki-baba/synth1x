@@ -7,10 +7,11 @@
 #include "render/VoiceTuningConfiguration.h"
 #include "render/VoiceLifecycleConfiguration.h"
 #include "dsp/AmplitudeBlockRenderer.h"
+#include "dsp/FractionalDial.h"
+#include "dsp/FrequencyModulation.h"
 #include "dsp/OscillatorTuning.h"
 #include <cmath>
 #include <cstring>
-#include "dsp/DspUtils.h"
 
 namespace synth1x
 {

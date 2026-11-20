@@ -1,5 +1,7 @@
 #include <gtest/gtest.h>
 #include "dsp/FmPhaseCorrection.h"
+#include "dsp/FractionalDial.h"
+#include "dsp/FrequencyModulation.h"
 #include "dsp/NoiseGenerator.h"
 #include "render/VoiceAudioConfiguration.h"
 #include <array>
@@ -221,19 +223,23 @@ TEST(FmPhaseCorrection, NativeRingDispatchBypassesFmCorrection)
 
 TEST(FmPhaseCorrection, StaticMappingPreservesKnotsAndFractionalEdits)
 {
+    const auto depthForNormalizedDial=[](float value) -> float {
+        return synth1x::dsp::FrequencyModulation::depth(
+            static_cast<float>(synth1x::dsp::fractionalDial(value)),0.0f);
+    };
     const auto knot=[](int dial) {
         const float normalized=static_cast<float>(dial)*(1.f/127.f);
         return static_cast<int32_t>((std::exp(std::log(1000.)*normalized)-1.)/999.*67108864.);
     };
     for(int dial=0;dial<=127;++dial)
     {
-        EXPECT_DOUBLE_EQ(synth1x::float01ToFmTarget(dial/127.f),static_cast<float>(knot(dial)));
-        EXPECT_DOUBLE_EQ(synth1x::float01ToFmTarget(dial*(1.f/127.f)),static_cast<float>(knot(dial)));
+        EXPECT_DOUBLE_EQ(depthForNormalizedDial(dial/127.f),static_cast<float>(knot(dial)));
+        EXPECT_DOUBLE_EQ(depthForNormalizedDial(dial*(1.f/127.f)),static_cast<float>(knot(dial)));
     }
-    double previous=synth1x::float01ToFmTarget(64.f/127.f);
+    double previous=depthForNormalizedDial(64.f/127.f);
     for(float dial:{64.1f,64.25f,64.49f,64.51f,64.75f})
     {
-        const double value=synth1x::float01ToFmTarget(dial/127.f);
+        const double value=depthForNormalizedDial(dial/127.f);
         EXPECT_GT(value,previous);EXPECT_LT(value,knot(65));previous=value;
     }
 }

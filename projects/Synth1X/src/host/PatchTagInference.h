@@ -22,5 +22,4 @@ struct PatchTagSuggestion
 // Inputs are resolved host dials, never raw version-dependent source entries.
 // Heuristic suggestions describe names/settings, not measured audio semantics.
 std::vector<PatchTagSuggestion> explainPatchTags(std::string_view name,const std::array<float,129>& dials);
-std::vector<std::string> inferPatchTags(std::string_view name,const std::array<float,129>& dials);
 }

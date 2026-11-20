@@ -69,10 +69,6 @@ namespace synth1x::dsp
         float getCachedLevel() const noexcept { return lastLevel; }
         bool wasSilent() const noexcept { return silent; }
 
-        void setGainScale (float value) noexcept
-        {
-            setGainFactors(1.0f,value);
-        }
         // CVca applies the two native factors before normalizing its target.
         // Keep their product order while retaining Float32 signal precision.
         void setGainFactors(float first,float second) noexcept

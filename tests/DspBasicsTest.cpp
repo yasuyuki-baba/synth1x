@@ -1,3 +1,4 @@
+#include "support/MidiMessages.h"
 #include <gtest/gtest.h>
 #include "dsp/Oscillator.h"
 #include "dsp/AmplitudeEnvelope.h"
@@ -382,7 +383,7 @@ TEST(TuningBehavior, ChannelBendUsesThirtyTwoFramePartitionsAcrossCallbacks)
         synth1x::SynthEngine whole,split;
         for(auto* engine:{&whole,&split}){engine->getParams().pitchBendRange=12;engine->prepareToPlay(44100,128);}
         synth1x::audio::MidiBuffer midi,empty;
-        midi.addEvent(synth1x::audio::MidiMessage::pitchWheel(1,target),0);
+        midi.addEvent(synth1x::test::pitchWheel(1,target),0);
         midi.addEvent(synth1x::audio::MidiMessage::noteOn(1,69,1.f),0);
         synth1x::audio::AudioBuffer<float> a(2,128),b(2,128);a.clear();b.clear();
         whole.render(a,midi,0,128);split.render(b,midi,0,32);
