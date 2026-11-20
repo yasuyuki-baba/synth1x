@@ -1,13 +1,13 @@
 # Installing Synth1X
 
-Choose the native package for your operating system:
-`Synth1X-linux.tar.gz`, `Synth1X-windows.zip` or `Synth1X-macos.tar.gz`. GitHub's
-source archives contain the files for building Synth1X. The current workflow
-uploads candidates to GitHub Actions; if a version is published under
-[Releases](https://github.com/yasuyuki-baba/synth1x/releases), use its native assets.
-Downloading an Actions artifact may require signing in to GitHub. An Actions
-artifact ZIP wraps the native package: extract that outer ZIP first, then extract
-the native ZIP or tar.gz inside it.
+Download the file for your operating system from the **Assets** section of
+the [latest Synth1X release](https://github.com/yasuyuki-baba/synth1x/releases/latest).
+
+| Platform | Download |
+| --- | --- |
+| Windows x64 | `Synth1X-windows.zip` |
+| macOS Apple Silicon | `Synth1X-macos.tar.gz` |
+| Linux x86_64 | `Synth1X-linux.tar.gz` |
 
 The extracted package contains a `Synth1X` folder with the plugin products,
 standalone application, `dependencies.json`, `LICENSE` and `notices/`.
@@ -52,7 +52,7 @@ outside this binary baseline; see the [build guide](https://github.com/yasuyuki-
 
 ## macOS
 
-Current macOS candidates require Apple Silicon (arm64) and macOS 13 or later.
+macOS packages require Apple Silicon (arm64) and macOS 13 or later.
 Intel Macs are not supported. In Finder, choose **Go > Go to Folder…** and
 enter a destination below. `~` means your home folder. Create missing folders;
 these user-level locations do not require administrator permission.
@@ -70,7 +70,7 @@ Logic Pro; VST3 and CLAP need a host that supports those formats.
 
 ### Unsigned builds
 
-Current candidates are not signed with a Developer ID or notarized. macOS may
+The macOS binaries are not signed with a Developer ID or notarized. macOS may
 block the application or prevent a DAW from scanning a downloaded plugin.
 
 For the standalone application, try opening it, then use **System Settings >
@@ -93,7 +93,7 @@ may still reject the build; do not disable system-wide protections to install it
 
 ## Windows
 
-Current Windows candidates are x64 builds. Extract the complete ZIP before
+Windows packages target x64. Extract the complete ZIP before
 launching or installing products. In File Explorer, copy these products:
 
 | Product in `Synth1X/` | Destination folder |
@@ -112,7 +112,7 @@ is required.
 
 ### Unsigned builds
 
-Current Windows candidates are not code-signed. SmartScreen may display a warning
+The Windows binaries are not code-signed. SmartScreen may display a warning
 when launching the standalone application. If you trust the downloaded package,
 choose **More info > Run anyway** when that option is offered.
 
@@ -131,10 +131,15 @@ prevent unsigned software from running.
    track monitoring and configure your audio output. In the standalone app,
    select the audio device and MIDI input in its settings.
 
-Synth1X starts with Init and an empty library. Add your own `.sy1` patches or ZIP/RAR/7z
-banks through the library; no factory bank is included. The default audio quality
-is 1x. Higher oversampling factors use more CPU and can change tone and level;
-reduce the factor or increase your audio buffer if playback crackles.
+Synth1X starts with Init and an empty library. To add your first patches:
+
+1. Open the **Library** tab.
+2. Choose **Add... → Add .zip/.rar/.7z bank or .sy1 file...** and select your file.
+3. Click a patch name in the list to load it, then play a note.
+
+The default oversampling factor is 1x. Higher factors use more CPU and can change
+tone and level. Reduce the factor or increase your audio buffer if playback
+crackles.
 
 If the plugin is missing, check its installation folder, the host's supported
 formats and CPU architecture, and the DAW's scan/validation log. Run Apple Silicon DAWs natively; Intel/Rosetta hosts cannot load these arm64-only
@@ -150,9 +155,15 @@ A successful build is not a guarantee of host/device compatibility. See the
 Close the DAW and standalone app, then remove the Synth1X products from their
 installation folders. Rescan if the DAW still lists the plugin.
 
-User library/settings are stored separately in `~/.local/share/Synth1X/` on Linux
-(or `$XDG_DATA_HOME/Synth1X/` when configured),
-`~/Library/Application Support/Synth1X/` on macOS and `%APPDATA%\Synth1X\` on
-Windows. Removing the products leaves those files and your original imported
-patches/banks in place. Keep your DAW projects and original patch files when
-updating or uninstalling.
+Removing the products leaves your user data in place. The default library is in
+the `Library` subfolder of the user data directory. A custom library stays in the
+folder you selected.
+
+| Platform | User data directory | Standalone device settings file |
+| --- | --- | --- |
+| Windows | `%APPDATA%\Synth1X\` | `%LOCALAPPDATA%\Synth1X\settings.ini` |
+| macOS | `~/Library/Application Support/Synth1X/` | `~/Library/Application Support/Synth1X/settings.ini` |
+| Linux | `~/.local/share/Synth1X/` | `~/.config/Synth1X/settings.ini` |
+
+On Linux, `$XDG_DATA_HOME` replaces `~/.local/share` when set. An absolute
+`$XDG_CONFIG_HOME` replaces `~/.config` for the standalone settings.

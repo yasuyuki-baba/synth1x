@@ -36,11 +36,10 @@ See [capabilities and verification boundaries](docs/status.md) for the current s
 
 ## Install native packages
 
-See [INSTALL.md](INSTALL.md) for Linux/Windows/macOS product locations, unsigned-build
-prompts and plugin rescanning. Find published packages under
-[Releases](https://github.com/yasuyuki-baba/synth1x/releases) and native candidates
-in successful [GitHub Actions runs](https://github.com/yasuyuki-baba/synth1x/actions).
-Source archives require building.
+Download the package for your OS from the
+[latest release](https://github.com/yasuyuki-baba/synth1x/releases/latest).
+See the [installation guide](INSTALL.md) for plugin folders, unsigned-build
+prompts, rescanning and adding your first patches.
 
 Upgrading from Synth2 0.1.x to Synth1X 0.2.x or later requires manual migration.
 See the [migration guide](MIGRATION.md) before upgrading.
