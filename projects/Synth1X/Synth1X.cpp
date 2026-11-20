@@ -1,4 +1,5 @@
 #include "Synth1X.h"
+#include "host/PresetSession.h"
 #include "IPlug_include_in_plug_src.h"
 #include "ParameterSetup.h"
 #if IPLUG_EDITOR
