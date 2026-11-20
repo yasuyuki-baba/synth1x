@@ -146,21 +146,34 @@ void Synth1X::notifyHostOfPatch()
 
 bool Synth1X::selectComparison(int slot)
 {
-    if(libraryJob.valid() || slot==comparison.activeSlot())return false;
-    browser.selectedId=selectedPatchId;browser.patchName=currentPatch;
-    if(!comparison.select(slot,processor,browser))return false;
-    selectedPatchId=browser.selectedId;currentPatch=browser.patchName;
-    keyboardPatchId.clear();browserStatus.clear();browserGeneration.fetch_add(1);
-    notifyHostOfPatch();return true;
+    return changeComparison(slot, ComparisonAction::select);
 }
+
 bool Synth1X::copyComparison(int source)
 {
-    if(libraryJob.valid())return false;
-    browser.selectedId=selectedPatchId;browser.patchName=currentPatch;
-    if(!comparison.copyFrom(source,processor,browser))return false;
-    selectedPatchId=browser.selectedId;currentPatch=browser.patchName;
-    keyboardPatchId.clear();browserStatus.clear();browserGeneration.fetch_add(1);
-    notifyHostOfPatch();return true;
+    return changeComparison(source, ComparisonAction::copy);
+}
+
+bool Synth1X::changeComparison(int slot, ComparisonAction action)
+{
+    const bool selecting = action == ComparisonAction::select;
+    if (libraryJob.valid() || (selecting && slot == comparison.activeSlot()))
+        return false;
+
+    browser.selectedId = selectedPatchId;
+    browser.patchName = currentPatch;
+    const bool changed = selecting ? comparison.select(slot, processor, browser)
+                                   : comparison.copyFrom(slot, processor, browser);
+    if (!changed)
+        return false;
+
+    selectedPatchId = browser.selectedId;
+    currentPatch = browser.patchName;
+    keyboardPatchId.clear();
+    browserStatus.clear();
+    browserGeneration.fetch_add(1);
+    notifyHostOfPatch();
+    return true;
 }
 
 #if IPLUG_EDITOR
