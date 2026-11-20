@@ -171,10 +171,4 @@ std::vector<PatchTagSuggestion> explainPatchTags(std::string_view name,const std
     if(p[77]!=0 && p[78]>=0 && p[78]<=3)add("Distortion","settings.effect","The effect is enabled with an overdrive or decimator type.");
     return tags;
 }
-std::vector<std::string> inferPatchTags(std::string_view name,const std::array<float,129>& p)
-{
-    std::vector<std::string> tags;
-    for(auto& suggestion:explainPatchTags(name,p))tags.push_back(std::move(suggestion.tag));
-    return tags;
-}
 }

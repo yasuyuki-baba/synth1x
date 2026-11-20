@@ -10,8 +10,8 @@
 namespace synth1x
 {
     /**
-        Abstract base class for mapping APVTS parameters to RenderControls
-        based on patch version.
+        Interface for mapping source parameter values to RenderControls using
+        the source patch version and loading context.
     */
     class PatchMapper
     {
@@ -29,8 +29,8 @@ namespace synth1x
         void setMissingEnvelopeFields (unsigned fields) noexcept { missingEnvelopeFields = fields; }
 
 
-        // Caller-owned APVTS atomics; read on each call, never retained by the
-        // mapper. The processor resolves its immutable layout outside audio.
+        // The processor supplies pointers to its source parameter atomics.
+        // The mapper reads their values without retaining the pointers.
         virtual void mapParameterValues (const std::array<std::atomic<float>*,126>& values,
                                          RenderControls& target)
         {
@@ -40,12 +40,12 @@ namespace synth1x
         }
 
         /**
-            Maps raw 0..127 parameter buffer directly to RenderControls.
+            Maps a buffer of source parameter values normalized by 127 to RenderControls.
         */
         virtual void mapFromRawBuffer (const float* p, RenderControls& target) = 0;
 
         /**
-            Factory method to create a mapper instance for the given version.
+            Creates the shared mapper for the given source patch version.
         */
         static std::unique_ptr<PatchMapper> create (int version);
 

@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <cmath>
 #include <algorithm>
-#include "DspUtils.h"
+#include "FractionalDial.h"
 #include "NoiseGenerator.h"
 #include "ModulationEnvelope.h"
 #include "PulseWidthRead.h"
@@ -66,25 +66,6 @@ namespace synth1x::dsp {
             const auto table=waveIndex==0 || waveIndex==2
                 ? bank->getNativeTableFor(waveIndex,static_cast<float>(frequencyHz)) : bank->getTableFor(waveIndex,frequency);
             return table.first!=nullptr ? readTable(table.first,phase) : 0.0f;
-        }
-
-        float renderPhaseDiffSawNoAdvance(uint32_t offsetFixed27, const WaveTableBank* bank,
-                                         uint32_t phaseOffset27 = 0, int sawShape = 0) noexcept {
-            if (bank == nullptr) return 0.0f;
-            float freqHz = (float)((float)phaseIncFixed27 * sampleRate / (float)kPhaseScale27);
-            auto saw = (sawShape == 0 || sawShape == 5) ? bank->getNativeTableFor (sawShape,static_cast<float>(frequencyHz)) : bank->getTableFor(sawShape, freqHz);
-            if (saw.first == nullptr) return 0.0f;
-
-            const float* sd = saw.first;
-            uint32_t p1 = (phaseAcc32 + phaseOffset27) & kPhaseMask27;
-            uint32_t p2 = (p1 + offsetFixed27) & kPhaseMask27;
-
-            auto read = [&](uint32_t p) {
-                uint32_t i0 = (p >> 16) & 0x7ffu;
-                float frac = (float)(p & 0xffffu) / 65536.0f;
-                return sd[i0] + frac * (sd[(i0 + 1) % 2048] - sd[i0]);
-            };
-            return 0.5f * (read(p1) - read(p2));
         }
 
         void advancePhase() noexcept {

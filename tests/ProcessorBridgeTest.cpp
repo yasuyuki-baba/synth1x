@@ -1,3 +1,4 @@
+#include "support/MidiMessages.h"
 #include "support/StateDocument.h"
 #include <gtest/gtest.h>
 #include "host/ProcessorBridge.h"
@@ -51,7 +52,7 @@ TEST(ProcessorBridge, RecallAndSameValueEditsRetainLoadingHistory)
         }
         synth1x::audio::AudioBuffer<float> a(2,frames),b(2,frames); synth1x::audio::MidiBuffer midi;
         midi.addEvent(synth1x::audio::MidiMessage::noteOn(1,60,static_cast<uint8_t>(100)),0);
-        midi.addEvent(synth1x::audio::MidiMessage::pitchWheel(1,10000),frames-1);
+        midi.addEvent(synth1x::test::pitchWheel(1,10000),frames-1);
         forward(bridge,midi); hostvalidation::process(*direct,a,midi);
         ASSERT_TRUE(bridge.process(b.getWritePointer(0),b.getWritePointer(1),frames,120)); equal(a,b);
     }

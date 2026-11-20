@@ -13,6 +13,15 @@
 using namespace synth1x::host;
 namespace {
 namespace fs=std::filesystem;
+
+std::vector<std::string> inferPatchTags(std::string_view name, const std::array<float,129>& dials)
+{
+    std::vector<std::string> tags;
+    for (auto& suggestion : explainPatchTags(name, dials))
+        tags.push_back(std::move(suggestion.tag));
+    return tags;
+}
+
 struct CatalogFiles {
     fs::path dir;
     CatalogFiles() {
