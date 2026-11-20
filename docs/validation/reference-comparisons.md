@@ -5,6 +5,31 @@ Product requirements and reproducible public tests are defined in the
 [test input description](../contracts/validation.md). No original instrument is needed to build
 or run the portable suite.
 
+## Rydeen bank comparison
+
+This run compared all 15 named patches from the official Rydeen bank
+(`rydsound.zip`) using the Synth1 v1.13 beta 3 Windows x64 DLL and the portable
+Synth1X renderer from the [v0.2.0 source tree](https://github.com/yasuyuki-baba/synth1x/tree/v0.2.0).
+These patches have no version header. The ZIP SHA-256 is
+`0bb65940b6b58bd775f5123a63cb205c9f53e1ab2af47b61c642d579824fb3eb`.
+[Original bank download and documentation](https://daichilab.sakura.ne.jp/softsynth/)
+
+Each engine loaded a donor patch before the target, with one quiet block per
+load. Each capture used 44.1 kHz, 64-frame blocks, 120 BPM, velocity 100, a
+1.5-second note hold and 2 seconds of release. Synth1X ran at 1× oversampling.
+The DLL ran under Wine. NRMSE is the RMS of the sample-wise stereo difference
+divided by the reference RMS, over the complete 3.5-second capture. The
+comparison used the rendered levels and timing directly.
+
+| Note (MIDI) | Patches | Median NRMSE | Max NRMSE | Patch at maximum |
+| --- | ---: | ---: | ---: | --- |
+| C2 (36) | 15 | 0.000199% | 0.0264% | Rydeen melo A2 |
+| C4 (60) | 15 | 0.000165% | 0.0269% | Rydeen melo A2 |
+| C6 (84) | 15 | 0.000162% | 0.0256% | Rydeen melo A2 |
+
+All 99 compared controls matched after target loading for all 45 renders.
+The results describe single notes at these pitches and settings.
+
 ## Before/after regression procedure
 
 Run these examples from the repository root in a shell with Python 3 available.
