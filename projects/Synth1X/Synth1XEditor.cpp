@@ -72,6 +72,45 @@ void Synth1X::requestEditorScale(float scale)
     refreshEditorScale();
 }
 
+void Synth1X::reconcileEditorWindowSize()
+{
+    auto* graphics = GetUI();
+    if (!graphics)
+        return;
+
+#if !defined(__APPLE__) || !defined(AU_API)
+    // AU hosts can resize the Cocoa view or its parent without an SDK notification.
+    if (!reconcileEditorScale)
+        return;
+#endif
+
+    reconcileEditorScale = false;
+#if defined(APP_API)
+    constexpr bool standalone = true;
+#else
+    constexpr bool standalone = false;
+#endif
+    const auto bounds = editorWindowBounds(graphics->GetWindow(), standalone);
+    if (!bounds)
+        return;
+
+#if defined(__APPLE__) && defined(AU_API)
+    // A host can resize the returned editor view while leaving its container fixed.
+    // Ignore a fitted view that we already sized on a previous tick.
+    const auto dpi = graphics->GetPlatformWindowScale();
+    const auto target = synth1x::editor::editorObservedResize(
+        {bounds->width, bounds->height}, {observedParentWidth, observedParentHeight},
+        {bounds->viewWidth, bounds->viewHeight},
+        {static_cast<int>(graphics->WindowWidth() * dpi), static_cast<int>(graphics->WindowHeight() * dpi)});
+    if (target)
+        OnParentWindowResize(target->width, target->height);
+    observedParentWidth = bounds->width;
+    observedParentHeight = bounds->height;
+#else
+    OnParentWindowResize(bounds->width, bounds->height);
+#endif
+}
+
 void Synth1X::refreshEditorScale()
 {
     if(auto* graphics=GetUI()) {
@@ -377,39 +416,7 @@ void Synth1X::showOversamplingMenu(IControl* caller)
 void Synth1X::OnIdle()
 {
     updatePaletteEditor();
-    const bool requested=reconcileEditorScale;
-    bool checkParentSize=requested;
-#if defined(__APPLE__) && defined(AU_API)
-    // AU hosts can resize the Cocoa parent without an SDK resize callback.
-    // Read its geometry on the existing UI timer; unchanged bounds do no work.
-    checkParentSize=true;
-#endif
-    if(checkParentSize && GetUI()) {
-        reconcileEditorScale=false;
-#if defined(APP_API)
-        constexpr bool standalone=true;
-#else
-        constexpr bool standalone=false;
-#endif
-        if(const auto bounds=editorWindowBounds(GetUI()->GetWindow(),standalone)) {
-#if defined(__APPLE__) && defined(AU_API)
-            // Some AU hosts resize the returned editor view directly while its
-            // container stays fixed. Do not mistake our own fitted view for a
-            // new parent resize on the following tick.
-            const auto* graphics=GetUI();
-            const auto dpi=graphics->GetPlatformWindowScale();
-            const auto target=synth1x::editor::editorObservedResize(
-                {bounds->width,bounds->height},{observedParentWidth,observedParentHeight},
-                {bounds->viewWidth,bounds->viewHeight},
-                {static_cast<int>(graphics->WindowWidth()*dpi),static_cast<int>(graphics->WindowHeight()*dpi)});
-            if(target)OnParentWindowResize(target->width,target->height);
-            observedParentWidth=bounds->width;observedParentHeight=bounds->height;
-#else
-            if(requested || bounds->width!=observedParentWidth || bounds->height!=observedParentHeight)
-                OnParentWindowResize(bounds->width,bounds->height);
-#endif
-        }
-    }
+    reconcileEditorWindowSize();
     refreshEditorScale();
     refreshDelayTiming();
     if(displayedOversampling!=processor.oversamplingFactor())refreshOversampling();
