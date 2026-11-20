@@ -10,14 +10,14 @@ ZIP, RAR and 7z banks.
 
 ## Synth engine
 
-- **Sound sources** — two main oscillators and a sub oscillator, with noise,
+- **Sound sources** - two main oscillators and a sub oscillator, with noise,
   pulse-width modulation, FM, hard sync and ring modulation.
-- **Tone and modulation** — resonant low-pass, high-pass, band-pass and diode
+- **Tone and modulation** - resonant low-pass, high-pass, band-pass and diode
   filters, filter and amplifier ADSR envelopes, an oscillator modulation
   envelope, and two LFOs with tempo and key sync.
-- **Performance** — up to 32 polyphonic voices, with unison drawing from the
+- **Performance** - up to 32 polyphonic voices, with unison drawing from the
   same voice pool. Mono and legato modes, glide, and a tempo-synced arpeggiator.
-- **Output** — multi-effects, chorus, delay, EQ, and selectable oversampling up
+- **Output** - multi-effects, chorus, delay, EQ, and selectable oversampling up
   to 16×.
 
 The editor has dedicated MIDI and Library views, and A/B slots for comparing

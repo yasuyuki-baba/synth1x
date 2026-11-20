@@ -3,6 +3,7 @@
 ## Communication and project context
 
 - Write code, documentation and commit messages in English.
+- Use ASCII hyphens (`-`) for em-dash punctuation in prose.
 - Name new branches with a prefix that reflects the primary purpose of the
   change and a short lowercase, hyphenated topic. Use `feature/` for new
   functionality, `fix/` for bug fixes, `docs/` for documentation changes, and
