@@ -1,16 +1,27 @@
 # Synth1X
 
-Synth1X is a virtual analog synthesizer with Synth1-compatible patch loading.
-Load `.sy1` patches and ZIP banks directly, without extracting them, and shape
-sounds from a single-panel interface.
-Synth1X starts with Init and an empty library. Add your own patches or banks;
-all imported sounds can be tagged, favorited and removed through the same UI.
+Synth1X is a free, open-source virtual analog subtractive synthesizer with
+Synth1-compatible patch loading. Shape sounds in a single panel and organize
+them in a searchable library with tags and favorites. Synth1X starts with Init
+and an empty library. Add your own `.sy1` files or browse patches directly in
+ZIP, RAR and 7z banks.
 
 ![Synth1X editor showing the Init patch](docs/images/synth1x.png)
 
-The editor combines Synth1-inspired functional groups with restrained red accents,
-warm-white legends and black controls. MIDI routing and the sound library have
-their own supplementary views; serialized metadata stays outside the editor.
+## Synth engine
+
+- **Sound sources** — two main oscillators and a sub oscillator, with noise,
+  pulse-width modulation, FM, hard sync and ring modulation.
+- **Tone and modulation** — resonant low-pass, high-pass, band-pass and diode
+  filters, filter and amplifier ADSR envelopes, an oscillator modulation
+  envelope, and two LFOs with tempo and key sync.
+- **Performance** — up to 32 polyphonic voices, with unison drawing from the
+  same voice pool. Mono and legato modes, glide, and a tempo-synced arpeggiator.
+- **Output** — multi-effects, chorus, delay, EQ, and selectable oversampling up
+  to 16×.
+
+The editor has dedicated MIDI and Library views, and A/B slots for comparing
+two sounds. [Editor and library guide](docs/gui/README.md)
 
 ## Platforms and formats
 
@@ -34,65 +45,17 @@ Source archives require building.
 Upgrading from Synth2 0.1.x to Synth1X 0.2.x or later requires manual migration.
 See the [migration guide](MIGRATION.md) before upgrading.
 
-## Build and test
+## Synth1 audio comparison
 
-Build the portable synthesis core, tools and tests with CMake 3.25+, Ninja, a
-C++20 toolchain, Python 3 and Git:
+All 15 patches in the official Rydeen bank were rendered with Synth1 and
+Synth1X at C2, C4 and C6. Across the 45 comparisons, the largest normalized
+stereo waveform error (NRMSE) was **0.027%**. The 99 compared patch controls
+matched in every run.
+[Results and test conditions](docs/validation/reference-comparisons.md#rydeen-bank-comparison)
 
-```sh
-cmake --preset core
-cmake --build --preset core --parallel 4
-ctest --preset core
-```
+## Development
 
-The `core` preset uses `build-oos-core` and fetches GoogleTest for testing.
-No plugin SDK, display, audio device, Synth1 DLL or Wine is required.
-
-Build switches can also be set explicitly:
-
-| Configuration | SYNTH1X_BUILD_IPLUG2 | SYNTH1X_BUILD_TOOLS | SYNTH1X_BUILD_TESTS |
-| --- | --- | --- | --- |
-| Portable library only | OFF | OFF | OFF |
-| Offline tools | OFF | ON | OFF |
-| Portable tests only | OFF | OFF | ON |
-| Native product only | ON | OFF | OFF |
-
-`core` enables tools and tests; native presets disable both. Tests build the Probe
-and WAV comparator they require even with optional tools disabled. Use a separate
-build directory for each configuration; for example:
-
-```sh
-cmake -S . -B build-oos-tests -DSYNTH1X_BUILD_IPLUG2=OFF -DSYNTH1X_BUILD_TOOLS=OFF -DSYNTH1X_BUILD_TESTS=ON
-cmake --build build-oos-tests --parallel 4
-ctest --test-dir build-oos-tests --output-on-failure
-```
-
-Local builds receive a dated development version. Release builds derive their
-version from the Git tag; see [build versions](docs/desktop-build.md#build-versions).
-
-Native products use the pinned `iPlug2/` submodule and additional SDK revisions
-in [dependencies.lock.json](dependencies.lock.json). Run
-`git submodule sync -- iPlug2` before `git submodule update --init iPlug2`, then follow the
-[desktop build guide](docs/desktop-build.md). External `IPLUG2_DIR` checkouts
-remain supported; CMake does not fetch or update SDKs. All platforms use the same
-pinned development branch of iPlug2; see the build guide for Linux requirements.
-
-[GitHub Actions](docs/ci.md) runs SDK-free portable tests on three platforms and
-builds native candidates on Linux/Windows/macOS. Portable test success does not establish
-native plugin or DAW operation.
-
-## Documentation
-
-| Topic | Guide |
-| --- | --- |
-| Capabilities and verification limits | [Product status](docs/status.md) |
-| Product behavior and architecture | [Product contracts](docs/README.md) |
-| Portable tests and focused checks | [Testing](tests/README.md) |
-| Plugin and standalone builds | [Desktop build guide](docs/desktop-build.md) |
-| Editor behavior and design previews | [GUI guide](docs/gui/README.md) |
-| Rendering, inspection and diagnostics | [Development tools](tools/README.md) |
-| Test inputs and evidence | [Evidence](docs/contracts/validation.md) |
-| Distribution considerations | [Distribution requirements](docs/publication/README.md) |
+Build from source and run the tests with the [development guide](DEVELOPMENT.md).
 
 ## License
 
