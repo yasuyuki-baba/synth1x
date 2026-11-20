@@ -81,7 +81,7 @@ def package(root, build, platform, manifest, output):
                 target.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copy2(source, target)
         (staging / 'README.txt').write_text(
-            'Synth1X native build candidate\n\n'
+            'Synth1X native package\n\n'
             'These unsigned binaries have not been certified for DAW or device use.\n'
             'Installation and unsigned-build instructions are in INSTALL.md.\n'
             'Upgrade instructions are in MIGRATION.md.\n'

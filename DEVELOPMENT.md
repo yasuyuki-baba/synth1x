@@ -50,6 +50,10 @@ pinned development branch of iPlug2; see the build guide for Linux requirements.
 builds native candidates on Linux/Windows/macOS. Portable test success does not establish
 native plugin or DAW operation.
 
+Get development packages from successful [Actions runs](https://github.com/yasuyuki-baba/synth1x/actions).
+Extract the downloaded artifact ZIP to find the platform package described in
+the [installation guide](INSTALL.md).
+
 ## Documentation
 
 | Topic | Guide |

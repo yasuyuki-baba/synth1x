@@ -148,8 +148,10 @@ class CandidatePackages(unittest.TestCase):
                              (self.root / 'MIGRATION.md').read_bytes())
             self.assertEqual(archive.read('Synth1X/migrate-synth2.ps1'),
                              (self.root / 'tools/migrate-synth2.ps1').read_bytes())
-            self.assertIn(b'INSTALL.md', archive.read('Synth1X/README.txt'))
-            self.assertIn(b'MIGRATION.md', archive.read('Synth1X/README.txt'))
+            readme = archive.read('Synth1X/README.txt')
+            self.assertEqual(readme.splitlines()[0], b'Synth1X native package')
+            self.assertIn(b'INSTALL.md', readme)
+            self.assertIn(b'MIGRATION.md', readme)
             self.assertEqual(archive.read('Synth1X/dependencies.json'),
                              self.manifest.read_bytes())
         with self.assertRaisesRegex(ValueError, 'replace'):
