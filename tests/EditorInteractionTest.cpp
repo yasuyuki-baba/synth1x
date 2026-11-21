@@ -165,6 +165,10 @@ TEST(EditorInteraction, EffectKnobLabelsFollowTheSelectedType)
     EXPECT_EQ(editorChoiceDisplay(false,0,editorChoices(78)),"Analog Distortion 1");
     EXPECT_EQ(editorChoiceDisplay(false,1,editorChoices(78)),"Analog Distortion 2");
     EXPECT_EQ(editorChoiceDisplay(false,2,editorChoices(78)),"Digital Distortion");
+    EXPECT_EQ(editorChoiceDisplay(false,6,editorChoices(78)),"Phaser (2-stage)");
+    EXPECT_EQ(editorChoiceDisplay(false,7,editorChoices(78)),"Phaser (4-stage)");
+    EXPECT_EQ(editorChoiceDisplay(false,8,editorChoices(78)),"Phaser (8-stage)");
+    EXPECT_EQ(editorChoiceDisplay(false,9,editorChoices(78)),"Phaser (12-stage)");
     for (const auto& choice : editorChoices(78)) {
         submitSource(processor,78,choice.value);
         const auto labels=editorEffectKnobLabels(sourceValue(processor,78));
