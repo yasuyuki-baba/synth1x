@@ -32,6 +32,7 @@ namespace synth1x
         void handlePitchWheel(int midiChannel,int value) override;
         void handleChannelPressure(int midiChannel, int pressure) override;
         void handleController(int midiChannel,int number,int value) override;
+        int midiVolume() const noexcept { return channelVolume; }
         std::array<int,4> nativeBendWords() const noexcept
         {return pitchBendWords(1);}
         std::array<int,4> pitchBendWords(int channel) const noexcept
@@ -67,6 +68,7 @@ namespace synth1x
         uint64_t noteOrder = 0;
         mutable int lastAllocatedVoice = -1;
         int nativeWorkspaceOrigin {};
+        int channelVolume {64};
     };
 
 }

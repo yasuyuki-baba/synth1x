@@ -233,7 +233,7 @@ namespace synth1x
         const auto panControls=settings.panLfo
             ? render::outputPanControls(params,&sharedModulation.block(),outputStart) : dsp::ReceiverLfoView{};
         outputPipeline.process(buffer,outputStart,outputFrames,settings,
-            {currentSampleRate,capacity,offline::bypassEffects(),inputSilent},panControls);
+            {currentSampleRate,capacity,offline::bypassEffects(),inputSilent,synth.midiVolume()},panControls);
         };
         if (previousPlayMode != params.playMode)
         {

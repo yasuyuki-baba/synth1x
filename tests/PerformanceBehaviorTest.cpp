@@ -285,6 +285,26 @@ TEST(ControllerBehavior, SelectableCcAndChannelPressureReachBothRoutesAtTheirSam
         }
 }
 
+TEST(ControllerBehavior, ChannelVolumeChangesOutputWithBothRoutesDisabled)
+{
+    constexpr int eventFrame = 1037;
+    constexpr int settledFrame = 2048;
+    const auto patch = hostvalidation::patch() + "86,45057\n87,-1\n88,45057\n89,-1\n";
+    const auto capture = [&](int volume) {
+        return render({{0,0x90,60,100},{eventFrame,0xb0,7,static_cast<uint8_t>(volume)}},
+                      {64}, patch, 4096);
+    };
+    const auto initial = capture(64);
+    const auto muted = capture(0);
+    const auto louder = capture(127);
+    EXPECT_TRUE(std::equal(initial.begin(), initial.begin() + 2 * eventFrame, muted.begin()));
+    EXPECT_TRUE(std::equal(initial.begin(), initial.begin() + 2 * eventFrame, louder.begin()));
+    const auto normalEnergy = energy(initial, settledFrame, 4096);
+    ASSERT_GT(normalEnergy, 0);
+    EXPECT_EQ(energy(muted, settledFrame, 4096), 0);
+    EXPECT_NEAR(std::sqrt(energy(louder, settledFrame, 4096) / normalEnergy), 3.49821, .0001);
+}
+
 TEST(PerformanceBehavior, OrdinaryBendAdvancesWithoutAnLfoProvider)
 {
     synth1x::RenderControls controls;controls.pitchBendRange=12;

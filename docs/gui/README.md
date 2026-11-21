@@ -23,6 +23,8 @@ to keep menus within the editor; None stays at the root. Destinations retain
 their source parameter IDs; None stores -1. Sensitivity displays signed -100% to +100%, with source dials
 63–64 neutral; numeric entry still edits the original 0–127 source dial. These
 assignments belong to the sound, rather than a global MIDI Learn map.
+CC7 also controls the instance's output volume independently of the two
+assignments. It starts at 64 and stays separate from the saved Master volume.
 The historical host destination range remains 0–127; named editor edits and sound
 state preserve the disabled -1 sentinel independently of the host projection.
 Displaying imported assignments or synchronizing host values must not edit them.

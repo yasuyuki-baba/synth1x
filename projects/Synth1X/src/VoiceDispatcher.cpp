@@ -198,6 +198,8 @@ namespace synth1x
             ::synth1x::audio::VoiceBank::handlePitchWheel(channel,8192);
         }
         if(channel==1 && number>=1 && number<=11)applyControllerMessage(0xb0,number,value);
+        if (number == 7)
+            channelVolume = value;
         ::synth1x::audio::VoiceBank::handleController(channel,number,value);
     }
 
