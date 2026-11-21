@@ -1,301 +1,41 @@
 # Public verification map
 
-This map identifies automated product checks and their scope.
-A checked scenario is not proof of every possible input or execution history.
-The public suite uses generated inputs and product contracts.
+Use this index to find the automated check for a product change. The
+[test guide](../../tests/README.md) gives build commands, focused runs and
+sanitizer options. The [manual platform guide](manual-platform.md) covers GUI
+interaction, DAW sessions and physical devices.
 
-Actual SDK GUI interaction, DAW sessions and physical MIDI/audio-device checks
-are outside the automated-test scope by product decision. They are not missing
-or pending automated tests and are omitted from this inventory. The optional
-[manual platform guide](manual-platform.md) is a reference for separate manual
-work; automated success does not claim that such work was performed.
+## Loading, state and editor
 
-| Product requirement | Automated public checks | Scope / interpretation |
+| Area | Representative tests | What they verify |
 | --- | --- | --- |
-| Portable C++ naming | NamingLint and synthetic NamingLintTests | File/type PascalCase and role suffixes across src, including patch/core; semantic naming and variable/function spelling require review |
-| Header dependencies | HeaderBoundaryAudit on GNU-style GNU/Clang Ninja/Makefile builds | Scalar oscillator, section, prepared LFO data, arpeggiator settings/runtime and physical/logical voice, editor presentation, serialized-state and numeric-I/O headers compile independently with explicit forbidden dependencies |
-| Source loading and versions | [LoadingBehavior](../../tests/LoadingBehaviorTest.cpp), [PatchImportWorkspace](../../tests/PatchImportWorkspaceTest.cpp), [PatchFormat](../../tests/PatchFormatTest.cpp): all accepted versions, extended coarse words, comma-containing titles, resolved-dial export, fractional version 200 patch/state recall, locale-independent decimal parsing/range rejection and malformed-input rejection | Acceptance of 1–113 is distinct from independently observed native conversion |
-| Bank handling | [PatchLibrary](../../tests/PatchLibraryTest.cpp), [ArchiveBank](../../tests/ArchiveBankTest.cpp) and [BankBoundary](../../tests/BankBoundaryTest.cpp): directory/ZIP/RAR/7z registration parity, ZIP/RAR/7z/file rejection, exact entry/expanded-byte limits, CRC rejection, symlink/macOS metadata filtering, natural ordering, UTF-8, source retention, large nested collections and late-ordinal detached-bank recall | RAR4/RAR5 and 7z compressed/solid fixtures, bounded 7z headers/decoder memory; encrypted, RAR4 solid and unlisted 7z codecs are unsupported; broad archive fuzzing is not exhaustive |
-| State and parameter ABI | [ParameterContract](../../tests/LoadingBehaviorTest.cpp), [ProcessorState](../../tests/LoadingBehaviorTest.cpp) (including patch-name recall and legacy source-title fallback), [StateRepresentation](../../tests/StateRepresentationTest.cpp) (child order, equivalent numeric spellings, host C-locale independence and legacy finite-number syntax), generated truncated payloads, all-parameter live edits | Covers ProcessorBridge state and host parameter definitions |
-| Editor keyboard | [EditorKeyboard](../../tests/EditorKeyboardTest.cpp): CheapSynth01 PC key map, octave limits, repeat suppression and release of original pitches | Portable PC key mapping; standard iPlug2 mouse behavior and native focus/resize interaction belong to the manual platform guide |
-| Persistent sound library | [PatchCatalog](../../tests/PatchCatalogTest.cpp) (imports, duplicates, recursive folder/ZIP/RAR/7z banks and ancestor filters, folder ordering, persistent tags/favorites and sound IDs/ordinals, shared Program Change slots and missing sounds, combined filters, external-file deletion/refresh and source-free recall); PatchTagInference (leading categories, word/acronym boundaries, named/envelope coexistence, Wind/Sequence and settings-based Poly/Mono/Legato); cached reasons, manual/hidden explanation precedence and obsolete-cache rebuild; [TagReportTests](../../tests/test_tag_reports.py) (authored read-only source scans when the tag probe is built, exact hashes, errors and tag/reason/source-change comparisons) | UI-side storage and filtering; heuristic name/settings suggestions, not measured sound classification; native interaction remains manual |
-| A/B sound comparison | [PatchComparison](../../tests/PatchComparisonTest.cpp): independent patch/edit identities and baselines, shared filters/quality, directional copy, both-slot session recall and atomic rejection of malformed inactive state; native VST3 host tests cover audible/silent switching, readback and recall | Portable state behavior and native API checks; GUI interaction remains manual |
-| Live changes | [PlaybackBehavior](../../tests/PlaybackBehaviorTest.cpp): all host parameters at endpoints/midpoint, live program loads, recall and rejected loads; integer sub-level audio across legacy/continuous states and fractional sub-level interpolation/recall | Arbitrary host automation schedules are not exhaustively enumerated |
-| MIDI and voice lifetime | [PerformanceBehavior](../../tests/PerformanceBehaviorTest.cpp), [HostLifecycle](../../tests/HostLifecycleTest.cpp), [GeneratedInput](../../tests/GeneratedInputTest.cpp): exact dispatcher timeline, CC1–CC11 and channel aftertouch in both routing slots, CC7 output gain with both slots disabled, sustain, CC121, stops, overflow, polyphony/unison | Timeline and lifetime checks cover the exercised schedules |
-| Instance ownership | [InstanceIsolation](../../tests/PlaybackBehaviorTest.cpp): interleaved noise/random/ARP, unrelated instance creation/destruction, edits/reprepare of another instance, parallel separate instances | Calls into the same bridge must remain serialized |
-| Callback heap use | [RealtimeBehavior](../../tests/RealtimeBehaviorTest.cpp): first prepared callback, source automation, version changes, float/double, zero/oversize blocks, MIDI/history overflow and drain, parameter setters, editor-note ownership and MIDI publication | Intercepts global C++ new/delete; Linux also wraps static project malloc/calloc/realloc/free references. Shared-library/OS allocation, locks/I/O, drivers and hard real-time deadlines remain outside this instrumentation |
-| Voice/sound ownership | [VoiceOwnership](../../tests/RealtimeBehaviorTest.cpp): injected container allocation failures destroy transferred objects immediately | Exercises failed ownership transfer with a one-shot C++ allocation failure, not process-wide memory exhaustion or native GUI lifetime |
-| Oscillators, envelopes and filters | [DspBasics](../../tests/DspBasicsTest.cpp), [FilterBehavior](../../tests/FilterBehaviorTest.cpp), [HostLifecycle](../../tests/HostLifecycleTest.cpp) pitch across rates | Does not establish unrestricted spectral or original-engine identity |
-| LFO and shared clocks | [ModulationBehavior](../../tests/ModulationBehaviorTest.cpp): all waveforms, bounds/reset, zero depth, tempo ratio, key sync/overlap, disabled shared-clock advancement and read-only consumers | Disabled waveform sources pause; shared native clocks can keep advancing. These are source/ownership properties rather than recorded RNG fingerprints |
-| History publication | [HistoryQueue](../../tests/HistoryQueueBehaviorTest.cpp): FIFO retention, drop counters, repeated saturation/reuse, concurrent producers, bridge invalidation and post-drain edits | A drained queue accepts new events; it does not reconstruct discarded execution history |
-| Effects/output lifecycle | [EffectsBehavior](../../tests/EffectsBehaviorTest.cpp), [EffectLifecycle](../../tests/EffectLifecycleTest.cpp), [EqualizerBehavior](../../tests/EqualizerBehaviorTest.cpp): bypass/reset, isolated modes, tails, rate setup, silence gain and output regions | Component reset and cold-start checks do not establish every conditional Engine history |
-| Native VST3 patch publication | [PatchNotificationTest](../../tests/sdk/vst3/PatchNotificationTest.cpp): actual Synth1X/iPlug2/VST3 code with a headless delegate; controller readback during notifications, full host readback echo preserving legacy controls/state/audio and fractional selectors, real host edits and explicit UI setters, latency publication without duplicate restarts, framework UI MIDI queue delivery and sample-offset audio parity with multi-point VST3 CC, pitch bend and channel pressure on channel 16, 16-channel input and mapping metadata, Program Change parameter and raw MIDI recall, A/B switch/copy/recall with controller readback | Runs separately in Windows/Linux native CI; no DAW or GUI interaction |
-| Built-plugin patch audio | [Native audio smoke](../../tests/native/README.md): actual VST3/CLAP modules on Linux/Windows/macOS and AUv2 on macOS; authored tone → mute → tone state restore, MIDI note-on/off, finite stereo output, sound/silence at 1x/8x, both active sides of persisted A/B sessions; VST3 baseline/host-echo raw stereo equality for legacy and fractional states | Public host APIs without GUI/audio devices; echo regression and coarse signal properties, not DLL equivalence or DAW/Library UI acceptance |
-| Editor source binding | [EditorInteraction](../../tests/EditorInteractionTest.cpp): shared native choice/toggle logic, loading/refresh/import/save summaries and distinct empty/filter/error states, inline library bank/tag hit regions, fractional-scroll row targeting and shared tag-toggle limits, measured active-filter chips and overflow access without gap actions, every selector, effect-dependent knob labels and the unused Ring Modulator control, cancellation, editing steps, named MIDI assignments and disabled-destination render/patch/state recall, bend-range choices with out-of-menu recall, signed fractional sensitivity displays, fractional unit displays, Delay note choices and fractional recall, host values and recall; [EditorLayout](../../tests/EditorLayoutTest.cpp): control/group/divider bounds, persistent Master/Pan header controls and center/L/R readouts, reserved delay readout space, labels/units, hidden metadata and Synth/MIDI/Library views | Covers shared source-selection logic, bridge binding and presentation |
-| CI preparation and candidate archives | BuildToolsTests: local Git SDK fixtures with CRLF preservation/reuse and edited-code rejection; generated product files, missing-binary rejection, metadata/notices, unrelated-file exclusion, overwrite rejection and POSIX bundle modes/symlinks; Linux archive products, adjacent resources and x86_64 bundle validation | Self-contained preparation/package contracts; no network or real SDK required, and no native build or DAW pass established |
-| Memory and undefined behavior | AddressSanitizer/UndefinedBehaviorSanitizer/LeakSanitizer local C++ runs; generated input sentinels | Compiler, architecture and platform coverage must be recorded per run |
+| Patch import and export | [PatchFormat](../../tests/PatchFormatTest.cpp), [PatchImportWorkspace](../../tests/PatchImportWorkspaceTest.cpp), [LoadingBehavior](../../tests/LoadingBehaviorTest.cpp) | Version conversion, source metadata, fractional dials and rejected input. Accepted file versions and independently observed native versions are listed in the [loading contract](../contracts/patch-loading.md). |
+| Banks and library | [ArchiveBank](../../tests/ArchiveBankTest.cpp), [BankBoundary](../../tests/BankBoundaryTest.cpp), [PresetFiles](../../tests/PresetFilesTest.cpp), [PatchCatalog](../../tests/PatchCatalogTest.cpp), [tag reports](../../tests/test_tag_reports.py) | Archive limits, save/refresh, source identity, shared caches, filters, tag overrides and Program Change slots. Tag tests exercise authored examples. |
+| Host parameters and session state | [ProcessorContracts](../../tests/ProcessorContractsTest.cpp), [ProcessorState](../../tests/ProcessorStateTest.cpp), [StateRepresentation](../../tests/StateRepresentationTest.cpp), [PatchComparison](../../tests/PatchComparisonTest.cpp) | Parameter definitions, numeric parsing, transactional recall and A/B sound ownership. |
+| Editor presentation and input | [EditorLayout](../../tests/EditorLayoutTest.cpp), [EditorInteraction](../../tests/EditorInteractionTest.cpp), [EditorKeyboard](../../tests/EditorKeyboardTest.cpp), [EditorPalette](../../tests/EditorPaletteTest.cpp) | Layout bounds, effect labels, control binding, keyboard mapping and palette edit/import/apply behavior. Native drawing, focus and dialogs require a running editor. |
 
 ## DSP and receiver coverage
 
-This table groups generated component and bridge checks by responsibility. It is
-an index to test sources, not a record of successive implementation changes.
-
-| Area | Test entry points | Exercised properties |
+| Area | Representative tests | What they verify |
 | --- | --- | --- |
-| Import and callback mapping | [PatchImportWorkspace](../../tests/PatchImportWorkspaceTest.cpp), [ProcessorState](../../tests/LoadingBehaviorTest.cpp), [PlaybackBehavior](../../tests/PlaybackBehaviorTest.cpp) | Ordinary/workspace decoding across accepted versions; exact integer promotion including packed MIDI/out-of-host-range words; sparse defaults; fractional state-mode retention and resolved EQ/Delay/Chorus recall |
-| Numerical precision | [BoundedPrecision](../../tests/BoundedPrecisionTest.cpp), [ContinuousLevel](../../tests/ContinuousLevelTest.cpp), [DspBasics](../../tests/DspBasicsTest.cpp) | Gain/velocity/saturation anchors, fine tuning, 27-bit phase storage, real signal transport versus discrete spans, fractional effect controls and decimation remainder; real envelope progress, retrigger anchors, release endpoints and final silence; representable Float32 filter/delay history and pitch-modulation base frequencies, Float32 time/rate frame conversion and exact widening for double host output (including oversampling) |
-| LFO depth, rate and history | [BoundedPrecision](../../tests/BoundedPrecisionTest.cpp), [ModulationBehavior](../../tests/ModulationBehaviorTest.cpp), [LfoPhasePrecision](../../tests/LfoPhasePrecisionTest.cpp) | Fractional depth/periods, discrete synced divisions, held spans, sine phase interpolation/wrapping and integer knots, key sync, one-draw random projection, held/smoothed targets and unchanged RNG advancement |
-| Shared source ownership | [ModulationBehavior](../../tests/ModulationBehaviorTest.cpp) | First-key resets after MIDI, overlapping keys/channels, subregions, unknown-history random retention without reseeding, read-only one/many-voice consumption and mixed modulated/unmodulated amplitude slots |
-| Tuning, glide and unison | [BoundedPrecision](../../tests/BoundedPrecisionTest.cpp), [TuningBehavior](../../tests/DspBasicsTest.cpp), [PerformanceBehavior](../../tests/PerformanceBehaviorTest.cpp) | Common tracked/fixed tuning and fractional fine values; Float32 fine inputs, tracked/stack base transport, moving coarse exponent words and stack-cache edit history; fractional glide/retrigger progress; pitch/filter unison layout, stacking/fixed-phase caches and pending random draw counts, adjacent Float32 fixed-phase/Spread coordinates with preserved local/shared draws; ordinary bend with/without LFO or bound dispatcher, channel isolation, omni ingress and CC121 |
-| Oscillator reads, Ring and Sub | [OscillatorRead](../../tests/OscillatorReadTest.cpp), [BoundedPrecision](../../tests/BoundedPrecisionTest.cpp) | Fixed 22 kHz frequency ceiling on both oscillators across sample rates, post-modulation ordering and FM/Ring/Sync/stack/sub paths; adjacent-sample/wrapped interpolation without phase advance; direct/adapter agreement; Ring product and FM precedence; OSC1-linked Sub phase while muted, pulse-width conversion across repeated/base/modulation/lifecycle edits, fractional level scaling across dial 0.5 and stacking |
-| Pulse width | [PwmPrecision](../../tests/PwmPrecisionTest.cpp), [PlaybackBehavior](../../tests/PlaybackBehaviorTest.cpp), [OscillatorRead](../../tests/OscillatorReadTest.cpp) | Reciprocal-multiply integer knots under both normalizations, fractional base/additional coordinates, wrap continuity, ordinary/stack adapter agreement without clock changes, shared/envelope input composition and OSC2 one-octave control response |
-| FM phase and receiver | [FmPhaseCorrection](../../tests/FmPhaseCorrectionTest.cpp), [FmBehavior](../../tests/DspBasicsTest.cpp), [ContinuousLevel](../../tests/ContinuousLevelTest.cpp) | Constant/ramped/held coefficient correction, bounded fractional drift, reset/rebase/settling and synchronized noise; common waveform/envelope/history policy, Ring bypass, wide-depth transport, integral mapping knots, base-dial slew horizon/completion and sounding-retrigger retention |
-| Modulation routing | [ModulationInputs](../../tests/ModulationBehaviorTest.cpp), [RenderPolicy](../../tests/RenderPolicyTest.cpp), [ModulationBehavior](../../tests/ModulationBehaviorTest.cpp) | Endpoint units, per-slot consumption, wheel beside admitted sources, shared/envelope/additional FM composition, exact partitions and missing-source neutrality; common deterministic composition and restricted unknown-random admission |
-| Filter and oscillator envelopes | [FilterEnvelopePrecision](../../tests/FilterEnvelopePrecisionTest.cpp), [ContinuousLevel](../../tests/ContinuousLevelTest.cpp), [EnvelopeBehavior](../../tests/DspBasicsTest.cpp), [HostLifecycle](../../tests/HostLifecycleTest.cpp) | Real peak/sustain/release coordinates, peak rescaling and zero-peak continuity, integer normalization knots, shared reciprocal sustain normalization through loading and parameter/controller edits, OSC2 destination/timing and direct physical envelopes; ordered live cutoff setters, slew restarts, zero-frame requests, saturation recovery and sound replacement |
-| Filter kernels | [FilterPath](../../tests/FilterPathTest.cpp), [FilterBehavior](../../tests/FilterBehaviorTest.cpp), [RenderPolicy](../../tests/RenderPolicyTest.cpp) | Analytic coefficient precision before Float32 storage, double diode impulse-response state below Float32 sample range, resonance-only cache edits versus forced frequency preparation, resonance-boundary crossings, repeated edits, direct-index/sample state agreement, low-rate cutoff stability, common coordinate history/reset and source admission around restricted resonance |
-| Physical VCA and allocation | [AmplitudeBehavior](../../tests/DspBasicsTest.cpp), [AmplitudeInputs](../../tests/ModulationBehaviorTest.cpp) | Direct Voice phases/retirement, repeated note-off, assigned velocity retention, release-first allocation, fractional attack-duration edits, independent shared/additional factors, output alignment, partitions, release state and disabled neutrality |
-| Delay and chorus | [DelayPath](../../tests/DelayPathTest.cpp), [ChorusPath](../../tests/ChorusPathTest.cpp), [EffectsBehavior](../../tests/EffectsBehaviorTest.cpp), [EffectLifecycle](../../tests/EffectLifecycleTest.cpp) | Integral/fractional edit-history reset equivalence, impulse endpoints, delay tone/type and slew partitioning/settling, chorus x1/x2/x4 coordinate continuity, rounded negative delay-coordinate boundaries and fractional impulse positions and cursor-independent weights across ring wraps, adjacent Float32 tempo tap endpoints, current stereo-delay timing telemetry across tempo/Spread changes and buffer limits, compatible modulation clocks with Float32 audio history, sweep direction changes and effect tails |
-| EQ and output tone | [OutputTonePrecision](../../tests/OutputTonePrecisionTest.cpp), [EqualizerBehavior](../../tests/EqualizerBehaviorTest.cpp), [PlaybackBehavior](../../tests/PlaybackBehaviorTest.cpp) | Integer-knot/fractional continuity, rate changes, cache/recall, near-neutral activity, bypass history, reset/prepare retention, and sample/context/stereo graph agreement |
-| Pan and stage order | [StereoBalance](../../tests/DspBasicsTest.cpp), [PanInputs](../../tests/DspBasicsTest.cpp), [StaticPanInputs](../../tests/DspBasicsTest.cpp), [OutputPipelinePath](../../tests/OutputPipelinePathTest.cpp) | Static coefficient bounds, real per-slot pan selection/depth/offsets, read-only subregion consumption and core/unison placement; mono/stereo balance after nonlinear stages and cubic-pan order versus independent stage composition |
-| Output lifecycle | [OutputPipelinePath](../../tests/OutputPipelinePathTest.cpp), [EffectsBehavior](../../tests/EffectsBehaviorTest.cpp), [EffectLifecycle](../../tests/EffectLifecycleTest.cpp) | Common wet kernels at integer/fractional supported-rate endpoints, unsupported-rate bypass, EQ retention/reset, startup gain through silence, nonlinear/EQ/pan/wet order and surrounding-buffer sentinels |
+| MIDI, voices and ARP | [PerformanceBehavior](../../tests/PerformanceBehaviorTest.cpp), [HostLifecycle](../../tests/HostLifecycleTest.cpp), [ArpeggiatorBehavior](../../tests/ArpeggiatorBehaviorTest.cpp), [GeneratedInput](../../tests/GeneratedInputTest.cpp) | Event order, controller routing, note admission, pedal, core reuse, release and buffer bounds for exercised schedules. |
+| Shared modulation and history | [ModulationBehavior](../../tests/ModulationBehaviorTest.cpp), [LfoPhasePrecision](../../tests/LfoPhasePrecisionTest.cpp), [HistoryQueueBehavior](../../tests/HistoryQueueBehaviorTest.cpp) | Clock and random-source ownership, phase progression, receiver ordering and queue overflow/reuse. |
+| Oscillators and render precision | [OscillatorRead](../../tests/OscillatorReadTest.cpp), [FmPhaseCorrection](../../tests/FmPhaseCorrectionTest.cpp), [PwmPrecision](../../tests/PwmPrecisionTest.cpp), [Oversampling](../../tests/OversamplingTest.cpp), [BoundedPrecision](../../tests/BoundedPrecisionTest.cpp) | Phase, interpolation, FM/Sync/Ring, quality switches, latency and folded-harmonic checks on generated signals. |
+| Envelopes and filters | [ContinuousLevel](../../tests/ContinuousLevelTest.cpp), [FilterEnvelopePrecision](../../tests/FilterEnvelopePrecisionTest.cpp), [FilterPath](../../tests/FilterPathTest.cpp), [FilterBehavior](../../tests/FilterBehaviorTest.cpp) | Fractional edits, envelope continuity, coefficient changes and retained kernel state. |
+| Output and effects | [OutputPipelinePath](../../tests/OutputPipelinePathTest.cpp), [EqualizerBehavior](../../tests/EqualizerBehaviorTest.cpp), [EffectLifecycle](../../tests/EffectLifecycleTest.cpp), [DelayPath](../../tests/DelayPathTest.cpp), [ChorusPath](../../tests/ChorusPathTest.cpp) | Stage order, stereo routing, tails, reset, delay timing and chorus interpolation. |
+| Instance and callback behavior | [PlaybackBehavior](../../tests/PlaybackBehaviorTest.cpp), [RealtimeBehavior](../../tests/RealtimeBehaviorTest.cpp) | Separate-instance isolation, prepared callback heap activity and allocation-failure ownership. Heap instrumentation covers C++ allocation and, on Linux, wrapped C heap calls. Timing and device underruns require separate measurement. |
 
-The FIR convolution regression uses linear generated input history to check
-every ring cursor over repeated wraps and resets, including signed zero and
-small normal inputs. Repeated reads must preserve the same output bits.
+Generated inputs exercise particular signal paths and event histories. For a
+claim about original-engine compatibility or preservation across a refactor,
+use the [validation contract](../contracts/validation.md) and the
+[reference comparison procedure](reference-comparisons.md).
 
-Oscillator pitch uses generated sine tables at multiple, including fractional,
-sample rates with a 0.02 Hz tolerance for zero crossings and phase quantization.
-GeneratedInput varies controls, play modes, unison, rates, callback lengths, MIDI
-channels and events using a fixed input seed without changing the engine RNG.
-It checks finite stereo output, buffer sentinels, unchanged state and release
-below -100 dBFS stereo RMS in the final window after channel stops. Performance
-release checks use the same bound; retained history need not become exact zero.
+## Build, tools and native formats
 
-Effects cover delay, chorus x1/x2/x4, phaser and all six MultiFX modes. Biased
-waveshapers can produce zero-input transients: channel isolation compares the
-unexcited channel with its zero-input run. Cross-mixing chorus modes are checked
-for reset rather than channel independence.
+| Area | Checks | Scope |
+| --- | --- | --- |
+| Portable build and tooling | [CTest registrations](../../cmake/PortableTests.cmake) | Naming, header dependencies on supported compilers, gain and WAV diagnostics, probe isolation, version metadata and package preparation. |
+| Native VST3 host API | [PatchNotificationTest](../../tests/sdk/vst3/PatchNotificationTest.cpp) | Windows/Linux headless checks of parameter publication, host echo, MIDI offsets, Program Change and A/B recall. |
+| Built-plugin audio | [Native smoke tests](../../tests/native/README.md) | Loads actual VST3/CLAP modules and macOS AUv2 through host APIs. Checks sound, silence and state restore without a DAW or audio device. |
 
-## Scope and maintenance
-
-Generated checks establish the exercised API, numerical and ownership properties.
-They do not establish unrestricted spectral/listening equivalence, arbitrary
-callback-partition identity, unavailable random histories or every native
-receiver/draw sequence. Recorded comparisons and preceding/candidate audio and
-control checks remain separate under the [validation contract](../contracts/validation.md).
-
-Keep this map grouped by responsibility and link to actual tests. Put build,
-focused-test, sanitizer and SDK commands in the [test guide](../../tests/README.md),
-architecture constraints in the relevant design/contract, and dated results in
-validation records. Add self-authored regression cases without weakening the
-requirement, and keep manual-only activities outside the automated inventory.
-
-## File-backed preset management
-
-`EditorLayoutTest.cpp` checks the current-preset header's bank/name formatting,
-missing-bank fallback, UTF-8 text and edited marker. Native selected-row colors,
-accent stripe and bold title remain platform presentation checks.
-
-`PresetFilesTest.cpp` covers recursive loose/ZIP discovery with invalid rows,
-registration identity, keep/replace/skip and apply-to-all, contained staged saving,
-current-format fractional/master-gain preservation, independent baselines and
-transactional wrapper-v1/v2 recall. `PatchCatalogTest.cpp` retains metadata and
-source-bank ordinal checks and adds exact registration filters and compatibility
-with existing managed-bank storage. Native adapters preserve these boundaries;
-actual SDK dialogs and standalone teardown are platform interactions.
-
-Dropped-ZIP refresh regressions cover ordinary folders, legacy storage folder
-names, mixed managed/loose sources, and unrelated files named `banks`. Managed
-IDs and metadata remain stable without suppressing newly copied source files.
-
-OversamplingTest uses generated impulses, DC, sine/cubic signals and actual bridge
-playback to check factor/state validation, fixed latency, folded-harmonic reduction,
-audible pitch, note-off tails and host-rate LFO/envelope clocks. RealtimeBehavior
-checks prepared factor changes and short/chunked callbacks without heap activity.
-
-Phase-preserving quality checks in OscillatorReadTest cover base-frame state
-and sample identity across waveform/Ring/Sync/sub/stack/control combinations,
-signed FM paths beyond half a cycle, and an analytically known folded carrier.
-OversamplingTest also compares actual bridge phase words across quality changes,
-MIDI offsets, overlapping notes and releases with nonlinear filter/drive enabled.
-These properties do not establish unrestricted source compatibility or remove
-aliasing already embedded in the retained base-rate feedback model.
-
-`RenderDiagnosticsTests` checks that the normal product probe ignores legacy DSP
-bypass environment variables and rejects switches reserved for the separately
-linked diagnostic probe. This does not validate native GUI/device operation.
-
-`BuildVersionTests` checks release-tag and development-date metadata generation,
-prerelease numeric fields and rejection of out-of-range plugin versions without
-native SDKs. It validates generated metadata, not native bundle/DAW operation.
-
-`PatchFormatTest.cpp` checks opaque header and named color decoding, duplicate
-unknown keys, export after edits, renaming, project recall and metadata clearing
-on replacement. Native library marker drawing requires manual GUI verification.
-
-Editor bank-menu tests cover classification-only folders, direct sounds alongside
-sub-banks, duplicate display names and root banks. Catalog tests distinguish direct
-bank filtering from All banks. Flat-row tests cover indentation, disabled headings, This folder and empty-library
-All banks. Header tests separate title/edit markers from bank text. Native popup
-and header appearance require manual verification.
-
-Automatic tag tests use self-authored names and controls to check word/prefix
-boundaries, distinct Mono/Legato modes, Ring/FM precedence and deferred conflicts.
-Catalog tests cover inference across legacy and version 200, combined search,
-manual precedence, legacy sidecars, persistent suppression/restore and unchanged
-source text and sounding processor state. Native tag colors and popup interaction
-require manual verification; these tests do not establish classifier accuracy.
-
-Editor layout checks verify shared result/header column boundaries and measured
-text fitting, including UTF-8 truncation, narrow cells and preserved bank suffixes.
-Native rendering and row tooltips require manual verification.
-
-Multi-tag/cache tests check AND matching across manual and automatic tags, filter
-composition and session recall, warm/new-instance cache reuse, same-size and
-same-timestamp content updates, additions/deletions, ZIP-entry changes, cached
-invalid-source diagnostics and corrupt-cache rebuilding without losing overrides.
-Portable checks do not certify native menu interaction or scan timing on other
-machines. No filesystem watcher is part of this contract.
-
-Header presentation tests check selected patch tags, manual/automatic origin and
-complete tooltip text, including sounds without bank metadata. Native three-line
-header appearance requires manual verification.
-
-Library navigation tests cover empty results, initial candidates, clamped ends,
-page movement, first/last jumps and stale indices. Native keyboard checks must
-verify focus/text-entry ownership, candidate-versus-loaded display and Enter-only
-audition; portable index tests do not establish host shortcut behavior.
-
-Library scroll tests cover fractional offsets, empty/short lists, full final
-viewports and minimal candidate reveal across viewport edges. Native clipping,
-scrollbar dragging, wheel deltas and animation timing require manual checks.
-
-Bank navigation tests verify menu-order stepping, classification heading skips,
-selectable parent folders, All banks, empty catalogs and non-wrapping ends.
-
-Editor resize tests cover proportional scaling, platform pixel ratios, keyboard
-height, uniform fitting to both parent bounds for every platform and format,
-wide/tall viewports, one-pixel reductions, limits and zero sizes.
-Display-scale tests cover percentage parsing/formatting, invalid/out-of-range
-edits, preset choices and readouts from accepted bounds independently of OS DPI.
-Repeated keyboard-size requests retain their scale across SDK pixel rounding;
-actual one-pixel parent reductions still recompute the fit.
-Resize-observation tests retain explicit scale edits while parent acknowledgement
-is delayed and handle direct view changes without bouncing to an unchanged container.
-Native window notifications, dragging and scaled hit testing require manual checks.
-
-`ModulationInputs.RingRetainsPhysicalFmSlewAndResumesWhenDisabled` checks Ring
-receiver retention, resumption and independence between physical FM states.
-
-`Arpeggiator.OrderedFullGateKeepsIdlePeriodsWithoutRandomDraws` covers all three
-ordered modes, callback offsets and sizes, key release, sustain release, stop and
-disable. `ModulationInputs.GlidePublishesNestedFmDispatchSpansWithoutChangingPitch`
-checks nested upstream/glide boundaries, pitch preservation and FM dispatch timing.
-
-FM phase tests cover integer depth with fractional sources, adjacent product-knot
-interpolation and fractional-depth synchronized-noise histories. Filter precision
-tests separate retained real levels from discrete retrigger anchors.
-
-The normalized LFO generator/router and their projection-only tests were retired
-with that API. Their source-specific callback-invariance test does not apply to
-compatible receiver queries. Common clocks retain native setter/query/advance
-cadence; do not infer block-size-independent LFO audio from gain-horizon tests.
-Physical ARP gain-fragment checks, receiver-knot/phase tests, history/draw-order
-checks, and end-to-end public playback coverage remain in the suite.
-
-`Arpeggiator.RepeatedTempoChangesRescaleWholeSampleCounters` checks integer
-counter truncation across repeated edits, modes, gates, callback partitions and
-long-running absolute clocks. `Arpeggiator.PeriodEditsRecomputeGateFromRescaledCounter`
-checks gate reconstruction; `Arpeggiator.PeriodRescalingHandlesSaturatedSlowTempo`
-checks saturated slow-tempo transitions. Membership cursor, first-key velocity,
-held-key press order, non-panic bypass and live gate edits have dedicated
-`ArpeggiatorBehaviorTest.cpp` properties.
-
-`PerformanceBehavior.SameTimeLegatoReplacementRetainsPhysicalAmplitudePhase`
-checks the actual bridge's physical VCA phase/level/counter through a same-time
-Off/controller/On replacement against the same partition without replacement.
-
-Polyphonic keyboard admission is exercised through the portable bridge with
-permuted simultaneous chords, repeated/cancelled pending keys, capacity limits
-and a pending key released under sustain in `PerformanceBehaviorTest.cpp`.
-Physical frequency words and paired generated-input audio establish admission
-order and absence of extra starts without captured original outputs.
-
-`PerformanceBehaviorTest.cpp` checks actual-bridge Fine refresh/zero-band rules
-and the FM base setter's full slew horizon. `DelayPathTest.cpp` checks completion
-of long integer/fractional delay-time slews without rounding stalls, alongside
-partition invariance, reset history and impulse endpoint properties.
-
-`PerformanceBehaviorTest.cpp` checks bend state through the actual bridge for
-large callbacks and varied MIDI offsets, including positions around 256 frames.
-An explicit MIDI-region pair checks audio equality only when internal spans
-match; arbitrary callback partitions retain their documented DSP sensitivity.
-
-`PerformanceBehavior.LargerLegatoGroupAdmitsCoresWithoutRetriggeringContinuingCores`
-loads a generated larger Unison program through the actual bridge. It checks
-retained amplitude counters and filter tracking in continuing cores, new starts
-in added cores and advancing physical phases. It does not establish arbitrary
-program/state-transition audio equivalence.
-
-`PerformanceBehavior.ReturningFromMonoDoesNotResumeRelinquishedPolyphonicNotes`
-checks retained paused core words through mono/poly program loads and verifies
-that subsequent poly admission reuses the relinquished group.
-
-`PerformanceBehavior.StateRestoreRetainsTheReleaseFromThePrecedingMonoGroupBoundary`
-recalls a generated mono state after a smaller poly group. It checks the partial
-physical release and subsequent legato admission/filter-note retention through
-the actual bridge; it does not establish unrestricted state-recall equivalence.
-
-`PerformanceBehavior.PedalUpReselectsTheNewestHeldKeyAfterPolyToMonoRecall`
-checks the physical pitch after pedal-up when a newer held key was admitted
-during a polyphonic interval and a mono state was recalled.
-
-`PerformanceBehavior.IdleLanesFreezeAndLeaveTheSurvivingVoiceBeforeReuse` checks
-physical phase/controller/filter-memory retention with a partially idle Unison
-group at 1x/4x, continued held-core progress, legato reactivation and unique
-physical-core views when a new polyphonic note claims the freed lanes.
-
-Poly admission regressions cover newest-note identity for Unison groups within
-physical budgets, including non-divisible budgets and partial groups. Mono
-reselection covers first entry from Poly through program and state recall,
-Note Off and pedal-up, for Mono and Legato modes.
-
-`FilterResponse.IndexedSpansPreserveFixedSettingsBypassAndRetainedHistory`
-compares span configuration against repeated sample configuration bit for bit,
-including changing modes, resonance and saturation, bypass/resume and retained
-filter memory at integral and fractional sample rates.
-
-## Editor palettes
-
-`EditorColorTest`, `EditorPaletteModel` and `EditorPaletteTest` cover strict RGB/
-RGBA decoding and formatting, independent instances, alpha retention with an
-opaque canvas, global/group inheritance and override removal, the default Filter
-colors, preview cancellation/application, preference replacement/round trips,
-missing/deleted preferences restoring defaults and transactional rejection of malformed, oversized, duplicate or
-unsupported preferences. Failed writes report errors without changing the
-in-memory palette. These portable tests do not establish native window or DAW
-interaction. See the GUI contract and manual platform guide.
-
-`EditorPaletteModel.UnsavedChangesTrackValuesAlphaAndInheritanceInsteadOfEditHistory`
-checks that discard confirmation is needed for changed color/alpha values or
-inheritance overrides, and stops being needed after exact restoration, cancellation
-or application. Native Cancel/title-bar interactions and confirmation rendering
-are covered by the manual palette-window procedure.
-
-`EditorPaletteTest.ExportedDraftImportsAllScopesAndAlphaWithoutApplyingTheEdit`
-checks a shared XML round trip with General colors, every group's overrides,
-inheritance removal, alpha and a Unicode filename while retaining the draft's
-cancellation baseline. `MissingOrInvalidImportsPreserveTheCurrentPreviewAndDiscardBaseline`
-checks that explicit import rejects missing, malformed, unsupported and oversized
-files atomically; missing preference files still load defaults. Native chooser,
-replacement confirmation and preview/apply behavior use the manual exchange guide.
-
-
-`EditorPaletteModel.BackgroundEditsParticipateInDiscardAndColorResetKeepsTheImage`
-and the image exchange cases in `EditorPaletteTest` cover image dirty state,
-color-only reset, content equality, embedded binary round trips with all Base64
-padding lengths, Unicode filenames, source-file removal, color-only imports
-clearing images and transactional rejection of malformed/duplicate image entries.
-Portable checks validate the container and supported signatures, not image decoding.
-The native renderer's decoder, size limits, aspect-preserving cover, panel alpha,
-chooser cancellation and image preview/Apply/discard use the manual platform guide.
+Record the platform and configuration when reporting a native or sanitizer run.

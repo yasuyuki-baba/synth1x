@@ -60,10 +60,11 @@ runtime trust/proxy configuration and use a fresh output file.
 A captured native frame checks that the actual APP editor can initialize and
 paint in the specified environment. It does not establish DAW plugin behavior,
 audio-device operation, native macOS operation or unrestricted GUI interactions.
-The HTML/SVG preview is a separate design aid and must not be labeled a native frame.
 
 See the [GUI contract](../gui/README.md) and [desktop build boundary](../desktop-build.md).
 Record the executable identity and capture conditions with any reported frame.
+
+## Library and keyboard interaction
 
 For a library with more banks than fit on screen, open the bank selector and check
 platform-menu scrolling, wheel/trackpad behavior and selection near both ends.
