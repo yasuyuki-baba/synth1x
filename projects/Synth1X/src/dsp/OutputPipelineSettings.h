@@ -22,5 +22,6 @@ namespace synth1x::dsp
         float sampleRate {44100};
         int gainBlockCapacity {256};
         bool bypassEffects {},inputSilent {};
+        int midiVolume {64};
     };
 }

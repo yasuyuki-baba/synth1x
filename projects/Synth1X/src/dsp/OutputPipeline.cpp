@@ -35,7 +35,8 @@ namespace synth1x::dsp
                 context.inputSilent,graphSilent);
         processBalance(buffer,outputStart,outputFrames,settings,graphSilent,panControls);
         if(useWetEffects)processWetEffects(buffer,outputStart,outputFrames,settings,graphSilent);
-        processGain(buffer,outputStart,outputFrames,context.gainBlockCapacity);
+        processGain(buffer,outputStart,outputFrames,context.gainBlockCapacity,
+            OutputGain::midiVolumeTarget(context.midiVolume));
     }
 
     bool OutputPipeline::processToneAndEffects(::synth1x::audio::AudioBuffer<float>& buffer,int outputStart,int outputFrames,
@@ -137,19 +138,17 @@ namespace synth1x::dsp
             buffer.getNumChannels()>1 ? buffer.getWritePointer(1,outputStart) : nullptr,outputFrames);
     }
 
-    void OutputPipeline::processGain(::synth1x::audio::AudioBuffer<float>& buffer,int outputStart,int outputFrames,int capacity)
+    void OutputPipeline::processGain(::synth1x::audio::AudioBuffer<float>& buffer,int outputStart,int outputFrames,int capacity,float target)
     {
-        // The existing voice trim represents the default native master
-        // target. Apply only its startup ratio here, retaining the current
-        // calibrated effect input levels and public master-volume control.
-        constexpr float target = OutputGain::defaultTarget;
+        // The voice trim already includes the default master target. Apply the
+        // smoothed MIDI target relative to that gain after effects.
         for (int offset = 0; offset < outputFrames;)
         {
             const int size = std::min ({capacity, 256, outputFrames - offset});
             for (int i = 0; i < size; ++i)
             {
-                const float left = outputGain.next (target) / target;
-                const float right = outputGain.next (target) / target;
+                const float left = outputGain.next (target) / OutputGain::defaultTarget;
+                const float right = outputGain.next (target) / OutputGain::defaultTarget;
                 const int frame = outputStart + offset + i;
                 if (buffer.getNumChannels() >= 2)
                 {

@@ -8,6 +8,10 @@ upstream keys separate from generated ARP notes and Voice note flags. Routed
 controller offsets belong to `ControllerRuntime` and callback adaptation; they
 must not enter source getters, mapper caches or saved patch values. Restore the
 mapped render controls at the callback boundary after applying performance offsets.
+CC7 drives the shared output-gain target at the input event's sample offset,
+including when both routes are disabled. Use the Synth1 channel-volume targets
+with the existing output gain smoothing. The initial value is 64, and the
+running value is independent of saved Master volume, patch loads and A/B.
 
 CC121 resets ordinary bend separately from routed pitch, wheel and pedal state.
 Equal-value controller setters may still split rendering or restart receivers.
