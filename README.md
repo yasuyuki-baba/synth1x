@@ -14,7 +14,8 @@ ZIP, RAR and 7z banks.
   pulse-width modulation, FM, hard sync and ring modulation.
 - **Tone and modulation** - resonant low-pass, high-pass, band-pass and diode
   filters, filter and amplifier ADSR envelopes, an oscillator modulation
-  envelope, and two LFOs with tempo and key sync.
+  envelope, and two LFOs with tempo and key sync. Each LFO can modulate pitch,
+  pulse width, FM, filter cutoff, amp level or pan.
 - **Performance** - up to 32 polyphonic voices, with unison drawing from the
   same voice pool. Mono and legato modes, glide, and a tempo-synced arpeggiator.
 - **Output** - multi-effects, chorus, delay, EQ, and selectable oversampling up
@@ -30,10 +31,6 @@ flowchart TD
         midi["MIDI notes"] -.->|ARP on| arp["Arpeggiator"]
         arp -.-> alloc["Voice allocation"]
         midi -.->|ARP off| alloc
-    end
-    subgraph modulation["Shared modulation"]
-        direction LR
-        lfos["LFO 1 and LFO 2"] -.->|each selects one| dest["Pitch (OSC 2 or both), pulse width, FM,<br/>filter cutoff, amp level or pan"]
     end
     subgraph voices["Per voice"]
         direction LR
