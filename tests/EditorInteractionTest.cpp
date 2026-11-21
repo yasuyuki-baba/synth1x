@@ -155,7 +155,7 @@ TEST(EditorInteraction, HostAutomationAndStateRecallReachChoiceAndNumericPresent
 TEST(EditorInteraction, EffectKnobLabelsFollowTheSelectedType)
 {
     using Labels = std::array<const char*,2>;
-    const Labels drive {"Drive","LP Cutoff"};
+    const Labels drive {"Drive","Tone"};
     const Labels phaser {"LFO Depth","LFO Rate"};
     const std::array<Labels,10> expected {
         drive,drive,drive,Labels{"Rate","Bit Depth"},Labels{"Frequency",nullptr},

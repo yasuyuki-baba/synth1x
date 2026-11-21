@@ -28,7 +28,7 @@ inline std::array<const char*,2> editorEffectKnobLabels(double source)
     if (!(type>=0 && type<=9 && std::abs(source-type)<.001))
         return {"Control 1","Control 2"};
     switch (static_cast<int>(type)) {
-        case 0: case 1: case 2: return {"Drive","LP Cutoff"};
+        case 0: case 1: case 2: return {"Drive","Tone"};
         case 3: return {"Rate","Bit Depth"};
         case 4: return {"Frequency",nullptr}; // Ring Mod reserves the second control.
         case 5: return {"Depth","Attack"};
