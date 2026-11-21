@@ -156,7 +156,7 @@ TEST(EditorInteraction, EffectKnobLabelsFollowTheSelectedType)
 {
     using Labels = std::array<const char*,2>;
     const Labels drive {"Drive","Tone"};
-    const Labels phaser {"LFO Depth","LFO Rate"};
+    const Labels phaser {"Depth","Rate"};
     const std::array<Labels,10> expected {
         drive,drive,drive,Labels{"Rate","Bit Depth"},Labels{"Frequency",nullptr},
         Labels{"Depth","Attack"},phaser,phaser,phaser,phaser

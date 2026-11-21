@@ -32,7 +32,7 @@ inline std::array<const char*,2> editorEffectKnobLabels(double source)
         case 3: return {"Rate","Bit Depth"};
         case 4: return {"Frequency",nullptr}; // Ring Mod reserves the second control.
         case 5: return {"Depth","Attack"};
-        default: return {"LFO Depth","LFO Rate"};
+        default: return {"Depth","Rate"};
     }
 }
 }
