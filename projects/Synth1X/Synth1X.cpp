@@ -2,6 +2,9 @@
 #include "host/PresetSession.h"
 #include "IPlug_include_in_plug_src.h"
 #include "ParameterSetup.h"
+#if defined(VST3_API)
+#include "pluginterfaces/vst/ivstparameterchanges.h"
+#endif
 #if IPLUG_EDITOR
 #include "editor/EditorPaletteWindow.h"
 #endif
@@ -91,12 +94,167 @@ void Synth1X::OnParamReset(EParamSource source)
 }
 void Synth1X::ProcessMidiMsg(const IMidiMsg& message)
 {
+    if (message.StatusMsg() == IMidiMsg::kProgramChange)
+    {
+        if (message.mData1 < synth1x::host::PatchCatalog::programCount)
+            pendingMidiProgram.store(message.mData1, std::memory_order_relaxed);
+        return;
+    }
     processor.enqueueMidi(message.mOffset, message.mStatus, message.mData1, message.mData2);
 }
 void Synth1X::ProcessBlock(sample**, sample** outputs, int frames)
 {
     processor.process(outputs ? outputs[0] : nullptr, outputs ? outputs[1] : nullptr, frames, GetTempo());
 }
+
+bool Synth1X::loadCatalogPatch(const synth1x::host::CatalogPatch& item)
+{
+    if (!item.error.empty()) {
+        browserStatus = item.error;
+        return false;
+    }
+    std::string error;
+    if (!processor.loadProgram(item.patch.text, item.program, error, item.patch.name)) {
+        browserStatus = error;
+        return false;
+    }
+    selectedPatchId = item.id;
+    keyboardPatchId = item.id;
+    currentPatch = item.patch.name;
+    browserStatus.clear();
+    stateRestored.store(false);
+    browser.capture(processor);
+    notifyHostOfPatch();
+    return true;
+}
+
+void Synth1X::pollMidiProgram()
+{
+    const int requested = pendingMidiProgram.exchange(-1, std::memory_order_relaxed);
+    if (requested >= 0)
+        waitingMidiProgram = requested;
+    if (waitingMidiProgram < 0 || libraryJob.valid())
+        return;
+
+    const int number = waitingMidiProgram;
+    std::string error;
+    const auto id = catalog.readProgramAssignment(number, error);
+    const auto* patch = id.empty() ? nullptr : catalog.findPatch(id);
+#if IPLUG_EDITOR
+    if (!id.empty() && !patch && !midiProgramScanRequested) {
+        midiProgramScanRequested = true;
+        reloadCatalog();
+        return;
+    }
+#endif
+    midiProgramScanRequested = false;
+    waitingMidiProgram = -1;
+    if (patch) {
+        if (loadCatalogPatch(*patch))
+            browserGeneration.fetch_add(1);
+    } else if (!error.empty()) {
+        browserStatus = std::move(error);
+    } else if (!id.empty()) {
+        browserStatus = "The sound assigned to PC " + std::to_string(number) + " is missing.";
+    } else {
+        return;
+    }
+#if IPLUG_EDITOR
+    refreshBrowser();
+#endif
+}
+
+#if defined(VST3_API)
+Steinberg::tresult PLUGIN_API Synth1X::initialize(Steinberg::FUnknown* context)
+{
+    const auto result = Plugin::initialize(context);
+    if (result != Steinberg::kResultOk)
+        return result;
+
+    using namespace Steinberg::Vst;
+    auto* programs = new StringListParameter(STR16("MIDI Program"), kPresetParam, nullptr,
+        ParameterInfo::kIsProgramChange | ParameterInfo::kIsList);
+    for (int number = 0; number < synth1x::host::PatchCatalog::programCount; ++number) {
+        String128 name {};
+        getProgramName(kPresetParam, number, name);
+        programs->appendString(name);
+    }
+    parameters.addParameter(programs);
+    return result;
+}
+
+Steinberg::tresult PLUGIN_API Synth1X::process(Steinberg::Vst::ProcessData& data)
+{
+    // VST3 hosts send PC through the program parameter. The host may provide
+    // a parameter-only callback with zero frames.
+    if (auto* changes = data.inputParameterChanges)
+        for (int i = 0; i < changes->getParameterCount(); ++i)
+            if (auto* queue = changes->getParameterData(i); queue && queue->getParameterId() == kPresetParam) {
+                Steinberg::int32 offset;
+                double value;
+                if (queue->getPointCount() > 0 &&
+                    queue->getPoint(queue->getPointCount() - 1, offset, value) == Steinberg::kResultTrue &&
+                    std::isfinite(value) && value >= 0.0 && value <= 1.0)
+                    pendingMidiProgram.store(static_cast<int>(std::lround(
+                        value * (synth1x::host::PatchCatalog::programCount - 1))), std::memory_order_relaxed);
+            }
+    return Plugin::process(data);
+}
+
+Steinberg::tresult PLUGIN_API Synth1X::setParamNormalized(Steinberg::Vst::ParamID tag,
+                                                        Steinberg::Vst::ParamValue value)
+{
+    // The host's controller-side update only reflects the choice. The
+    // processor callback queues recall, avoiding a second patch load.
+    if (tag == kPresetParam)
+        return Steinberg::Vst::SingleComponentEffect::setParamNormalized(tag, value);
+    return Plugin::setParamNormalized(tag, value);
+}
+
+Steinberg::tresult PLUGIN_API Synth1X::getUnitInfo(Steinberg::int32 index, Steinberg::Vst::UnitInfo& info)
+{
+    const auto result = Plugin::getUnitInfo(index, info);
+    if (result == Steinberg::kResultTrue && info.id == Steinberg::Vst::kRootUnitId)
+        info.programListId = kPresetParam;
+    return result;
+}
+
+Steinberg::tresult PLUGIN_API Synth1X::getUnitByBus(Steinberg::Vst::MediaType type,
+    Steinberg::Vst::BusDirection direction, Steinberg::int32 bus, Steinberg::int32 channel,
+    Steinberg::Vst::UnitID& unit)
+{
+    using namespace Steinberg::Vst;
+    if (type != kEvent || direction != Steinberg::Vst::kInput || bus != 0 || channel < 0 || channel >= 16)
+        return Steinberg::kResultFalse;
+    unit = kRootUnitId;
+    return Steinberg::kResultTrue;
+}
+
+Steinberg::int32 PLUGIN_API Synth1X::getProgramListCount()
+{
+    return 1;
+}
+
+Steinberg::tresult PLUGIN_API Synth1X::getProgramListInfo(Steinberg::int32 index,
+                                                        Steinberg::Vst::ProgramListInfo& info)
+{
+    if (index != 0)
+        return Steinberg::kResultFalse;
+    info.id = kPresetParam;
+    info.programCount = synth1x::host::PatchCatalog::programCount;
+    Steinberg::UString(info.name, 128).fromAscii("MIDI Programs");
+    return Steinberg::kResultTrue;
+}
+
+Steinberg::tresult PLUGIN_API Synth1X::getProgramName(Steinberg::Vst::ProgramListID list,
+                                                    Steinberg::int32 number, Steinberg::Vst::String128 name)
+{
+    if (list != kPresetParam || number < 0 || number >= synth1x::host::PatchCatalog::programCount)
+        return Steinberg::kResultFalse;
+    Steinberg::UString(name, 128).fromAscii(("PC " + std::to_string(number)).c_str());
+    return Steinberg::kResultTrue;
+}
+#endif
 
 synth1x::host::PresetBrowserState Synth1X::captureBrowser() const
 {

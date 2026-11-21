@@ -35,6 +35,18 @@ public:
     void OnUIOpen() override;
     void OnParentWindowResize(int width,int height) override;
     void OnUIClose() override;
+#if defined(VST3_API)
+    Steinberg::tresult PLUGIN_API initialize(Steinberg::FUnknown* context) override;
+    Steinberg::tresult PLUGIN_API process(Steinberg::Vst::ProcessData& data) override;
+    Steinberg::tresult PLUGIN_API setParamNormalized(Steinberg::Vst::ParamID, Steinberg::Vst::ParamValue) override;
+    Steinberg::tresult PLUGIN_API getUnitInfo(Steinberg::int32, Steinberg::Vst::UnitInfo&) override;
+    Steinberg::tresult PLUGIN_API getUnitByBus(Steinberg::Vst::MediaType, Steinberg::Vst::BusDirection,
+        Steinberg::int32, Steinberg::int32, Steinberg::Vst::UnitID&) override;
+    Steinberg::int32 PLUGIN_API getProgramListCount() override;
+    Steinberg::tresult PLUGIN_API getProgramListInfo(Steinberg::int32, Steinberg::Vst::ProgramListInfo&) override;
+    Steinberg::tresult PLUGIN_API getProgramName(Steinberg::Vst::ProgramListID, Steinberg::int32,
+        Steinberg::Vst::String128) override;
+#endif
 
 private:
     void loadPalettePreferences();
@@ -94,6 +106,10 @@ private:
     bool handleLibraryKey(const iplug::IKeyPress& key,bool up);
     void changeFilter(const char* query);
     void loadLibraryPatch(std::size_t index);
+    bool loadCatalogPatch(const synth1x::host::CatalogPatch&);
+    void pollMidiProgram();
+    void showProgramAssignment(iplug::igraphics::IControl*, const std::string& id, float x, float y);
+    void showProgramAssignments(iplug::igraphics::IControl*);
     void stepPatch(int direction);
     void notifyHostOfPatch();
     bool selectComparison(int slot);
@@ -136,6 +152,9 @@ private:
     synth1x::host::CatalogFilter libraryFilter;
     bool catalogLoaded = false;
     bool catalogReloadPending = false;
+    std::atomic<int> pendingMidiProgram {-1};
+    int waitingMidiProgram = -1;
+    bool midiProgramScanRequested = false;
     std::string selectedPatchId,keyboardPatchId;
     double resultOffset = 0;
     int page = 0;

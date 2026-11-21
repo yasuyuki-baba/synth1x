@@ -2,6 +2,7 @@
 #include "PatchLibrary.h"
 #include "PresetFiles.h"
 #include "PatchTagInference.h"
+#include <array>
 #include <filesystem>
 #include <utility>
 
@@ -31,13 +32,14 @@ struct CatalogFilter {
 };
 struct TagCacheStats { std::size_t reused=0, rebuilt=0, reusedArchives=0; };
 
-// UI-only persistent library. Filesystem work never enters ProcessorBridge or
+// Persistent library for the control thread. Filesystem work never enters ProcessorBridge or
 // the render callback. Callers supply the platform's user application-data path.
 class PatchCatalog {
 public:
     explicit PatchCatalog(std::filesystem::path directory = {}) : directory(std::move(directory)) {}
     static constexpr std::size_t maximumCatalogPatches = 100000;
     static constexpr std::size_t maximumCatalogBytes = 512 * 1024 * 1024;
+    static constexpr int programCount = 128;
     static std::filesystem::path userDirectory();
     static std::vector<std::string> splitTags(const std::string& text);
     static std::string tagText(const std::vector<std::string>& tags);
@@ -45,6 +47,11 @@ public:
     bool registerFiles(const std::string&, const ResolveConflict&, PresetImportResult&);
     bool saveFile(const std::filesystem::path&, const std::string&, bool replace, std::string& id, std::string& error);
     bool setFavorite(const std::string& id, bool favorite, std::string& error);
+    std::string readProgramAssignment(int number, std::string& error) const;
+    bool readProgramAssignments(std::array<std::string, programCount>&, std::string& error) const;
+    bool assignProgram(int number, const std::string& id, std::string& error);
+    bool clearProgram(int number, const std::string& expectedId, std::string& error);
+    const CatalogPatch* findPatch(const std::string& id) const noexcept;
     bool setTags(const std::string& id, const std::string& tags, std::string& error);
     bool hideAutomaticTag(const std::string& id,const std::string& tag,std::string& error);
     bool restoreAutomaticTags(const std::string& id,std::string& error);

@@ -57,6 +57,7 @@ class PresetFiles
 
   private:
     friend class PatchCatalog;
+    static bool createLibraryFile(const std::filesystem::path&, const std::string&, std::string& error);
     // The catalog refreshes after the write and uses its validated entries to report imports.
     std::unordered_set<std::filesystem::path> copySources(const std::filesystem::path &, const ResolveConflict &,
                                                           PresetImportResult &);

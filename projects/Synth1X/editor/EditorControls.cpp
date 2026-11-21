@@ -253,11 +253,13 @@ CatalogListControl::CatalogListControl(const IRECT& bounds,const synth1x::host::
                    const std::string& selected,const std::string& keyboardSelection,
                    std::function<void(std::size_t)> load,
                    std::function<void(const std::string&,bool)> favorite,
+                   std::function<void(IControl*,const std::string&,float,float)> assignProgram,
                    std::function<void(const std::string&)> bank,std::function<void(const std::string&)> tag,
                    std::function<void(double)> scroll,
                    std::function<void(const char*)> import)
     : IControl(bounds),catalog(catalog),selected(selected),keyboardSelection(keyboardSelection),load(std::move(load)),
-      favorite(std::move(favorite)),filterBank(std::move(bank)),filterTag(std::move(tag)),
+      favorite(std::move(favorite)),assignProgram(std::move(assignProgram)),
+      filterBank(std::move(bank)),filterTag(std::move(tag)),
       scroll(std::move(scroll)),import(std::move(import)) {
     SetTooltip("Click a sound name to audition, a bank to filter, or a tag to toggle its filter. Click + / - to favorite.");
 }
@@ -385,9 +387,9 @@ void CatalogListControl::Draw(IGraphics& g) {
     if(matches.size()>visibleRows)g.FillRoundRect(draggingScroll ? appearance.accent : appearance.muted,scrollThumb(),4.f);
 }
 
-void CatalogListControl::OnMouseDown(float x,float y,const IMouseMod&) {
+void CatalogListControl::OnMouseDown(float x,float y,const IMouseMod& modifiers) {
     if(x>=mRECT.R-18) {
-        if(matches.size()<=visibleRows)return;
+        if(modifiers.R || matches.size()<=visibleRows)return;
         OnEndAnimation();drawOffset=offset;
         const auto thumb=scrollThumb();
         draggingScroll=true;
@@ -397,6 +399,11 @@ void CatalogListControl::OnMouseDown(float x,float y,const IMouseMod&) {
     const auto row=rowAt(y);
     if(!row)return;
     const auto index=matches[*row];const auto& item=catalog.patches()[index];
+    if(modifiers.R) {
+        if(item.favorite && item.error.empty())
+            assignProgram(this,item.id,x,y);
+        return;
+    }
     const auto target=targetAt(x,item);
     switch(target.action) {
         case LibraryRowAction::favorite: {
@@ -432,6 +439,7 @@ void CatalogListControl::OnMouseOver(float x,float y,const IMouseMod& mod) {
             tooltip=explanation.empty() ? "Manual tag: "+target.tag+"." : explanation;
             tooltip+=" Click to toggle this tag filter.";
         }
+        if(item.favorite && item.error.empty())tooltip+="\nRight-click to assign a Program Change number.";
         SetTooltip(tooltip.c_str());
     }
     else SetTooltip("Click a sound name to audition, a bank to filter, or a tag to toggle its filter.");

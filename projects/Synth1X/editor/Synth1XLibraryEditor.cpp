@@ -349,6 +349,76 @@ void Synth1X::showAutomaticTagMenu(IControl* caller)
     showScrollableLibraryMenu(caller,caller->GetRECT());
 }
 
+void Synth1X::showProgramAssignment(IControl* caller, const std::string& id, float x, float y)
+{
+    std::array<std::string, synth1x::host::PatchCatalog::programCount> assignments;
+    if (!catalog.readProgramAssignments(assignments, browserStatus)) {
+        refreshBrowser();
+        return;
+    }
+
+    presetMenu = std::make_unique<IPopupMenu>("Assign Program Change");
+    const std::weak_ptr<int> lifetime = dialogLifetime;
+    presetMenu->SetFunction([this, lifetime, id](IPopupMenu* menu) {
+        if (lifetime.expired())
+            return;
+        if (auto* item = menu->GetChosenItem()) {
+            const int number = item->GetTag();
+            if (catalog.assignProgram(number, id, browserStatus))
+                browserStatus = "Assigned PC " + std::to_string(number) + ".";
+            refreshBrowser();
+        }
+    });
+    constexpr int pageSize = 16;
+    for (int first = 0; first < static_cast<int>(assignments.size()); first += pageSize) {
+        auto* range = new IPopupMenu();
+        const auto title = "PC " + std::to_string(first) + "-" + std::to_string(first + pageSize - 1);
+        presetMenu->AddItem(title.c_str(), range);
+        for (int number = first; number < first + pageSize; ++number) {
+            std::string label = "PC " + std::to_string(number);
+            const auto& assigned = assignments[number];
+            if (!assigned.empty())
+                label += assigned == id ? " (this sound)" : " (assigned)";
+            range->AddItem(new IPopupMenu::Item(label.c_str(),
+                assigned.empty() ? 0 : IPopupMenu::Item::kDisabled, number));
+        }
+    }
+    caller->GetUI()->CreatePopupMenu(*caller, *presetMenu, IRECT(x,y,x+1,y+1));
+}
+
+void Synth1X::showProgramAssignments(IControl* caller)
+{
+    std::array<std::string, synth1x::host::PatchCatalog::programCount> assignments;
+    if (!catalog.readProgramAssignments(assignments, browserStatus)) {
+        refreshBrowser();
+        return;
+    }
+
+    presetMenu = std::make_unique<IPopupMenu>("Program Change");
+    const std::weak_ptr<int> lifetime = dialogLifetime;
+    for (int number = 0; number < static_cast<int>(assignments.size()); ++number) {
+        const auto& id = assignments[number];
+        if (id.empty())
+            continue;
+        const auto* patch = catalog.findPatch(id);
+        const std::string name = patch ? patch->patch.name : "Unavailable sound";
+        const std::string label = "PC " + std::to_string(number) + " - " + name;
+        auto* actions = new IPopupMenu();
+        actions->AddItem("Remove assignment");
+        presetMenu->AddItem(label.c_str(), actions);
+        actions->SetFunction([this, lifetime, number, id](IPopupMenu* menu) {
+            if (lifetime.expired() || !menu->GetChosenItem())
+                return;
+            if (catalog.clearProgram(number, id, browserStatus))
+                browserStatus = "Removed PC " + std::to_string(number) + ".";
+            refreshBrowser();
+        });
+    }
+    if (!presetMenu->NItems())
+        presetMenu->AddItem("No Program Change assignments", -1, IPopupMenu::Item::kDisabled);
+    showScrollableLibraryMenu(caller, caller->GetRECT());
+}
+
 void Synth1X::stepPatch(int direction)
 {
     const auto matches = catalog.search(libraryFilter);
@@ -372,26 +442,7 @@ void Synth1X::loadLibraryPatch(std::size_t index)
     if (index >= catalog.patches().size() ||
         (libraryJob.valid() && libraryOperation != synth1x::editor::LibraryOperation::scan))
         return;
-    const auto &item = catalog.patches()[index];
-    std::string error;
-    if (!item.error.empty())
-    {
-        browserStatus = item.error;
-        refreshBrowser();
-        return;
-    }
-    if (!processor.loadProgram(item.patch.text, item.program, error, item.patch.name))
-    {
-        browserStatus = error;
-        refreshBrowser();
-        return;
-    }
-    selectedPatchId = item.id;keyboardPatchId=item.id;
-    currentPatch = item.patch.name;
-    browserStatus.clear();
-    stateRestored.store(false);
-    browser.capture(processor);
-    notifyHostOfPatch();
+    loadCatalogPatch(catalog.patches()[index]);
     refreshBrowser();
 }
 void Synth1X::showImportConflict()

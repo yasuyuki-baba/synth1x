@@ -72,8 +72,8 @@ struct ProcessorBridge::Impl
     std::atomic<float>* rawPatchVersion=&values[126];
     std::atomic<float>* rawMasterVolume=&values[128];
     std::unique_ptr<Synth1PatchMapper> parameterMapper=std::make_unique<Synth1PatchMapper>();
-    bool continuousControls=true;
-    bool directControls=false;
+    std::atomic<bool> continuousControls{true},directControls{false};
+    std::atomic<bool> mappingModeRefreshRequested{true};
     int parameterMappingVersion=-1;
     std::atomic<uint64_t> parameterRevision{1};
     uint64_t mappedParameterRevision{};
@@ -102,7 +102,6 @@ struct ProcessorBridge::Impl
     audio::MidiBuffer midi;
     Impl()
     {
-        parameterMapper->setContinuousControls(continuousControls);
         for(int i=0;i<parameterCount;++i)
         {
             const float minimum=i==128 ? 0.f : static_cast<float>(sourceMinimum(i));
@@ -223,11 +222,12 @@ struct ProcessorBridge::Impl
     {
         if(replacingParameters.load())return;
         auto& synthParams = engine.getParams();
-        const int patchVersion=directControls ? currentPatchFormatVersion : static_cast<int>(std::round(rawPatchVersion->load()));
+        const bool direct=directControls.load();
+        const int patchVersion=direct ? currentPatchFormatVersion : static_cast<int>(std::round(rawPatchVersion->load()));
 
         if (! parameterMapper || parameterMappingVersion != patchVersion)
         {
-            parameterMapper->resetSourceVersion(directControls ? currentPatchFormatVersion : patchVersion>=1 && patchVersion<=113 ? patchVersion : 105);
+            parameterMapper->resetSourceVersion(direct ? currentPatchFormatVersion : patchVersion>=1 && patchVersion<=113 ? patchVersion : 105);
             parameterMappingVersion = patchVersion;
         }
         if (parameterMapper != nullptr)
@@ -237,9 +237,13 @@ struct ProcessorBridge::Impl
             flushNativeLfoHistory();
             const auto revision=parameterRevision.load(std::memory_order_acquire);
             const bool historyValid=engine.nativeRandomHistoryValid();
-            if(revision!=mappedParameterRevision || historyValid!=mappedRandomHistoryValid)
+            // A control-thread patch load publishes the mode. Only this
+            // thread invalidates or updates the render-side mapper.
+            const bool modeChanged=mappingModeRefreshRequested.exchange(false);
+            if(revision!=mappedParameterRevision || historyValid!=mappedRandomHistoryValid || modeChanged)
             {
-                parameterMapper->setDirectControls(directControls);
+                if(modeChanged)parameterMapper->setContinuousControls(continuousControls.load());
+                parameterMapper->setDirectControls(direct);
                 parameterMapper->setRandomHistoryValid(historyValid);
                 parameterMapper->setMissingEnvelopeFields(missingEnvelopeFields.load());
                 parameterMapper->setNativeSourceContext(nativeSourceLoading.load() && patchVersion==nativeSourceVersion.load()
@@ -296,7 +300,7 @@ struct ProcessorBridge::Impl
                 // can otherwise lose a low bit at signed source ranges.
                 for(int i=0;i<parameterCount;++i)values[i].store(patch.values[i]);
                 directControls=true;continuousControls=true;
-                parameterMapper->setContinuousControls(true);
+                mappingModeRefreshRequested.store(true);
                 lastLoadedPreset=text;patchName=patch.name;
                 missingEnvelopeFields.store(0);storeSourcePresence({});storeNativeContext({}, {},113);
                 nativeSourceLoading.store(false);lastNativeParameterPair.store(~uint64_t{0});lastReceiverParameterPair.store(~uint64_t{0});receiverGeneration.fetch_add(1);
@@ -368,13 +372,14 @@ struct ProcessorBridge::Impl
         replacingParameters.store(true);
         requestedOversampling.store(state->oversamplingFactor);
         directControls=state->directControls;
+        continuousControls=state->version==3;
+        mappingModeRefreshRequested.store(true);
         for(int i=0;i<parameterCount;++i)values[i].store(state->values[i]);
         patchName=std::move(state->patchName);program=state->program;lastLoadedPreset=std::move(state->presetText);
         missingEnvelopeFields.store(state->missingEnvelopeFields);storeSourcePresence(state->sourcePresence);
         storeNativeContext(state->initialControls,state->runtimeEdits,static_cast<int>(std::lround(state->values[126])));
         nativeSourceLoading.store(state->nativeSource);lastNativeParameterPair.store(~uint64_t{0});lastReceiverParameterPair.store(~uint64_t{0});receiverGeneration.fetch_add(1);queueNativeLfoLoad();phaseResetRequested.store(true);parameterRevision.fetch_add(1,std::memory_order_release);replacingParameters.store(false);
-        continuousControls=state->version==3;
-        parameterMapper->setContinuousControls(continuousControls);return true;
+        return true;
     }
     template<class Sample> bool render(Sample* left,Sample* right,int frames,double bpm)
     {

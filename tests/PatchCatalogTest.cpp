@@ -101,6 +101,51 @@ TEST(PatchCatalog, EveryImportedBankCanBeTaggedFavoritedAndRefreshedAfterFileDel
     ASSERT_TRUE(fs::remove(catalog.root()/bank));
     ASSERT_TRUE(catalog.reload(error));EXPECT_TRUE(catalog.patches().empty());
 }
+
+TEST(PatchCatalog, ProgramNumbersReferToFavoritesIndependentOfFileNames)
+{
+    CatalogFiles files;
+    PatchCatalog catalog(files.dir/"Library"), other(catalog.root());
+    std::string error;
+    PresetImportResult result;
+    const auto source = files.bank("Own.zip", {{"Warm strings.sy1",warm},{"bass.sy1",bass}});
+    ASSERT_TRUE(registerSource(catalog, source.string(), result, error)) << error;
+    ASSERT_TRUE(other.reload(error)) << error;
+    const auto matches = catalog.search({"Warm Pad"});
+    ASSERT_EQ(matches.size(), 1u);
+    const auto patch = catalog.patches()[matches.front()];
+
+    EXPECT_FALSE(catalog.assignProgram(0, patch.id, error));
+    ASSERT_TRUE(catalog.setFavorite(patch.id, true, error)) << error;
+    EXPECT_FALSE(catalog.assignProgram(-1, patch.id, error));
+    EXPECT_FALSE(catalog.assignProgram(128, patch.id, error));
+    ASSERT_TRUE(catalog.assignProgram(0, patch.id, error)) << error;
+    ASSERT_TRUE(other.assignProgram(127, patch.id, error)) << error;
+    EXPECT_FALSE(other.assignProgram(0, patch.id, error));
+    ASSERT_TRUE(catalog.setFavorite(patch.id, false, error)) << error;
+
+    std::array<std::string, PatchCatalog::programCount> assignments;
+    ASSERT_TRUE(other.readProgramAssignments(assignments, error)) << error;
+    EXPECT_EQ(assignments[0], patch.id);
+    EXPECT_EQ(assignments[127], patch.id);
+    EXPECT_TRUE(assignments[1].empty());
+    const auto* recalled = other.findPatch(other.readProgramAssignment(127, error));
+    ASSERT_TRUE(recalled) << error;
+    EXPECT_EQ(recalled->patch.text, warm);
+    EXPECT_TRUE(other.readProgramAssignment(1, error).empty());
+    EXPECT_TRUE(error.empty());
+    EXPECT_FALSE(other.clearProgram(127, "different sound", error));
+
+    ASSERT_TRUE(fs::remove(patch.file));
+    ASSERT_TRUE(other.reload(error)) << error;
+    EXPECT_EQ(other.readProgramAssignment(127, error), patch.id);
+    EXPECT_FALSE(other.findPatch(patch.id));
+    ASSERT_TRUE(other.clearProgram(127, patch.id, error)) << error;
+    ASSERT_TRUE(catalog.readProgramAssignments(assignments, error)) << error;
+    EXPECT_TRUE(assignments[127].empty());
+    EXPECT_EQ(assignments[0], patch.id);
+}
+
 TEST(PatchCatalog, EmptyLibraryKeepsInitAndExistingSoundStateIndependent) {
     CatalogFiles files;PatchCatalog catalog(files.dir/"Library");ProcessorBridge sounding;std::string error;
     const auto init=sounding.saveState();ASSERT_TRUE(catalog.reload(error));EXPECT_TRUE(catalog.patches().empty());
