@@ -80,7 +80,7 @@ enum class Synth1VoicePlayMode {
 enum class Synth1EffectType {
     overdrive1,
     overdrive2,
-    decimatorDrive,
+    digitalDistortion,
     decimator,
     ringMod,
     compressor,

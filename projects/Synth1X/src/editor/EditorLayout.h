@@ -86,7 +86,7 @@ inline std::vector<EditorChoice> editorChoices(int index)
         case 42: case 47: return {{0,"Saw"},{1,"Triangle"},{2,"Square"},{3,"Random S&H"},{4,"Random smooth"},{5,"Sine"}};
         case 64: return {{1,"1x"},{2,"2x"},{4,"4x"}};
         case 71: return {{0,"OSC2"},{1,"FM"},{2,"Width"}};
-        case 78: return {{0,"Overdrive 1"},{1,"Overdrive 2"},{2,"Decimator drive"},{3,"Decimator"},{4,"Ring mod"},
+        case 78: return {{0,"Analog Distortion 1"},{1,"Analog Distortion 2"},{2,"Digital Distortion"},{3,"Decimator"},{4,"Ring mod"},
                          {5,"Compressor"},{6,"Phaser 1"},{7,"Phaser 2"},{8,"Phaser 3"},{9,"Phaser 4"}};
         case 82: return {{0,"Stereo"},{1,"Cross"},{2,"Ping-pong"}};
         case 86: case 88: return {

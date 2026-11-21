@@ -245,7 +245,7 @@ std::optional<Synth1EffectType> decodeEffectKind(const Synth1PatchDocument& docu
     case 1:
         return Synth1EffectType::overdrive2;
     case 2:
-        return Synth1EffectType::decimatorDrive;
+        return Synth1EffectType::digitalDistortion;
     case 3:
         return Synth1EffectType::decimator;
     case 4:
@@ -693,7 +693,7 @@ void importEffectControls(const Synth1PatchDocument& document, Synth1EffectPatch
     switch (effect.type.value()) {
     case Synth1EffectType::overdrive1:
     case Synth1EffectType::overdrive2:
-    case Synth1EffectType::decimatorDrive:
+    case Synth1EffectType::digitalDistortion:
         effect.distortion.amount = control1;
         effect.distortion.lowPassCutoff = control2;
         effect.distortion.level = control3;
@@ -735,7 +735,7 @@ void exportEffectControls(Synth1PatchDocument& document, const Synth1EffectPatch
     switch (effect.type.value()) {
     case Synth1EffectType::overdrive1:
     case Synth1EffectType::overdrive2:
-    case Synth1EffectType::decimatorDrive:
+    case Synth1EffectType::digitalDistortion:
         writeOptional(document, 79, effect.distortion.amount);
         writeOptional(document, 80, effect.distortion.lowPassCutoff);
         writeOptional(document, 81, effect.distortion.level);
