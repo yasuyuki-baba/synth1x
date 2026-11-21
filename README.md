@@ -23,6 +23,9 @@ ZIP, RAR and 7z banks.
 The editor has dedicated MIDI and Library views, and A/B slots for comparing
 two sounds. [Editor and library guide](docs/gui/README.md)
 
+See the [MIDI Implementation Chart](docs/midi-implementation.md) for supported
+messages and Program Change behavior.
+
 ## Platforms and formats
 
 | Platform | Plugin formats | Standalone |
