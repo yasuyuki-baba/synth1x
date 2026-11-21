@@ -159,7 +159,7 @@ TEST(EditorInteraction, EffectKnobLabelsFollowTheSelectedType)
     const Labels phaser {"Depth","Rate"};
     const std::array<Labels,10> expected {
         drive,drive,drive,Labels{"Rate","Bit Depth"},Labels{"Frequency",nullptr},
-        Labels{"Depth","Attack"},phaser,phaser,phaser,phaser
+        Labels{"Comp","Attack"},phaser,phaser,phaser,phaser
     };
     synth1x::host::ProcessorBridge processor;
     for (const auto& choice : editorChoices(78)) {
