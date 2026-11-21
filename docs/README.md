@@ -18,6 +18,7 @@ independently observed behavior, implementation regressions and unresolved gaps.
 | Source formats, defaults and transactional loading | [Patch loading](contracts/patch-loading.md) |
 | Stable parameters, saved state and callback interface | [Processor/state](contracts/processor-state.md) |
 | MIDI, ARP and physical/logical voices | [MIDI and voices](contracts/midi-voices.md) |
+| Supported MIDI messages and controllers | [MIDI Implementation Chart](midi-implementation.md) |
 | Shared clocks, random streams and input history | [Modulation](contracts/modulation.md) |
 | DSP/output order, numerical behavior and silence | [Audio rendering](contracts/audio-rendering.md) |
 | Test oracles, provenance and compatibility scope | [Validation](contracts/validation.md) |
