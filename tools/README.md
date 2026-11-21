@@ -12,7 +12,7 @@ compatibility checkout. Native APP capture is an optional Wine GUI workflow.
 | Compare WAVs for diagnostics | [CompareWaves](compare_waves.cpp) |
 | Audit DSP, voice, editor and state header compilation/dependency boundaries | audit_dsp_headers.py; GNU-style GNU/Clang Ninja/Makefile builds also provide CTest `HeaderBoundaryAudit` and target `Synth1XHeaderAudit` |
 | Check portable C++ file/type names and setting suffixes | `python3 tools/lint_naming.py` or CMake target `Synth1XNamingLint` |
-| Preview/render the editor study | preview_editor.py, render_editor_study.py |
+| Prepare native SDKs and package builds | `prepare_native_sdks.py` and `package_native.py`. See [CI commands and package formats](../docs/ci.md#local-equivalents). |
 | Capture the Windows APP editor | capture_iplug_wine.py |
 
 Use the [reference comparison procedure](../docs/validation/reference-comparisons.md) for a
@@ -20,8 +20,7 @@ self-authored input example, exact MIDI timeline format, loading-probe file layo
 and byte-for-byte before/after checks. The loading probe is a case-based tool, not
 a single-patch command; its mode determines which values it reports.
 
-Editor generation is described in the [GUI guide](../docs/gui/README.md); native
-APP capture is covered by the [platform guide](../docs/validation/manual-platform.md#native-windows-app-capture).
+For screenshots of the running editor, follow the [platform guide](../docs/validation/manual-platform.md#native-windows-app-capture).
 
 `measurement_common.py` supplies standard-library WAV decoding, hashes, raw stereo
 errors and logged subprocess I/O. Its tests are part of the portable suite.
@@ -31,7 +30,7 @@ stereo compatibility evidence.
 Configure with `SYNTH1X_BUILD_TOOLS=ON` to build the offline tool targets; the
 portable `core` preset enables them. Native presets disable tools. Tests enabled
 with `SYNTH1X_BUILD_TOOLS=OFF` still build the required Probe and WAV comparator,
-but omit LoadingProbe, the editor exporter, the host benchmark and the tag probe.
+but omit LoadingProbe, the host benchmark and the tag probe.
 
 ## Automatic tag reports
 
@@ -72,11 +71,6 @@ increased tag coverage by itself does not establish better classification.
 errors, and 1 for a tool/input/output failure. `compare` returns 0 after producing
 a report even when differences exist. The lower-level `Synth1XTagProbe` streams
 records to the Python wrapper and is built only when optional tools are enabled.
-
-Native CI helpers: `prepare_native_sdks.py` installs lock-file SDK revisions and
-writes a build-identity manifest. `package_native.py` checks the expected native
-products and creates a Windows ZIP or macOS tar.gz with metadata and notices.
-See [CI](../docs/ci.md) for local commands and verification boundaries.
 
 ## Offline host benchmark
 

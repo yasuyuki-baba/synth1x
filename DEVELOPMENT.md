@@ -58,11 +58,11 @@ the [installation guide](INSTALL.md).
 
 | Topic | Guide |
 | --- | --- |
-| Capabilities and verification limits | [Product status](docs/status.md) |
+| Capabilities and verification limits | [Verification scope](docs/README.md#verification-scope) |
 | Product behavior and architecture | [Product contracts](docs/README.md) |
 | Portable tests and focused checks | [Testing](tests/README.md) |
 | Plugin and standalone builds | [Desktop build guide](docs/desktop-build.md) |
-| Editor behavior and design previews | [GUI guide](docs/gui/README.md) |
+| Editor behavior and layout | [GUI guide](docs/gui/README.md) |
 | Rendering, inspection and diagnostics | [Development tools](tools/README.md) |
 | Test inputs and evidence | [Evidence](docs/contracts/validation.md) |
 | Distribution considerations | [Distribution requirements](docs/publication/README.md) |

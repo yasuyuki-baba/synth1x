@@ -84,9 +84,7 @@ an Unused label.
 Time retains its tempo and
 stereo-delay readout directly below it. Muted rose headings and thin internal dividers
 provide hierarchy without reducing label sizes or moving controls off the main
-surface. Native drawing and review studies share group frames, dividers and delay readout bounds;
-studies use placeholders for live tempo and stereo delay times.
-Native drawing and review tools consume the shared typography policy.
+surface.
 
 Window-frame resizing scales the complete logical canvas, including text and
 input hit areas, rather than enlarging an unscaled drawing area. Standalone and
@@ -175,8 +173,8 @@ position rather than rounding to an adjacent integer first. Unit readouts remain
 presentation only; numeric entry and host automation use the original source
 scale. See the [processor contract](../contracts/processor-state.md).
 
-`EditorLayout`, `EditorAppearance`, `EditorValueDisplay` and the exporter provide
-shared native/preview geometry, appearance and value displays. Failed library
+`EditorLayout`, `EditorAppearance` and `EditorValueDisplay` define
+the native editor geometry, appearance and value displays. Failed library
 reads or invalid source loads preserve valid state. State recall retains source
 text and its patch display name and does not require the source ZIP. UI notifications must not sweep imported
 values through native setters and thereby change loading history.
@@ -198,31 +196,10 @@ native tags and appearance helpers keep layout and library updates consistent. C
 and dialog lifetime remain owned by the plugin wrapper. Controls borrow them. Both native
 build paths consume the same editor source list.
 
-```sh
-cmake --preset core
-cmake --build build-oos-core --target ExportEditorLayout
-python3 tools/preview_editor.py --exporter build-oos-core/ExportEditorLayout
-python3 tools/render_editor_study.py --exporter build-oos-core/ExportEditorLayout
-```
-
-These commands generate local studies at `build/editor/synth1x-preview.html` and
-`build/editor/synth1x-study.svg`; open those files to inspect the design. Generated
-studies are excluded from Git. On Windows, use
-`build-oos-core/ExportEditorLayout.exe` as the exporter path. Optional PNG output
-adds `--png` to the study command and requires discoverable librsvg, Cairo and
-GObject shared libraries; SVG/HTML generation does not require those libraries.
-The optional PNG is another local generated export alongside the SVG.
-
-The HTML preview illustrates the main synthesis controls; the persistent Library
-view is covered by the native editor and portable catalog tests. The preview has
-no audio engine or complete versioned loading resolver. SVG
-and PNG studies are design renderings, not native plugin screenshots. Native
-focus, scaling, DAW interaction and platform accessibility need platform testing.
-See [EditorLayoutTest.cpp](../../tests/EditorLayoutTest.cpp), the patch-library tests
-and [native APP capture](../validation/manual-platform.md#native-windows-app-capture).
-
-The generated layout study and interactive preview are presentation aids governed
-by this contract, not audio/DAW validation.
+The portable suite checks control placement and bounds in
+[EditorLayoutTest.cpp](../../tests/EditorLayoutTest.cpp). Check label fit, disabled
+controls and scaling in the running editor. For screenshots, follow the
+[native Windows APP capture procedure](../validation/manual-platform.md#native-windows-app-capture).
 
 Momentary editor actions use the shared native ActionButtonControl, which starts
 the SDK completion animation before invoking application code. Click feedback

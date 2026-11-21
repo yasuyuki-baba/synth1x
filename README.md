@@ -20,12 +20,6 @@ ZIP, RAR and 7z banks.
 - **Output** - multi-effects, chorus, delay, EQ, and selectable oversampling up
   to 16×.
 
-The editor has dedicated MIDI and Library views, and A/B slots for comparing
-two sounds. [Editor and library guide](docs/gui/README.md)
-
-See the [MIDI Implementation Chart](docs/midi-implementation.md) for supported
-messages and Program Change behavior.
-
 ## Platforms and formats
 
 | Platform | Plugin formats | Standalone |
@@ -35,7 +29,7 @@ messages and Program Change behavior.
 | Linux (experimental) | VST3, CLAP | APP |
 
 These are configured build targets, not certification of plugin/DAW operation.
-See [capabilities and verification boundaries](docs/status.md) for the current scope.
+See [capabilities and verification boundaries](docs/README.md#verification-scope) for the current scope.
 
 ## Install native packages
 
@@ -46,6 +40,13 @@ prompts, rescanning and adding your first patches.
 
 Upgrading from Synth2 0.1.x to Synth1X 0.2.x or later requires manual migration.
 See the [migration guide](MIGRATION.md) before upgrading.
+
+## Using Synth1X
+
+- [Load the instrument and add your first patches](INSTALL.md#load-and-play)
+- [Browse the library by keyboard](docs/gui/patch-library.md#keyboard-patch-selection) or [save an edited sound](docs/gui/patch-library.md#saving-and-edited-sounds).
+- [Compare two sounds with A/B](docs/gui/patch-comparison.md)
+- [Assign a favorite sound to MIDI Program Change](docs/gui/patch-library.md#program-change-slots) or check the [MIDI Implementation Chart](docs/midi-implementation.md).
 
 ## Synth1 audio comparison
 

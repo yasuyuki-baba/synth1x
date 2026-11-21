@@ -1,18 +1,5 @@
 # Synth1X product documentation
 
-Use this index to find the authoritative document for each topic. Directory
-READMEs introduce their local contents and link to these detailed contracts
-rather than duplicating them.
-
-`contracts/` defines required behavior, `architecture/` explains component
-ownership, `validation/` contains verification scope and procedures, and `gui/`
-covers editor and library behavior.
-
-These documents define what the product must do, its ownership boundaries, how to
-verify them and what remains unverified. Do not convert the current implementation
-into a requirement merely because it exists. Distinguish intended behavior,
-independently observed behavior, implementation regressions and unresolved gaps.
-
 | Need | Maintained contract |
 | --- | --- |
 | Source formats, defaults and transactional loading | [Patch loading](contracts/patch-loading.md) |
@@ -32,13 +19,20 @@ independently observed behavior, implementation regressions and unresolved gaps.
 | Before/after audio and loading comparisons | [Reference comparisons](validation/reference-comparisons.md) |
 | CI checks and candidate artifacts | [Continuous integration](ci.md) |
 | Native formats and toolchains | [Desktop build boundary](desktop-build.md) |
+| Library archives, tags and recall | [Patch library](gui/patch-library.md) |
 | Editor behavior and design | [GUI](gui/README.md) |
 
-[status.md](status.md) is a short capability/verification index, not a development
-journal. Each requirement should name a regression test or retained evidence and
-state its limits. Change a contract only for an explicit product decision or new
-independent evidence; do not silently bless a failing implementation or weaken a bound.
+## Verification scope
 
-Public readers can use [validation requirements](contracts/validation.md) and the
-included test sources for local verification. Source and binary packages follow
-the [distribution requirements](publication/README.md).
+Portable tests exercise the core with self-authored inputs. Headless native tests
+load built plugins and check host API behavior. The [verification map](validation/coverage.md)
+identifies what each suite covers. Use the [manual platform guide](validation/manual-platform.md)
+for editor interaction, DAW sessions and physical audio/MIDI devices.
+
+Original-instrument comparisons apply to the measured patches, pitches and
+render settings. See the [results and conditions](validation/reference-comparisons.md#rydeen-bank-comparison).
+For upgrades, the [migration guide](../MIGRATION.md) explains how changed plugin
+IDs affect existing DAW sessions.
+
+Use the [test guide](../tests/README.md) to run checks and the
+[distribution requirements](publication/README.md) when preparing packages.
