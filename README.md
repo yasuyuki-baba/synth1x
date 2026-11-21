@@ -20,7 +20,39 @@ ZIP, RAR and 7z banks.
 - **Output** - multi-effects, chorus, delay, EQ, and selectable oversampling up
   to 16×.
 
-## Platforms and formats
+Solid arrows carry audio. Dotted arrows carry note events or envelope control. The sub oscillator
+follows OSC 1's phase. All voices share the effects after the voice sum.
+
+```mermaid
+flowchart TD
+    subgraph notes["Note input"]
+        direction LR
+        midi["MIDI notes"] -.->|ARP on| arp["Arpeggiator"]
+        arp -.-> alloc["Voice allocation"]
+        midi -.->|ARP off| alloc
+    end
+    subgraph voices["Per voice"]
+        direction LR
+        osc1["OSC 1"] --> mix["Oscillator mix"]
+        sub["Sub oscillator"] --> mix
+        osc2["OSC 2"] --> mix
+        mix --> filter["Filter"] --> amp["Amplifier"]
+        fe["Filter envelope"] -.-> filter
+        ae["Amp envelope"] -.-> amp
+    end
+    subgraph output["Shared output"]
+        direction LR
+        sum["Voice sum"] --> fx["Multi-effects"] --> eq["EQ / Tone"]
+        eq --> pan["Pan"] --> delay["Delay"] --> chorus["Chorus"] --> out["Stereo out"]
+    end
+    notes -.-> voices
+    voices --> output
+```
+
+## Download and install
+
+Download the package for your OS from the
+[latest release](https://github.com/yasuyuki-baba/synth1x/releases/latest).
 
 | Platform | Plugin formats | Standalone |
 | --- | --- | --- |
@@ -31,10 +63,6 @@ ZIP, RAR and 7z banks.
 These are configured build targets, not certification of plugin/DAW operation.
 See [capabilities and verification boundaries](docs/README.md#verification-scope) for the current scope.
 
-## Install native packages
-
-Download the package for your OS from the
-[latest release](https://github.com/yasuyuki-baba/synth1x/releases/latest).
 See the [installation guide](INSTALL.md) for plugin folders, unsigned-build
 prompts, rescanning and adding your first patches.
 
