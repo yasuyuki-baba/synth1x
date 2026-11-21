@@ -537,6 +537,11 @@ bool PresetFiles::save(const fs::path &relative, const std::string &text, bool r
 {
     return writePreset(relative, text, replace, id, error) && scan(error);
 }
+
+bool PresetFiles::createLibraryFile(const fs::path& path, const std::string& text, std::string& error)
+{
+    return writeFile(path, text, false, error);
+}
 bool PresetFiles::writePreset(const fs::path &relative, const std::string &text, bool replace, std::string &id,
                               std::string &error)
 {

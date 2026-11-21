@@ -263,6 +263,22 @@ Per-file and per-archive PatchLibrary limits still apply. The catalog retains it
 A failed catalog reload retains the previous valid snapshot. Catalog indices are
 not host program ordinals; archive entries retain their source-bank ordinal.
 
+## Program Change slots
+
+Mark a sound as a favorite, then right-click its row and choose a Program Change
+number. The numbers in the menu match the MIDI values 0 to 127. There is one
+bank. Patch filenames are independent of the assigned numbers.
+
+Choose **Program Change...** on the MIDI tab to see the assigned numbers and
+sound names. To free a number, open its entry and select **Remove assignment**.
+Removing a favorite leaves its assignment in place. If a sound is removed from
+the library, its slot stays available for removal from this menu.
+
+The assignments live in the library's `programs/` folder and are shared by
+instances that use that library. Keep this folder with the sound files when
+backing up the library. A received number recalls the sound into the active A/B
+slot. An unassigned number leaves the current sound alone.
+
 ## Session recall
 
 Each plugin instance saves its query, bank/tag/favorite filters, registration IDs,

@@ -112,6 +112,7 @@ public:
     CatalogListControl(const IRECT& bounds,const host::PatchCatalog& catalog,
         const std::string& selected,const std::string& keyboardSelection,std::function<void(std::size_t)> load,
         std::function<void(const std::string&,bool)> favorite,
+        std::function<void(IControl*,const std::string&,float,float)> assignProgram,
         std::function<void(const std::string&)> bank,std::function<void(const std::string&)> tag,
         std::function<void(double)> scroll,std::function<void(const char*)> import);
     void setResults(std::vector<std::size_t> results,double start);
@@ -142,6 +143,7 @@ private:
     void dragScroll(float y);
     std::function<void(std::size_t)> load;
     std::function<void(const std::string&,bool)> favorite;
+    std::function<void(IControl*,const std::string&,float,float)> assignProgram;
     std::function<void(const std::string&)> filterBank,filterTag;
     std::function<void(double)> scroll;
     std::function<void(const char*)> import;

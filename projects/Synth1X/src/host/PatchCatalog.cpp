@@ -10,6 +10,7 @@
 #include <fstream>
 #include <iomanip>
 #include <map>
+#include <mutex>
 #include <sstream>
 #include <stdexcept>
 #include <string_view>
@@ -92,6 +93,18 @@ void storeOverrides(const fs::path& root,const std::string& id,const TagOverride
 void requireRoot(const fs::path& root) {
     if(root.empty())throw std::runtime_error("The user library folder is unavailable.");
 }
+fs::path programPath(const fs::path& root, int number)
+{
+    requireRoot(root);
+    if (number < 0 || number >= PatchCatalog::programCount)
+        throw std::runtime_error("Choose a Program Change number from 0 to 127.");
+    return root / "programs" / (std::to_string(number) + ".pc");
+}
+std::string programId(const fs::path& path)
+{
+    return fs::exists(path) ? read(path, 32768) : std::string{};
+}
+std::mutex programAssignmentWrites;
 std::vector<PatchTagSuggestion> readTagSuggestions(std::istream& input)
 {
     std::size_t count;
@@ -312,6 +325,63 @@ bool PatchCatalog::saveFile(const fs::path& relative,const std::string& text,boo
         requireRoot(directory);PresetFiles files(directory);if(!files.writePreset(relative,text,replace,id,error))return false;
         return reload(error);
     }catch(const std::exception& e){error=e.what();return false;}
+}
+
+std::string PatchCatalog::readProgramAssignment(int number, std::string& error) const
+{
+    try {
+        auto id = programId(programPath(directory, number));
+        error.clear();
+        return id;
+    } catch (const std::exception& e) { error = e.what(); return {}; }
+}
+
+bool PatchCatalog::readProgramAssignments(std::array<std::string, programCount>& assignments,
+                                          std::string& error) const
+{
+    try {
+        std::array<std::string, programCount> next;
+        for (int number = 0; number < programCount; ++number)
+            next[number] = programId(programPath(directory, number));
+        assignments = std::move(next);
+        error.clear();
+        return true;
+    } catch (const std::exception& e) { error = e.what(); return false; }
+}
+
+bool PatchCatalog::assignProgram(int number, const std::string& id, std::string& error)
+{
+    try {
+        const std::lock_guard lock(programAssignmentWrites);
+        const auto path = programPath(directory, number);
+        const auto* patch = findPatch(id);
+        if (!patch || !patch->error.empty() || !fs::is_regular_file(favorites(directory, id)))
+            throw std::runtime_error("Choose a playable sound marked as a favorite.");
+        if (id.size() > 32768)
+            throw std::runtime_error("The sound identifier is too long to assign.");
+        if (fs::exists(path))
+            throw std::runtime_error("This Program Change number is already assigned.");
+        return PresetFiles::createLibraryFile(path, id, error);
+    } catch (const std::exception& e) { error = e.what(); return false; }
+}
+
+bool PatchCatalog::clearProgram(int number, const std::string& expectedId, std::string& error)
+{
+    try {
+        const std::lock_guard lock(programAssignmentWrites);
+        const auto path = programPath(directory, number);
+        if (expectedId.empty() || programId(path) != expectedId || !fs::remove(path))
+            throw std::runtime_error("This Program Change assignment has changed.");
+        error.clear();
+        return true;
+    } catch (const std::exception& e) { error = e.what(); return false; }
+}
+
+const CatalogPatch* PatchCatalog::findPatch(const std::string& id) const noexcept
+{
+    const auto found = std::find_if(entries.begin(), entries.end(),
+        [&](const auto& patch) { return patch.id == id; });
+    return found == entries.end() ? nullptr : &*found;
 }
 
 bool PatchCatalog::setFavorite(const std::string& id,bool favorite,std::string& error) {

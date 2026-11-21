@@ -2,6 +2,7 @@
 #include "patch/PatchFormat.h"
 #include "public.sdk/source/vst/hosting/parameterchanges.h"
 #include <array>
+#include <chrono>
 #include <cmath>
 #include <iostream>
 #include <stdexcept>
@@ -51,6 +52,84 @@ struct Host final : Steinberg::Vst::IComponentHandler
 
 struct Synth1XVst3PatchTest
 {
+    static void checkProgramChange()
+    {
+        using namespace Steinberg::Vst;
+        namespace fs = std::filesystem;
+        struct Library {
+            fs::path root = fs::temp_directory_path() / ("synth1x-pc-" +
+                std::to_string(std::chrono::steady_clock::now().time_since_epoch().count()));
+            ~Library() { std::error_code ignored; fs::remove_all(root, ignored); }
+        } library;
+
+        Host host;
+        Synth1X plugin {iplug::InstanceInfo{}};
+        host.plugin = &plugin;
+        require(plugin.initialize(&host) == Steinberg::kResultOk, "Program Change initialize failed");
+        plugin.setComponentHandler(&host);
+        ProgramListInfo list {};
+        UnitID unit = -1;
+        UnitInfo unitInfo {};
+        require(plugin.getProgramListCount() == 1 && plugin.getProgramListInfo(0, list) == Steinberg::kResultTrue &&
+                list.programCount == 128, "Missing 128-slot VST3 program list");
+        require(plugin.getUnitByBus(kEvent, kInput, 0, 15, unit) == Steinberg::kResultTrue &&
+                plugin.getUnitInfo(0, unitInfo) == Steinberg::kResultTrue && unitInfo.id == unit &&
+                unitInfo.programListId == list.id, "VST3 MIDI input has no Program Change unit");
+        bool hasProgramParam = false;
+        for (int index = 0; index < plugin.getParameterCount(); ++index) {
+            ParameterInfo info {};
+            if (plugin.getParameterInfo(index, info) == Steinberg::kResultTrue && info.id == list.id)
+                hasProgramParam = (info.flags & ParameterInfo::kIsProgramChange) && info.stepCount == 127;
+        }
+        require(hasProgramParam, "Missing stepped VST3 program parameter");
+
+        plugin.catalog = synth1x::host::PatchCatalog(library.root);
+        std::string error, padId, leadId;
+        require(plugin.catalog.saveFile("Pad in use.sy1", "Soft Pad\nver=113\n19,83\n", false, padId, error),
+                "Could not save Program Change test pad");
+        require(plugin.catalog.saveFile("First lead.sy1", "Bright Lead\nver=113\n19,103\n", false, leadId, error),
+                "Could not save Program Change test lead");
+        require(plugin.catalog.setFavorite(padId, true, error) && plugin.catalog.assignProgram(127, padId, error) &&
+                plugin.catalog.setFavorite(leadId, true, error) && plugin.catalog.assignProgram(0, leadId, error),
+                "Could not assign Program Change test patches");
+        plugin.catalogLoaded = true;
+        ProcessSetup setup {};
+        setup.sampleRate = 48000;
+        setup.maxSamplesPerBlock = 128;
+        setup.symbolicSampleSize = kSample64;
+        require(plugin.setupProcessing(setup) == Steinberg::kResultOk, "Program Change setup failed");
+        plugin.setActive(true);
+        require(plugin.setParamNormalized(list.id, 1.0) == Steinberg::kResultTrue, "Controller rejected program");
+
+        ParameterChanges changes;
+        Steinberg::int32 queueIndex = 0, pointIndex = 0;
+        changes.addParameterData(list.id, queueIndex)->addPoint(0, 1.0, pointIndex);
+        ProcessData data {};
+        data.symbolicSampleSize = kSample64;
+        data.inputParameterChanges = &changes;
+        require(plugin.process(data) == Steinberg::kResultOk, "Zero-frame VST3 Program Change callback failed");
+        require(plugin.currentPatch == "Init", "Program Change loaded from the audio callback");
+        plugin.pollMidiProgram();
+        require(plugin.currentPatch == "Soft Pad" && plugin.selectedPatchId == padId && host.reads > 0 &&
+                host.mismatches == 0, "VST3 host Program Change did not publish the assigned pad");
+
+        iplug::IMidiMsg raw {};
+        raw.mStatus = 0xCF;
+        raw.mData1 = 0;
+        plugin.ProcessMidiMsg(raw);
+        plugin.pollMidiProgram();
+        require(plugin.currentPatch == "Bright Lead" && plugin.processor.currentPatchName() == "Bright Lead",
+                "Raw channel-16 Program Change did not recall slot 0");
+        const auto before = plugin.processor.saveState();
+        raw.mData1 = 1;
+        plugin.ProcessMidiMsg(raw);
+        plugin.pollMidiProgram();
+        require(plugin.processor.saveState() == before, "Unassigned Program Change altered the patch");
+        plugin.setActive(false);
+        plugin.setComponentHandler(nullptr);
+        plugin.terminate();
+    }
+
     static void checkHostEcho()
     {
         // Authored legacy input: loaded control conversion must survive a host
@@ -276,6 +355,7 @@ struct Synth1XVst3PatchTest
         require(host.mismatches==0,"A/B copy published stale VST3 values");
         std::cout<<"A/B: audible/silent switching, copy, host readback and project recall passed\n";
         checkEditorMidi(patch(100));
+        checkProgramChange();
         plugin.setActive(false);
         plugin.setComponentHandler(nullptr);plugin.terminate();
     }

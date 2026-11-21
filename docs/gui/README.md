@@ -29,6 +29,10 @@ The historical host destination range remains 0–127; named editor edits and so
 state preserve the disabled -1 sentinel independently of the host projection.
 Displaying imported assignments or synchronizing host values must not edit them.
 
+In the Library, mark a sound as a favorite and right-click its row to assign a
+MIDI Program Change number. Use **Program Change...** on the MIDI tab to view
+assigned sounds or remove an assignment. See [Program Change slots](patch-library.md#program-change-slots).
+
 ![MIDI editor: bend range and two controller assignments](../images/midi-routing.png)
 
 The image is a native Linux CLAP editor capture at 100% scale.

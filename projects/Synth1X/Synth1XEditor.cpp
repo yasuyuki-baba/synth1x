@@ -246,6 +246,9 @@ void Synth1X::layoutEditor(IGraphics* graphics)
             graphics->AttachControl(control,parameterTag+item.parameter);
         }
     }
+    graphics->AttachControl(new ActionButtonControl(IRECT(1036,136,1260,174),[this](IControl* caller) {
+        showProgramAssignments(caller);
+    },"Program Change...",style),midiProgramsTag);
     graphics->AttachControl(new PaletteTextControl(IRECT(20,802,530,826),"",text.WithFGColor(appearance.muted).WithSize(Typography::auxiliary).WithAlign(EAlign::Near),synth1x::editor::PaletteRole::muted),statusTag);
     graphics->AttachControl(new PaletteTextControl(rect(synth1x::editor::editorVersionBounds),"v" PLUG_VERSION_STR,
         text.WithFGColor(appearance.muted).WithSize(Typography::auxiliary).WithAlign(EAlign::Far),synth1x::editor::PaletteRole::muted));
@@ -320,6 +323,7 @@ void Synth1X::layoutEditor(IGraphics* graphics)
             std::string error;if(!catalog.setFavorite(id,favorite,error))browserStatus=error;
             else browserStatus.clear();refreshBrowser();
         },
+        [this](IControl* caller,const std::string& id,float x,float y) { showProgramAssignment(caller,id,x,y); },
         [this](const std::string& bank) { selectBank(bank); },
         [this](const std::string& tag) { toggleTagFilter(tag); },
         [this](double offset) {
@@ -361,6 +365,7 @@ void Synth1X::showPage(int next)
         }
         for(std::size_t panelIndex=0;panelIndex<synth1x::editor::editorMidiPanels().size();++panelIndex)
             if(auto* control=graphics->GetControlWithTag(midiPanelTag+static_cast<int>(panelIndex)))control->Hide(page!=1);
+        if(auto* control=graphics->GetControlWithTag(midiProgramsTag))control->Hide(page!=1);
         for (std::size_t group=5;group<pages.size();++group)
             for (int index:pages[group].parameters)
                 if (auto* control=graphics->GetControlWithTag(parameterTag+index)) control->Hide(page!=static_cast<int>(group)-4);
@@ -423,6 +428,7 @@ void Synth1X::OnIdle()
     updateKeyboardInput();
     showImportConflict();
     pollLibraryJob();
+    pollMidiProgram();
     const bool modified = browser.modified(processor);
     if (stateRestored.exchange(false))
     {
