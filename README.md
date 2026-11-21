@@ -20,7 +20,7 @@ ZIP, RAR and 7z banks.
 - **Output** - multi-effects, chorus, delay, EQ, and selectable oversampling up
   to 16×.
 
-Solid arrows carry audio. Dotted arrows carry note events or envelope control. The sub oscillator
+Solid arrows carry audio. Dotted arrows carry note events or modulation. The sub oscillator
 follows OSC 1's phase. All voices share the effects after the voice sum.
 
 ```mermaid
@@ -31,11 +31,17 @@ flowchart TD
         arp -.-> alloc["Voice allocation"]
         midi -.->|ARP off| alloc
     end
+    subgraph modulation["Shared modulation"]
+        direction LR
+        lfos["LFO 1 and LFO 2"] -.->|each selects one| dest["Pitch (OSC 2 or both), pulse width, FM,<br/>filter cutoff, amp level or pan"]
+    end
     subgraph voices["Per voice"]
         direction LR
-        osc1["OSC 1"] --> mix["Oscillator mix"]
+        osc1["OSC 1"] --> mix["Oscillator mix<br/>Optional ring modulation: OSC 1 × OSC 2"]
         sub["Sub oscillator"] --> mix
         osc2["OSC 2"] --> mix
+        osc2 -.->|FM| osc1
+        osc1 -.->|Hard sync| osc2
         mix --> filter["Filter"] --> amp["Amplifier"]
         fe["Filter envelope"] -.-> filter
         ae["Amp envelope"] -.-> amp
