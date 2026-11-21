@@ -152,6 +152,27 @@ TEST(EditorInteraction, HostAutomationAndStateRecallReachChoiceAndNumericPresent
     EXPECT_EQ(editorChoiceDisplay(false,127,editorChoices(64)),"Custom");
 }
 
+TEST(EditorInteraction, EffectKnobLabelsFollowTheSelectedType)
+{
+    using Labels = std::array<const char*,2>;
+    const Labels drive {"Drive","LP Cutoff"};
+    const Labels phaser {"LFO Depth","LFO Rate"};
+    const std::array<Labels,10> expected {
+        drive,drive,drive,Labels{"Rate","Bit Depth"},Labels{"Frequency",nullptr},
+        Labels{"Depth","Attack"},phaser,phaser,phaser,phaser
+    };
+    synth1x::host::ProcessorBridge processor;
+    for (const auto& choice : editorChoices(78)) {
+        submitSource(processor,78,choice.value);
+        const auto labels=editorEffectKnobLabels(sourceValue(processor,78));
+        EXPECT_STREQ(labels[0],expected.at(choice.value)[0]) << choice.label;
+        EXPECT_STREQ(labels[1],expected.at(choice.value)[1]) << choice.label;
+    }
+    const auto custom=editorEffectKnobLabels(3.5);
+    EXPECT_STREQ(custom[0],"Control 1");
+    EXPECT_STREQ(custom[1],"Control 2");
+}
+
 TEST(EditorInteraction, EditingStepsDistinguishSelectorsCountsAndContinuousDials)
 {
     using namespace synth1x::host;

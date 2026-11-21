@@ -7,11 +7,13 @@
 #include "editor/EditorStyle.h"
 #include "editor/EditorPages.h"
 #include "editor/EditorFonts.h"
+#include "editor/EditorInteraction.h"
 #include "IVKeyboardControl.h"
 #include "editor/EditorKeyboardFocus.h"
 #include "editor/EditorWindowBounds.h"
 #include <algorithm>
 #include <cstdio>
+#include <string_view>
 
 using namespace iplug;
 using namespace iplug::igraphics;
@@ -219,6 +221,7 @@ void Synth1X::layoutEditor(IGraphics* graphics)
         graphics->AttachControl(timing,delayTimingTag+line);
     }
     refreshDelayTiming();
+    refreshEffectLabels(*graphics);
     for(std::size_t panelIndex=0;panelIndex<synth1x::editor::editorMidiPanels().size();++panelIndex)
     {
         const auto& section=synth1x::editor::editorMidiPanels()[panelIndex];
@@ -376,6 +379,25 @@ void Synth1X::showPage(int next)
     }
 }
 
+void Synth1X::refreshEffectLabels(IGraphics& graphics)
+{
+    const auto& type=processor.parameter(78);
+    const auto labels=synth1x::editor::editorEffectKnobLabels(
+        type.minimum+processor.normalizedValue(78)*(type.maximum-type.minimum));
+    for (std::size_t index=0; index<labels.size(); ++index)
+        if (auto* control=graphics.GetControlWithTag(parameterTag+79+static_cast<int>(index))) {
+            auto* knob=control->As<PanelKnobControl>();
+            const bool unused=labels[index]==nullptr;
+            const auto* label=unused ? "Unused" : labels[index];
+            if (std::string_view(knob->GetLabelStr())!=label) {
+                knob->SetLabelStr(label);
+                knob->SetTooltip(label);
+            }
+            if (knob->IsDisabled()!=unused)
+                knob->SetDisabled(unused);
+        }
+}
+
 void Synth1X::refreshDelayTiming()
 {
     auto* graphics=GetUI();if(!graphics)return;
@@ -429,6 +451,8 @@ void Synth1X::OnIdle()
     showImportConflict();
     pollLibraryJob();
     pollMidiProgram();
+    if (auto* graphics=GetUI())
+        refreshEffectLabels(*graphics);
     const bool modified = browser.modified(processor);
     if (stateRestored.exchange(false))
     {
