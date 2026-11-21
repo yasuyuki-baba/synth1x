@@ -92,6 +92,10 @@ iplug_add_plugin(Synth1X
     LINK Synth1XCore Synth1XEditorFonts
 )
 
+if(TARGET Synth1X-vst3)
+    target_compile_definitions(Synth1X-vst3 PRIVATE VST3_NUM_MIDI_IN_CHANS=16 VST3_NUM_CC_CHANS=16)
+endif()
+
 # Native formats share the Synth1X binary name. MSVC derives both the import
 # library and .exp sidecar from it, so parallel links need separate directories.
 if(WIN32)
