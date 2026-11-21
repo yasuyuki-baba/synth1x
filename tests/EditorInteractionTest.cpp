@@ -162,6 +162,9 @@ TEST(EditorInteraction, EffectKnobLabelsFollowTheSelectedType)
         Labels{"Comp","Attack"},phaser,phaser,phaser,phaser
     };
     synth1x::host::ProcessorBridge processor;
+    EXPECT_EQ(editorChoiceDisplay(false,0,editorChoices(78)),"Analog Distortion 1");
+    EXPECT_EQ(editorChoiceDisplay(false,1,editorChoices(78)),"Analog Distortion 2");
+    EXPECT_EQ(editorChoiceDisplay(false,2,editorChoices(78)),"Digital Distortion");
     for (const auto& choice : editorChoices(78)) {
         submitSource(processor,78,choice.value);
         const auto labels=editorEffectKnobLabels(sourceValue(processor,78));
