@@ -6,9 +6,11 @@ them in a searchable library with tags and favorites. Synth1X starts with Init
 and an empty library. Add your own `.sy1` files or browse patches directly in
 ZIP, RAR and 7z banks.
 
-We played each of the 15 Rydeen patches at three pitches (C2, C4 and C6) on both
-Synth1 and Synth1X. The waveforms closely matched, with a maximum normalized
-stereo waveform error of 0.027%. [See the audio comparison](#synth1-audio-comparison).
+To check how closely Synth1X reproduces Synth1, we compared their audio on
+1,000 patches at three pitches and checked how both synths interpreted the
+settings in each patch. We also traced individual differences to behaviors such
+as envelope attack and FM. The [Rydeen audio comparison](#synth1-audio-comparison)
+below illustrates the results for one bank.
 
 ![Synth1X editor showing the Init patch](docs/images/synth1x.png)
 
