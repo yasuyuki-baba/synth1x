@@ -93,6 +93,7 @@ iplug_add_plugin(Synth1X
 )
 
 if(TARGET Synth1X-vst3)
+    target_sources(Synth1X-vst3 PRIVATE Synth1XVst3.cpp)
     target_compile_definitions(Synth1X-vst3 PRIVATE VST3_NUM_MIDI_IN_CHANS=16 VST3_NUM_CC_CHANS=16)
 endif()
 
