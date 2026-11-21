@@ -8,8 +8,8 @@ ZIP, RAR and 7z banks.
 
 We've tested Synth1X against Synth1 using a large and varied collection of
 patches. We compare how the two synths load each sound and how their waveforms
-match at different pitches. We've traced differences to details such as envelope
-attack and FM. For one example, see the [Rydeen audio comparison](#synth1-audio-comparison).
+match at different pitches.
+For one example, see the [Rydeen audio comparison](#synth1-audio-comparison).
 
 ![Synth1X editor showing the Init patch](docs/images/synth1x.png)
 
