@@ -30,7 +30,7 @@ inline std::array<const char*,2> editorEffectKnobLabels(double source)
     switch (static_cast<int>(type)) {
         case 0: case 1: case 2: return {"Drive","Tone"};
         case 3: return {"Rate","Bit Depth"};
-        case 4: return {"Frequency",nullptr}; // Ring Mod reserves the second control.
+        case 4: return {"Frequency",nullptr}; // Ring Modulator reserves the second control.
         case 5: return {"Comp","Attack"};
         default: return {"Depth","Rate"};
     }

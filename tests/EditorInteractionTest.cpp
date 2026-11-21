@@ -165,6 +165,7 @@ TEST(EditorInteraction, EffectKnobLabelsFollowTheSelectedType)
     EXPECT_EQ(editorChoiceDisplay(false,0,editorChoices(78)),"Analog Distortion 1");
     EXPECT_EQ(editorChoiceDisplay(false,1,editorChoices(78)),"Analog Distortion 2");
     EXPECT_EQ(editorChoiceDisplay(false,2,editorChoices(78)),"Digital Distortion");
+    EXPECT_EQ(editorChoiceDisplay(false,4,editorChoices(78)),"Ring Modulator");
     EXPECT_EQ(editorChoiceDisplay(false,6,editorChoices(78)),"Phaser (2 stage)");
     EXPECT_EQ(editorChoiceDisplay(false,7,editorChoices(78)),"Phaser (4 stage)");
     EXPECT_EQ(editorChoiceDisplay(false,8,editorChoices(78)),"Phaser (8 stage)");
