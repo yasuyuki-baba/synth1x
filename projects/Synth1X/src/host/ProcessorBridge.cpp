@@ -402,8 +402,9 @@ struct ProcessorBridge::Impl
         {
             const auto& message=metadata.getMessage();
             const int controller=message.isController() ? message.getControllerNumber() : -1;
-            const bool supportedController=message.isPitchWheel() || controller==1 || controller==64 || controller==120 || controller==121 || controller==123;
-            if((message.isController() || message.isChannelPressure() || message.isPitchWheel()) && !supportedController)engine.invalidateNativeRandomHistory();
+            // Routing support and verified native random-history behavior have different scopes.
+            const bool verifiedHistoryInput=message.isPitchWheel() || controller==1 || controller==64 || controller==120 || controller==121 || controller==123;
+            if((message.isController() || message.isChannelPressure() || message.isPitchWheel()) && !verifiedHistoryInput)engine.invalidateNativeRandomHistory();
         }
         updateSynthParams();
         const int desired=requestedOversampling.load();
