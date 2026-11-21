@@ -4,6 +4,7 @@
 #include "ParameterSetup.h"
 #if defined(VST3_API)
 #include "pluginterfaces/vst/ivstparameterchanges.h"
+#include "pluginterfaces/vst/ivstmidicontrollers.h"
 #endif
 #if IPLUG_EDITOR
 #include "editor/EditorPaletteWindow.h"
@@ -165,6 +166,72 @@ void Synth1X::pollMidiProgram()
 }
 
 #if defined(VST3_API)
+namespace {
+using namespace Steinberg;
+using namespace Steinberg::Vst;
+
+bool isMidiControllerParameter(ParamID id)
+{
+    return id >= kMIDICCParamStartIdx && id < kMIDICCParamStartIdx + VST3_NUM_CC_CHANS * kCountCtrlNumber;
+}
+
+// iPlug2 processes the last point when it visits each queue. Deliver earlier
+// MIDI points at that visit, preserving queue order and the SDK's editor
+// delivery of the final point (including the keyboard's All Notes Off).
+class Vst3InputParameterChanges final : public IParameterChanges
+{
+public:
+    Vst3InputParameterChanges(IParameterChanges& source, Synth1X& plugin)
+        : source(source), plugin(plugin) {}
+    int32 PLUGIN_API getParameterCount() override { return source.getParameterCount(); }
+    IParamValueQueue* PLUGIN_API getParameterData(int32 index) override
+    {
+        auto* queue = source.getParameterData(index);
+        if (!queue || !isMidiControllerParameter(queue->getParameterId()))
+            return queue;
+
+        const int midiIndex = queue->getParameterId() - kMIDICCParamStartIdx;
+        const int channel = midiIndex / kCountCtrlNumber;
+        const int controller = midiIndex % kCountCtrlNumber;
+        const int last = queue->getPointCount() - 1;
+        for (int point = 0; point < last; ++point) {
+            int32 offset;
+            double value;
+            if (!readPoint(*queue, point, offset, value))
+                continue;
+            IMidiMsg message;
+            if (controller == kAfterTouch)
+                message.MakeChannelATMsg(static_cast<int>(value * 127.0), offset, channel);
+            else if (controller == kPitchBend)
+                message.MakePitchWheelMsg(value * 2.0 - 1.0, channel, offset);
+            else
+                message.MakeControlChangeMsg(static_cast<IMidiMsg::EControlChangeMsg>(controller), value, channel, offset);
+            plugin.ProcessMidiMsg(message);
+        }
+        int32 offset;
+        double value;
+        return last >= 0 && readPoint(*queue, last, offset, value) ? queue : nullptr;
+    }
+    IParamValueQueue* PLUGIN_API addParameterData(const ParamID&, int32&) override { return nullptr; }
+    tresult PLUGIN_API queryInterface(const TUID, void** object) override
+    {
+        *object = nullptr;
+        return kNoInterface;
+    }
+    uint32 PLUGIN_API addRef() override { return 1; }
+    uint32 PLUGIN_API release() override { return 1; }
+private:
+    static bool readPoint(IParamValueQueue& queue, int32 point, int32& offset, double& value)
+    {
+        return queue.getPoint(point, offset, value) == kResultTrue &&
+            std::isfinite(value) && value >= 0.0 && value <= 1.0;
+    }
+
+    IParameterChanges& source;
+    Synth1X& plugin;
+};
+}
+
 Steinberg::tresult PLUGIN_API Synth1X::initialize(Steinberg::FUnknown* context)
 {
     const auto result = Plugin::initialize(context);
@@ -185,20 +252,40 @@ Steinberg::tresult PLUGIN_API Synth1X::initialize(Steinberg::FUnknown* context)
 
 Steinberg::tresult PLUGIN_API Synth1X::process(Steinberg::Vst::ProcessData& data)
 {
-    // VST3 hosts send PC through the program parameter. The host may provide
-    // a parameter-only callback with zero frames.
-    if (auto* changes = data.inputParameterChanges)
-        for (int i = 0; i < changes->getParameterCount(); ++i)
-            if (auto* queue = changes->getParameterData(i); queue && queue->getParameterId() == kPresetParam) {
-                Steinberg::int32 offset;
-                double value;
-                if (queue->getPointCount() > 0 &&
-                    queue->getPoint(queue->getPointCount() - 1, offset, value) == Steinberg::kResultTrue &&
-                    std::isfinite(value) && value >= 0.0 && value <= 1.0)
-                    pendingMidiProgram.store(static_cast<int>(std::lround(
-                        value * (synth1x::host::PatchCatalog::programCount - 1))), std::memory_order_relaxed);
-            }
-    return Plugin::process(data);
+    using namespace Steinberg::Vst;
+    auto* changes = data.inputParameterChanges;
+    if (!changes)
+        return Plugin::process(data);
+
+    for (int i = 0; i < changes->getParameterCount(); ++i) {
+        auto* queue = changes->getParameterData(i);
+        if (!queue)
+            continue;
+        const auto id = queue->getParameterId();
+        const int count = queue->getPointCount();
+        if (id == kPresetParam) {
+            // A host can send Program Change in a zero-frame callback.
+            Steinberg::int32 offset;
+            double value;
+            if (count > 0 && queue->getPoint(count - 1, offset, value) == Steinberg::kResultTrue &&
+                std::isfinite(value) && value >= 0.0 && value <= 1.0)
+                pendingMidiProgram.store(static_cast<int>(std::lround(
+                    value * (synth1x::host::PatchCatalog::programCount - 1))), std::memory_order_relaxed);
+        }
+    }
+
+    Vst3InputParameterChanges inputChanges(*changes, *this);
+    auto inputData = data;
+    inputData.inputParameterChanges = &inputChanges;
+    return Plugin::process(inputData);
+}
+
+Steinberg::tresult PLUGIN_API Synth1X::getMidiControllerAssignment(Steinberg::int32 bus,
+    Steinberg::int16 channel, Steinberg::Vst::CtrlNumber controller, Steinberg::Vst::ParamID& id)
+{
+    if (channel < 0 || controller < 0 || controller >= Steinberg::Vst::kCountCtrlNumber)
+        return Steinberg::kResultFalse;
+    return Plugin::getMidiControllerAssignment(bus, channel, controller, id);
 }
 
 Steinberg::tresult PLUGIN_API Synth1X::setParamNormalized(Steinberg::Vst::ParamID tag,
@@ -224,7 +311,8 @@ Steinberg::tresult PLUGIN_API Synth1X::getUnitByBus(Steinberg::Vst::MediaType ty
     Steinberg::Vst::UnitID& unit)
 {
     using namespace Steinberg::Vst;
-    if (type != kEvent || direction != Steinberg::Vst::kInput || bus != 0 || channel < 0 || channel >= 16)
+    if (type != kEvent || direction != Steinberg::Vst::kInput || bus != 0 || channel < 0 ||
+        channel >= VST3_NUM_MIDI_IN_CHANS)
         return Steinberg::kResultFalse;
     unit = kRootUnitId;
     return Steinberg::kResultTrue;

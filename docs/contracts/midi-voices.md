@@ -8,6 +8,11 @@ upstream keys separate from generated ARP notes and Voice note flags. Routed
 controller offsets belong to `ControllerRuntime` and callback adaptation; they
 must not enter source getters, mapper caches or saved patch values. Restore the
 mapped render controls at the callback boundary after applying performance offsets.
+The VST3 event input advertises all 16 MIDI channels and maps CC, channel
+pressure and pitch bend on each channel. Process every point in a mapped
+controller queue at its sample offset. For simultaneous points, preserve the
+host's queue order and each queue's point order.
+
 CC7 drives the shared output-gain target at the input event's sample offset,
 including when both routes are disabled. Use the Synth1 channel-volume targets
 with the existing output gain smoothing. The initial value is 64, and the
@@ -18,7 +23,9 @@ channels. VST3 hosts deliver these values through the program parameter. Recall
 uses the control thread and may wait for the library to load. When several
 requests arrive before recall, the newest one takes effect.
 
-CC121 resets ordinary bend separately from routed pitch, wheel and pedal state.
+In Synth1-compatible performance mode, both CC120 and CC123 clear the shared
+keyboard and release voices using the sound's envelope. CC121 resets ordinary
+bend separately from routed pitch, wheel and pedal state.
 Equal-value controller setters may still split rendering or restart receivers.
 Keep per-note velocity gain and actual physical-core ownership through program
 changes. Combine root region limits before advancing shared modulation state.

@@ -27,7 +27,8 @@ set_target_properties(iPlug2::VST3 PROPERTIES INTERFACE_COMPILE_DEFINITIONS "${v
 add_executable(Synth1XVst3PatchTest PatchNotificationTest.cpp "${SYNTH1X_ROOT}/projects/Synth1X/Synth1X.cpp"
     "${VST3_SDK_DIR}/public.sdk/source/vst/hosting/parameterchanges.cpp")
 target_compile_features(Synth1XVst3PatchTest PRIVATE cxx_std_20)
-target_compile_definitions(Synth1XVst3PatchTest PRIVATE NO_IGRAPHICS IPLUG_EDITOR=0 _USE_MATH_DEFINES)
+target_compile_definitions(Synth1XVst3PatchTest PRIVATE NO_IGRAPHICS IPLUG_EDITOR=0 _USE_MATH_DEFINES
+    VST3_NUM_MIDI_IN_CHANS=16 VST3_NUM_CC_CHANS=16)
 target_precompile_headers(Synth1XVst3PatchTest PRIVATE
     "$<$<COMPILE_LANGUAGE:CXX>:${CMAKE_CURRENT_SOURCE_DIR}/HeadlessEditor.h>")
 # Only the Synth1X/test translation units need the editor type declarations.

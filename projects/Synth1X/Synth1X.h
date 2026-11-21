@@ -38,6 +38,8 @@ public:
 #if defined(VST3_API)
     Steinberg::tresult PLUGIN_API initialize(Steinberg::FUnknown* context) override;
     Steinberg::tresult PLUGIN_API process(Steinberg::Vst::ProcessData& data) override;
+    Steinberg::tresult PLUGIN_API getMidiControllerAssignment(Steinberg::int32, Steinberg::int16,
+        Steinberg::Vst::CtrlNumber, Steinberg::Vst::ParamID&) override;
     Steinberg::tresult PLUGIN_API setParamNormalized(Steinberg::Vst::ParamID, Steinberg::Vst::ParamValue) override;
     Steinberg::tresult PLUGIN_API getUnitInfo(Steinberg::int32, Steinberg::Vst::UnitInfo&) override;
     Steinberg::tresult PLUGIN_API getUnitByBus(Steinberg::Vst::MediaType, Steinberg::Vst::BusDirection,

@@ -1,5 +1,6 @@
 #include "Synth1X.h"
 #include "patch/PatchFormat.h"
+#include "pluginterfaces/vst/ivstmidicontrollers.h"
 #include "public.sdk/source/vst/hosting/parameterchanges.h"
 #include <array>
 #include <chrono>
@@ -185,13 +186,30 @@ struct Synth1XVst3PatchTest
         }
         return result;
     }
-    static void checkEditorMidi(const std::string& patch)
+    static void checkMidiTimeline(const std::string& tone)
     {
-        // Use the same public queue as IVKeyboardControl, then the real VST3
-        // process callback. No editor-to-core note-ownership path is involved.
+        using namespace Steinberg::Vst;
         Host host;
         Synth1X plugin {iplug::InstanceInfo{}};host.plugin=&plugin;
         require(plugin.initialize(&host)==Steinberg::kResultOk,"UI MIDI VST3 initialize failed");
+        BusInfo midiBus {};
+        require(plugin.getBusInfo(kEvent, kInput, 0, midiBus) == Steinberg::kResultTrue &&
+                midiBus.channelCount == 16, "VST3 did not advertise all 16 MIDI channels");
+        for (int channel = 0; channel < 16; ++channel) {
+            for (CtrlNumber controller : std::array<CtrlNumber,4>{7,64,kAfterTouch,kPitchBend}) {
+                ParamID id;
+                require(plugin.getMidiControllerAssignment(0, channel, controller, id) == Steinberg::kResultTrue &&
+                        id == iplug::kMIDICCParamStartIdx + channel * kCountCtrlNumber + controller,
+                        "VST3 MIDI assignment missing or changed");
+            }
+        }
+        ParamID unused;
+        require(plugin.getMidiControllerAssignment(0, -1, 7, unused) == Steinberg::kResultFalse &&
+                plugin.getMidiControllerAssignment(0, 16, 7, unused) == Steinberg::kResultFalse &&
+                plugin.getMidiControllerAssignment(0, 0, kCountCtrlNumber, unused) == Steinberg::kResultFalse,
+                "VST3 accepted an invalid MIDI assignment");
+
+        const auto patch = tone + "19,40\n50,127\n86,53248\n87,19\n";
         synth1x::host::ProcessorBridge reference;
         std::string error;
         require(plugin.processor.loadProgram(patch,0,error),"UI MIDI patch load failed");
@@ -212,6 +230,47 @@ struct Synth1XVst3PatchTest
         double sounding=0;
         for(int block=0;block<512;++block)
         {
+            ParameterChanges changes;
+            if (block == 2) {
+                struct Point {
+                    int controller, offset;
+                    double normalized;
+                    uint8_t status, data1, data2;
+                };
+                // Host queues group points by controller. The raw reference
+                // uses the same queue order at equal sample offsets.
+                const Point points[] {
+                    {7, 11, 0.0, 0xBF, 7, 0},
+                    {7, 95, 1.0, 0xBF, 7, 127},
+                    {kPitchBend, 23, 1.0, 0xEF, 127, 127},
+                    {kPitchBend, 79, 0.0, 0xEF, 0, 0},
+                    {kPitchBend, 112, 0.5, 0xEF, 0, 64},
+                    {kAfterTouch, 23, 1.0, 0xDF, 127, 0},
+                    {kAfterTouch, 79, 0.0, 0xDF, 0, 0},
+                    {64, 35, 1.0, 0xBF, 64, 127},
+                    {64, 87, 0.0, 0xBF, 64, 0}
+                };
+                for (const auto& point : points) {
+                    ParamID id;
+                    require(plugin.getMidiControllerAssignment(0, 15, point.controller, id) == Steinberg::kResultTrue,
+                            "MIDI controller could not be routed on channel 16");
+                    Steinberg::int32 queueIndex, pointIndex;
+                    changes.addParameterData(id, queueIndex)->addPoint(point.offset, point.normalized, pointIndex);
+                    require(reference.enqueueMidi(point.offset, point.status, point.data1, point.data2),
+                            "Reference rejected a MIDI controller point");
+                }
+            }
+            data.inputParameterChanges = &changes;
+            if (block == 2) {
+                iplug::IMidiMsg off, on;
+                off.MakeNoteOffMsg(60, 49);
+                on.MakeNoteOnMsg(60, 100, 101);
+                for (const auto& message : {off, on}) {
+                    plugin.SendMidiMsgFromUI(message);
+                    require(reference.enqueueMidi(message.mOffset, message.mStatus, message.mData1, message.mData2),
+                            "Reference rejected an interleaved note");
+                }
+            }
             if(block==0 || block==4 || block==6 || block==8)
             {
                 iplug::IMidiMsg message;
@@ -228,13 +287,13 @@ struct Synth1XVst3PatchTest
             }
             require(plugin.process(data)==Steinberg::kResultOk,"VST3 UI MIDI callback failed");
             require(reference.process(expectedLeft.data(),expectedRight.data(),128,120),"Reference MIDI render failed");
-            require(left==expectedLeft && right==expectedRight,"Framework UI MIDI differs from ordinary MIDI audio");
+            require(left==expectedLeft && right==expectedRight,"VST3 controller or editor MIDI differs from the raw MIDI timeline");
             if(block<4)for(int i=0;i<128;++i)sounding+=left[i]*left[i]+right[i]*right[i];
         }
         require(sounding>1e-8,"Framework UI MIDI did not produce audio");
         for(int i=0;i<128;++i)require(left[i]==0 && right[i]==0,"Framework UI note-off did not release the note");
         plugin.setProcessing(false);plugin.setActive(false);plugin.terminate();
-        std::cout << "Framework UI MIDI: audio matches ordinary MIDI; note release passed\n";
+        std::cout << "VST3 16-channel controller and editor MIDI: audio matches the raw MIDI timeline\n";
     }
     static void run()
     {
@@ -354,7 +413,7 @@ struct Synth1XVst3PatchTest
         require(plugin.comparison.activeSlot()==1 && plugin.currentPatch=="Reference","A/B recall lost selection or identity");
         require(host.mismatches==0,"A/B copy published stale VST3 values");
         std::cout<<"A/B: audible/silent switching, copy, host readback and project recall passed\n";
-        checkEditorMidi(patch(100));
+        checkMidiTimeline(patch(100));
         checkProgramChange();
         plugin.setActive(false);
         plugin.setComponentHandler(nullptr);plugin.terminate();
