@@ -65,6 +65,7 @@ private:
     void syncQualityLatency();
     void refreshOversampling();
     void refreshDelayTiming();
+    void refreshEffectLabels(iplug::igraphics::IGraphics& graphics);
     void showOversamplingMenu(iplug::igraphics::IControl* caller);
     void requestEditorScale(float scale);
     void reconcileEditorWindowSize();

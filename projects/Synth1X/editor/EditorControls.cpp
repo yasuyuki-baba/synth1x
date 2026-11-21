@@ -151,7 +151,7 @@ void PanelKnobControl::OnResize() {
 }
 
 void PanelKnobControl::DrawValue(IGraphics& g,bool mouseOver) {
-    if (mouseOver) g.FillRect(COLOR_TRANSLUCENT,mValueBounds);
+    if (mouseOver && !IsDisabled()) g.FillRect(COLOR_TRANSLUCENT,mValueBounds);
     if (!mStyle.showValue) return;
     const auto value=synth1x::editor::editorValueDisplay(GetParamIdx(),GetParam()->FromNormalized(GetValue()));
     const auto blend=GetBlend();
@@ -160,20 +160,23 @@ void PanelKnobControl::DrawValue(IGraphics& g,bool mouseOver) {
 
 void PanelKnobControl::DrawHandle(IGraphics& g,const IRECT& bounds) {
     const auto appearance=controlAppearance(*this);
-    g.FillCircle(appearance.control,bounds.MW(),bounds.MH(),bounds.W()/2);
-    g.DrawCircle(appearance.controlEdge,bounds.MW(),bounds.MH(),bounds.W()/2,nullptr,1.f);
-    g.DrawCircle(appearance.controlEdge,bounds.MW(),bounds.MH(),std::max(1.f,bounds.W()/2-2),nullptr,0.5f);
+    const auto blend=GetBlend();
+    g.FillCircle(appearance.control,bounds.MW(),bounds.MH(),bounds.W()/2,&blend);
+    g.DrawCircle(appearance.controlEdge,bounds.MW(),bounds.MH(),bounds.W()/2,&blend,1.f);
+    g.DrawCircle(appearance.controlEdge,bounds.MW(),bounds.MH(),std::max(1.f,bounds.W()/2-2),&blend,0.5f);
 }
 
 void PanelKnobControl::DrawPointer(IGraphics& g,float angle,float cx,float cy,float radius) {
     const auto appearance=controlAppearance(*this);
-    g.DrawRadialLine(appearance.pointer,cx,cy,angle,radius*0.56f,radius*0.96f,nullptr,1.8f);
+    const auto blend=GetBlend();
+    g.DrawRadialLine(appearance.pointer,cx,cy,angle,radius*0.56f,radius*0.96f,&blend,1.8f);
 }
 
 void PanelKnobControl::DrawIndicatorTrack(IGraphics& g,float angle,float cx,float cy,float radius) {
     const auto appearance=controlAppearance(*this);
-    g.DrawArc(appearance.track,cx,cy,radius,-135.f,135.f,nullptr,1.f);
-    g.DrawArc(GetParamIdx()==19 ? appearance.accent : appearance.pointer,cx,cy,radius,-135.f,angle,nullptr,1.25f);
+    const auto blend=GetBlend();
+    g.DrawArc(appearance.track,cx,cy,radius,-135.f,135.f,&blend,1.f);
+    g.DrawArc(GetParamIdx()==19 ? appearance.accent : appearance.pointer,cx,cy,radius,-135.f,angle,&blend,1.25f);
 }
 
 SourceChoiceControl::SourceChoiceControl(const IRECT& bounds,int parameter,const char* label,std::function<double()> sourceValue,std::function<void(int)> submitSource)

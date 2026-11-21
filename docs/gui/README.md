@@ -78,7 +78,10 @@ oscillators, with Mode/Auto glide above Polyphony/Glide. Adjacent Unison keeps
 Enabled, Voices, Detune, Spread, Pitch and Phase in one centered row. Both LFOs
 retain a selector row and full-size lower knobs in the right column. Amplifier separates
 ADSR from level/velocity. EQ arranges Frequency/Level and Q/Tone in two compact rows. The bottom row distributes width by control density, keeping ordinary knob
-spacing close across Effect, Chorus, Delay and EQ. Time retains its tempo and
+spacing close across Effect, Chorus, Delay and EQ. The two Effect knob labels
+follow the selected type. Ring Mod's second knob is dimmed and disabled, with
+an Unused label.
+Time retains its tempo and
 stereo-delay readout directly below it. Muted rose headings and thin internal dividers
 provide hierarchy without reducing label sizes or moving controls off the main
 surface. Native drawing and review studies share group frames, dividers and delay readout bounds;
