@@ -107,6 +107,12 @@ protected:
     virtual void handlePitchWheel(int c,int value) {
         pitch[c-1]=value;for(auto& v:voices)if(v->channel==c)v->pitchWheelMoved(value);
     }
+    virtual void handleChannelPressure(int channel, int pressure)
+    {
+        for (auto& voice : voices)
+            if (voice->channel == channel)
+                voice->channelPressureChanged(pressure);
+    }
     virtual void handleSustainPedal(int c,bool down) {
         if(down) {
             sustain[c-1]=true;for(auto& v:voices)if(v->channel==c && v->keyDown)v->sustain=true;
@@ -127,7 +133,7 @@ protected:
         if(message.isAllNotesOff() || message.isAllSoundOff()){allNotesOff(c,true);return;}
         if(message.isPitchWheel()){handlePitchWheel(c,message.getPitchWheelValue());return;}
         if(status==0xa0){for(auto& v:voices)if(v->channel==c && v->note==message.getNoteNumber())v->aftertouchChanged(message.getRawData()[2]);return;}
-        if(message.isChannelPressure()){for(auto& v:voices)if(v->channel==c)v->channelPressureChanged(message.getRawData()[1]);return;}
+        if(message.isChannelPressure()){handleChannelPressure(c,message.getRawData()[1]);return;}
         if(message.isController())handleController(c,message.getControllerNumber(),message.getControllerValue());
     }
 

@@ -36,13 +36,16 @@ namespace synth1x::midi
         template<class Sink>
         void message(int status,int first,int second,const std::array<ControllerRoute,2>& routes,Sink&& apply)
         {
-            const int source=(status&0xf0)*256+((status&0xf0)==176 ? first : 0);
+            const int kind = status & 0xf0;
+            const int source = kind * 256 + (kind == 0xb0 ? first : 0);
             for(size_t slot=0;slot<routes.size();++slot)
             {
                 const auto& route=routes[slot];
                 if(route.destination<0 || route.source!=source)continue;
-                inputs[slot]=(status&0xf0)==224 ? float((second-64)*128+first)*(1.0f/8192.0f)
-                    : float(second)*(1.0f/127.0f);
+                if (kind == 0xe0)
+                    inputs[slot] = float((second-64)*128+first)*(1.0f/8192.0f);
+                else
+                    inputs[slot] = float(kind == 0xd0 ? first : second)*(1.0f/127.0f);
                 apply(route.destination,dial(slot,routes));
             }
         }

@@ -248,6 +248,43 @@ TEST(ControllerBehavior, WheelUsesConfiguredFmAndFilterRoutesWithoutChangingStor
     }
 }
 
+TEST(ControllerBehavior, SelectableCcAndChannelPressureReachBothRoutesAtTheirSampleOffset)
+{
+    constexpr int eventFrame = 1037;
+    for (int slot : {0, 1})
+        for (int cc = 1; cc <= 12; ++cc)
+        {
+            const bool pressure = cc == 12;
+            const int source = pressure ? 0xd000 : 0xb000 + cc;
+            SCOPED_TRACE(::testing::Message() << "slot " << slot << ", source " << source);
+            const int sourceIndex = 86 + 2 * slot;
+            synth1x::host::ProcessorBridge processor;
+            const auto patch = hostvalidation::patch() + "19,40\n" + std::to_string(50 + slot) +
+                ",127\n" + std::to_string(sourceIndex) + "," + std::to_string(source) + "\n" +
+                std::to_string(sourceIndex + 1) + ",19\n";
+            const auto capture = [&](int value) {
+                const std::vector<Event> events{{0,0x90,60,100},
+                    {eventFrame, static_cast<uint8_t>(pressure ? 0xd2 : 0xb2),
+                     static_cast<uint8_t>(pressure ? value : cc), static_cast<uint8_t>(pressure ? 0 : value)},
+                    {4096,0x80,60,0}};
+                return render(events, {64}, patch, 4608);
+            };
+            const auto low = capture(0);
+            const auto high = capture(127);
+            EXPECT_TRUE(std::equal(low.begin(), low.begin() + 2 * eventFrame, high.begin()));
+            EXPECT_NE(low, high);
+
+            std::string error;
+            ASSERT_TRUE(processor.loadPatch(patch, error)) << error;
+            const auto saved = processor.saveState();
+            processor.prepare(48000, 64);
+            std::array<float,64> left{}, right{};
+            ASSERT_TRUE(processor.enqueueMidi(13, pressure ? 0xd2 : 0xb2, pressure ? 127 : cc, pressure ? 0 : 127));
+            ASSERT_TRUE(processor.process(left.data(), right.data(), 64, 120));
+            EXPECT_EQ(processor.saveState(), saved);
+        }
+}
+
 TEST(PerformanceBehavior, OrdinaryBendAdvancesWithoutAnLfoProvider)
 {
     synth1x::RenderControls controls;controls.pitchBendRange=12;

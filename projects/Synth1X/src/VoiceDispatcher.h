@@ -30,6 +30,7 @@ namespace synth1x
         void allNotesOff (int midiChannel, bool allowTailOff) override;
         void handleSustainPedal(int midiChannel,bool down) override;
         void handlePitchWheel(int midiChannel,int value) override;
+        void handleChannelPressure(int midiChannel, int pressure) override;
         void handleController(int midiChannel,int number,int value) override;
         std::array<int,4> nativeBendWords() const noexcept
         {return pitchBendWords(1);}

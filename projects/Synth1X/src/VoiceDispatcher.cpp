@@ -159,6 +159,13 @@ namespace synth1x
         ::synth1x::audio::VoiceBank::handlePitchWheel(channel,value);
     }
 
+    void VoiceDispatcher::handleChannelPressure(int channel, int pressure)
+    {
+        if (channel == 1)
+            applyControllerMessage(0xd0, pressure, 0);
+        ::synth1x::audio::VoiceBank::handleChannelPressure(channel, pressure);
+    }
+
     void VoiceDispatcher::applyControllerMessage(int status,int first,int second)
     {
         if(params!=nullptr && controllerSettings!=nullptr)
@@ -190,7 +197,7 @@ namespace synth1x
             pitchBends[static_cast<size_t>(channel-1)].set(8192);
             ::synth1x::audio::VoiceBank::handlePitchWheel(channel,8192);
         }
-        if(channel==1 && number==1)applyControllerMessage(176,number,value);
+        if(channel==1 && number>=1 && number<=11)applyControllerMessage(0xb0,number,value);
         ::synth1x::audio::VoiceBank::handleController(channel,number,value);
     }
 
