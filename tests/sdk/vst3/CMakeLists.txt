@@ -25,6 +25,7 @@ get_target_property(vst3_defines iPlug2::VST3 INTERFACE_COMPILE_DEFINITIONS)
 list(REMOVE_ITEM vst3_defines IPLUG_EDITOR=1)
 set_target_properties(iPlug2::VST3 PROPERTIES INTERFACE_COMPILE_DEFINITIONS "${vst3_defines}")
 add_executable(Synth1XVst3PatchTest PatchNotificationTest.cpp "${SYNTH1X_ROOT}/projects/Synth1X/Synth1X.cpp"
+    "${SYNTH1X_ROOT}/projects/Synth1X/Synth1XVst3.cpp"
     "${VST3_SDK_DIR}/public.sdk/source/vst/hosting/parameterchanges.cpp")
 target_compile_features(Synth1XVst3PatchTest PRIVATE cxx_std_20)
 target_compile_definitions(Synth1XVst3PatchTest PRIVATE NO_IGRAPHICS IPLUG_EDITOR=0 _USE_MATH_DEFINES

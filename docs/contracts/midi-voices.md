@@ -19,7 +19,8 @@ with the existing output gain smoothing. The initial value is 64, and the
 running value is independent of saved Master volume, patch loads and A/B.
 
 Program Change uses one shared library bank for MIDI values 0 to 127 on all
-channels. VST3 hosts deliver these values through the program parameter. Recall
+channels. The VST3 adapter translates the host's program parameter into the
+same MIDI message handled by the other formats. Recall
 uses the control thread and may wait for the library to load. When several
 requests arrive before recall, the newest one takes effect.
 
