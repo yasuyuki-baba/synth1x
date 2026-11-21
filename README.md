@@ -6,11 +6,10 @@ them in a searchable library with tags and favorites. Synth1X starts with Init
 and an empty library. Add your own `.sy1` files or browse patches directly in
 ZIP, RAR and 7z banks.
 
-To check how closely Synth1X reproduces Synth1, we compared their audio on
-1,000 patches at three pitches and checked how both synths interpreted the
-settings in each patch. We also traced individual differences to behaviors such
-as envelope attack and FM. The [Rydeen audio comparison](#synth1-audio-comparison)
-below illustrates the results for one bank.
+We've tested Synth1X against Synth1 using a large and varied collection of
+patches. We compare how the two synths load each sound and how their waveforms
+match at different pitches. We've traced differences to details such as envelope
+attack and FM. For one example, see the [Rydeen audio comparison](#synth1-audio-comparison).
 
 ![Synth1X editor showing the Init patch](docs/images/synth1x.png)
 
