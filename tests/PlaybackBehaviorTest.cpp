@@ -614,6 +614,39 @@ TEST(PlaybackBehavior, OscillatorTwoKeyboardTrackingKeepsFixedBaseAndOctavePitch
     }
 }
 
+TEST(PlaybackBehavior, MonoAutoGlideUsesFullGateRandomArpOverlap)
+{
+    const auto trace=[](int gate,int portamento)
+    {
+        const auto text="Mono ARP glide\nver=113\n0,1\n5,0\n19,127\n27,127\n29,100\n"
+            "31,4\n32,1\n33,14\n38,1\n59,1\n74,1\n34,"+std::to_string(gate)
+            +"\n39,"+std::to_string(portamento)+"\n";
+        ProcessorBridge processor;
+        setup(processor,text);
+        EXPECT_TRUE(processor.enqueueMidi(0,0x90,60,100));
+        std::vector<uint32_t> phase;
+        for(int callback=0;callback<520;++callback)
+        {
+            Stereo audio{};
+            EXPECT_TRUE(processor.process(audio[0].data(),audio[1].data(),64,120));
+            std::array<uint32_t,9> words{};
+            EXPECT_TRUE(synth1x::readPhysicalCoreWords(processor,0,words));
+            phase.push_back(words[0]);
+        }
+        return phase;
+    };
+
+    const auto fullGateGlide=trace(127,26);
+    const auto fullGateNoGlide=trace(127,0);
+    // The first held note starts at its own pitch. The next ARP step is at
+    // frame 5512, so any phase difference must occur after that boundary.
+    constexpr int callbacksBeforeSecondStep=5512/64;
+    EXPECT_TRUE(std::equal(fullGateGlide.begin(),fullGateGlide.begin()+callbacksBeforeSecondStep,
+                           fullGateNoGlide.begin()));
+    EXPECT_NE(fullGateGlide,fullGateNoGlide);
+    EXPECT_EQ(trace(66,26),trace(66,0));
+}
+
 TEST(PlaybackBehavior, PortamentoRespondsToOverlapAutomaticModeAndLiveDurationEdits)
 {
     const auto render=[](double rate,int version,int mode,int unison,bool automatic,int dial,bool edit)
