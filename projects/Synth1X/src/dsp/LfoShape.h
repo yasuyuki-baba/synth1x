@@ -219,6 +219,13 @@ namespace synth1x::dsp
                 fraction=dial-low;first=knot(destination,low);
                 second=fraction==0 ? first : knot(destination,low+1);
             }
+            // At full depth the held sine-table endpoint also controls the wet effect clock.
+            bool sineMutesAmplitude(int counter,int period) const noexcept
+            {
+                if(first.destination!=3 || first.depth!=2048)return false;
+                const auto phase=(static_cast<uint32_t>(counter)<<11)/static_cast<uint32_t>(period);
+                return amplitude(first.depth,static_cast<int>(phase))==2048;
+            }
             std::pair<float,int> query(int wave,int counter,int period,int minimumStep) const noexcept
             {
                 const auto a=first.query(wave,counter,period,minimumStep);

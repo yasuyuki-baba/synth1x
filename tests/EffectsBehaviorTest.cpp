@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include "dsp/OutputPipeline.h"
 #include "dsp/FractionalDial.h"
+#include "dsp/AmplitudeEnvelope.h"
 #include "SynthEngine.h"
 #include <array>
 #include <cmath>
@@ -297,5 +298,35 @@ TEST(EffectsBehavior, RingFrequencyKnotsRetainTheirPhaseStepWords)
         effect.setDials(dial,64,127);
         const float step=effect.snapshot()[5];
         EXPECT_EQ(step,static_cast<float>(static_cast<float>(step)));
+    }
+}
+
+TEST(EffectsBehavior, FullAmplitudeLfoKnotPausesWetClockAfterTheWholeGainRamp)
+{
+    for(size_t slot:{0u,1u})
+    {
+        synth1x::dsp::AmplitudeEnvelope env;
+        env.setParameters(0,0,2048,100);
+        env.noteOn();
+        std::array<float,8> gains {};
+        std::array<float,2> attenuation {};
+        std::array<bool,2> muted {};
+        muted[slot]=true;
+        attenuation[slot]=2047.75f;
+        env.setModulation(attenuation[0],attenuation[1],muted);
+        env.render(gains.data(),4,8);
+        EXPECT_TRUE(env.shouldAdvanceEffectClock());
+        env.render(gains.data(),4,4);
+        EXPECT_TRUE(env.shouldAdvanceEffectClock());
+        attenuation[slot]=2047.5f;
+        env.setModulation(attenuation[0],attenuation[1],muted);
+        env.render(gains.data(),8);
+        EXPECT_FALSE(env.shouldAdvanceEffectClock());
+        EXPECT_GT(gains.back(),0.0f);
+        muted[slot]=false;
+        attenuation[slot]=2047.0f;
+        env.setModulation(attenuation[0],attenuation[1],muted);
+        env.render(gains.data(),8);
+        EXPECT_TRUE(env.shouldAdvanceEffectClock());
     }
 }

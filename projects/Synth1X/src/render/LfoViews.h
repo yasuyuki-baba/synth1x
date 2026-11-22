@@ -14,6 +14,7 @@ namespace synth1x::render
             const int offset=start-block->startSample;
             for(size_t slot=0;slot<2;++slot)
             {
+                view.sineAmplitudeMute[slot]=block->sineAmplitudeMute[slot].data()+offset;
                 view.values[slot]=block->controls[slot].data()+offset;
                 view.remaining[slot]=block->controlRemaining[slot].data()+offset;
             }
