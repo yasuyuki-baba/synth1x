@@ -47,6 +47,24 @@ TEST(ContinuousLevel, ReleaseKeepsTheExistingActiveWindow)
     }
 }
 
+TEST(ContinuousLevel, ReleaseRetiresAfterFinishingTheSubUnitGainSegment)
+{
+    synth1x::dsp::ReleaseRamp release;
+    release.start(4410,1.75f);
+    const auto checkSegment=[](float level,int count)
+    {
+        EXPECT_FLOAT_EQ(level,0.75f);
+        EXPECT_EQ(count,32);
+    };
+    release.advance(32,checkSegment,64);
+    EXPECT_TRUE(release.isActive());
+    EXPECT_EQ(release.segmentHorizon(),32);
+    release.advance(32,checkSegment);
+    EXPECT_FALSE(release.isActive());
+    EXPECT_EQ(release.getCounter(),64);
+    EXPECT_FLOAT_EQ(release.getLevel(),0.0f);
+}
+
 TEST(ContinuousLevel, StaticFilterPassesFractionalCutoffToTheExistingNativeKernels)
 {
     for(int mode=0;mode<5;++mode)
