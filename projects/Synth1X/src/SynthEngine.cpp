@@ -116,6 +116,7 @@ namespace synth1x
         params.globalSampleCount = 0;
         previousPlayMode = params.playMode;
         previousUnisonVoices=params.unisonVoices;
+        previousPolyphony=params.polyphony;
         outputPipeline.prepareProcessors(sampleRate,!sharedModulation.isInitial());
         sharedModulation.prepareBlock(samplesPerBlock);
 
@@ -244,6 +245,10 @@ namespace synth1x
             previousPlayMode = params.playMode;
         }
         previousUnisonVoices=params.unisonVoices;
+        // A changed limit releases any held keys outside the new render range.
+        if(params.playMode!=0 && previousPolyphony!=params.polyphony)
+            corePool.releaseKeysAbove(params.polyphony);
+        previousPolyphony=params.polyphony;
         assert (capacity > 0);
         if (capacity <= 0) return;
         const auto outputSink=[](void* context,int start,int count,bool silent) {

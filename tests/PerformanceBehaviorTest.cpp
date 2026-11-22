@@ -526,6 +526,58 @@ TEST(PerformanceBehavior, UpcomingMidiBoundsProjectedArpeggioGainAtRegionEnd)
     for(size_t sample=0;sample<31u*2;++sample)EXPECT_EQ(actual[sample],expected[sample])<<sample;
 }
 
+TEST(PerformanceBehavior, MonoAndLegatoPauseUnisonCoresBeyondPolyphony)
+{
+    using Phase=synth1x::dsp::AmplitudeEnvelope::Phase;
+    for(int mode:{1,2})
+    {
+        SCOPED_TRACE(mode);
+        auto processor=hostvalidation::processor();
+        hostvalidation::load(*processor,hostvalidation::patch(4,mode)+"94,2\n91,63\n");
+        processor->prepare(44100,64);
+        ASSERT_TRUE(processor->enqueueMidi(0,144,60,100));
+        std::array<float,64> left{},right{};
+        ASSERT_TRUE(processor->process(left.data(),right.data(),64,120));
+        std::array<uint32_t,9> sounding{},paused{},actual{};
+        std::array<int,13> pausedEnvelope{},actualEnvelope{};
+        ASSERT_TRUE(synth1x::readPhysicalCoreWords(*processor,0,sounding));
+        ASSERT_TRUE(synth1x::readPhysicalCoreWords(*processor,2,paused));
+        ASSERT_TRUE(synth1x::readPhysicalCoreEnvelopeWords(*processor,2,pausedEnvelope));
+        ASSERT_NE(pausedEnvelope[10],static_cast<int>(Phase::Idle));
+
+        ASSERT_TRUE(processor->process(left.data(),right.data(),64,120));
+        ASSERT_TRUE(synth1x::readPhysicalCoreWords(*processor,0,actual));
+        EXPECT_NE(actual[0],sounding[0]);
+        ASSERT_TRUE(synth1x::readPhysicalCoreWords(*processor,2,actual));
+        EXPECT_EQ(actual,paused);
+        ASSERT_TRUE(synth1x::readPhysicalCoreEnvelopeWords(*processor,2,actualEnvelope));
+        EXPECT_EQ(actualEnvelope,pausedEnvelope);
+
+        const auto& polyphony=processor->parameter(94);
+        const auto setPolyphony=[&](int count) {
+            processor->setNormalizedValue(94,(count-polyphony.minimum)/(polyphony.maximum-polyphony.minimum));
+        };
+        setPolyphony(3);
+        ASSERT_TRUE(processor->process(left.data(),right.data(),64,120));
+        ASSERT_TRUE(synth1x::readPhysicalCoreWords(*processor,2,actual));
+        EXPECT_NE(actual[0],paused[0]);
+        const auto resumed=actual;
+        ASSERT_TRUE(synth1x::readPhysicalCoreEnvelopeWords(*processor,3,actualEnvelope));
+        EXPECT_EQ(actualEnvelope[10],static_cast<int>(Phase::Release));
+
+        setPolyphony(2);
+        ASSERT_TRUE(processor->process(left.data(),right.data(),64,120));
+        ASSERT_TRUE(synth1x::readPhysicalCoreWords(*processor,2,actual));
+        EXPECT_EQ(actual,resumed);
+        ASSERT_TRUE(synth1x::readPhysicalCoreEnvelopeWords(*processor,2,actualEnvelope));
+        EXPECT_EQ(actualEnvelope[10],static_cast<int>(Phase::Release));
+        setPolyphony(4);
+        ASSERT_TRUE(processor->process(left.data(),right.data(),64,120));
+        ASSERT_TRUE(synth1x::readPhysicalCoreWords(*processor,2,actual));
+        EXPECT_NE(actual[0],resumed[0]);
+    }
+}
+
 TEST(PerformanceBehavior, LargerLegatoGroupAdmitsCoresWithoutRetriggeringContinuingCores)
 {
     for(int initial:{1,2,4})

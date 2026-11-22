@@ -112,6 +112,7 @@ namespace synth1x
         uint64_t globalSampleCount { 0 };
         int previousPlayMode { 0 };
         int previousUnisonVoices {1};
+        int previousPolyphony {32};
         
 
     };
