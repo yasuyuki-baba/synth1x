@@ -51,9 +51,7 @@ namespace synth1x::dsp
                 if (desired!=current && elapsed<horizon)
                 {
                     const float distance = desired-anchor;
-                    current=anchor+compatibleControlCurve(distance,[&](int delta){
-                        return std::trunc(static_cast<float>(delta)*elapsed/horizon);
-                    });
+                    current=anchor+distance*elapsed/horizon;
                     count=std::min(frames,std::max(1,static_cast<int>(horizon/std::max(1.0f,std::abs(distance)))));
                 }
                 else current = desired;

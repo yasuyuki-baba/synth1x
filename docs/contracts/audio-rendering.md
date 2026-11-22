@@ -190,7 +190,7 @@ keeps its target interpolation and slew in Float64 through the coefficient
 calculation, then writes Float32 depth samples for the oscillator. Segment lengths
 and sample counters remain integers. Pitch, pulse width, FM, filter and amplitude
 consumers accept fractional receiver values.
-Compatible transfer/slew curves retain their integer-coordinate response and
+Compatible transfer curves retain their integer-coordinate response and
 interpolate between those knots without narrowing the running signal. Filter
 coefficient caches include the fractional cutoff coordinate. These changes do not
 remove integer LFO clock counters/sample periods, compatible portamento
@@ -242,7 +242,9 @@ integer proximity must not select a different formula. During Release, retain
 the real starting level captured at note-off: a peak edit rescales the visible
 level without replacing the remaining release trajectory. Host edits to filter
 sustain, cutoff, envelope depth or keyboard tracking restart the cutoff receiver's
-50ms slew from its current value, including on releasing physical cores. Consecutive
+50ms slew from its current value, including on releasing physical cores. At each
+scheduled update the cutoff uses the linear elapsed fraction of the distance
+from the captured anchor to the desired target. Consecutive
 identical parameter/value setters are neutral; fractional value changes remain
 effective even within one integer dial. Ordered filter edits retain intermediate
 values and configure sounding filter envelopes before the callback's MIDI events; zero-depth round trips must not be
@@ -388,19 +390,12 @@ interpolate between those knots in Float64.
 
 OscillatorSection reads one Float32 audio sample for audio and FM/Sync from the
 same phase and table entries. Prepared tables retain their calibrated Float32
-words. FmPhaseCorrection receives Float32 depth and source values. It interpolates
-differences from the compatible integer phase-product word, so large integer
-phase offsets are never added to fractional corrections in floating point.
-The reference offset remains `int32(depth * source)`. A Float32 residual and an
-integer whole offset compose the corrected signed phase word with truncation
-toward zero. Accumulated
-product error feeds back toward that compatible trajectory over the native
-32-frame coefficient interval; a fractional carry retains the remainder when
-converting the corrected audible offset to a phase word. This feedback deliberately
-bounds drift relative to compatible integer FM. It is a compatibility policy,
-not unbiased fractional integration or a claim that every precision boundary has
-been removed. Constant-input quantization must not cause unbounded phase drift,
-and accumulated correction must return after the fractional product error settles.
+words. At integer depth coordinates the audible oscillator uses the measured
+phase-product word. Between coordinates it linearly interpolates the two adjacent
+words and accumulates their fractional remainder in Float64. Only the whole
+increment advances the fixed-point oscillator. For a sustained fractional depth,
+the accumulated audible increment follows that interpolated pitch to within one
+phase word. The separate Sync reference uses the original Float32 product.
 
 OscillatorSection owns this state and a separate local compatible reference phase
 for Sync/slave/noise resets. Advance that reference online with the live compatible

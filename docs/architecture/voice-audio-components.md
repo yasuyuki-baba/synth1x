@@ -32,10 +32,9 @@ an extra filter; it needs no envelope signal or pending-transition span. Native
 receiver partitioning remains in OscillatorControlRenderer, with caller-owned
 real FM depth and existing control spans.
 
-[FmPhaseCorrectionTest.cpp](../../tests/FmPhaseCorrectionTest.cpp) checks compatible
-phase bounds, unfiltered coefficient changes, reset/disabled behavior and
-synchronized-noise history with generated inputs. Compatibility feedback bounds
-fractional-product drift; it is not unbiased fractional phase accumulation.
+[FmPhaseCorrectionTest.cpp](../../tests/FmPhaseCorrectionTest.cpp) checks cumulative
+fractional phase, coefficient changes, reset/disabled behavior and synchronized
+noise history with generated inputs.
 
 FilterAudioRenderer consumes one cutoff coordinate prepared from the physical
 filter envelope and receiver controls. It does not select a second envelope or

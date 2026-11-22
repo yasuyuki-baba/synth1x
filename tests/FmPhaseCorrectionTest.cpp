@@ -4,6 +4,7 @@
 #include "dsp/FrequencyModulation.h"
 #include "dsp/NoiseGenerator.h"
 #include "render/VoiceAudioConfiguration.h"
+#include <algorithm>
 #include <array>
 #include <cmath>
 #include <cstdint>
@@ -28,7 +29,7 @@ TEST(FmPhaseCorrection, DisabledPathPreservesCompatiblePhaseAdvancement)
     }
 }
 
-TEST(FmPhaseCorrection, ConstantCoefficientDoesNotAccumulateQuantizationDrift)
+TEST(FmPhaseCorrection, ConstantCoefficientTracksItsInterpolatedPhase)
 {
     synth1x::dsp::FmPhaseCorrection correction;
     uint32_t phase=0;int64_t difference=0;
@@ -36,12 +37,11 @@ TEST(FmPhaseCorrection, ConstantCoefficientDoesNotAccumulateQuantizationDrift)
     const int32_t native=static_cast<int32_t>(depth*source);
     // Adjacent compatible products for 123456 and 123457 are 37036/37037.
     const double interpolated=37036.75;
-    const double bound=31*std::abs(interpolated-native)+1;
     for(int i=0;i<20000;++i)
     {
         const auto result=correction.advance(depth,source,400000,phase,true);
         difference+=offset(result.audibleOffset)-offset(result.referenceOffset);
-        EXPECT_LE(std::abs(static_cast<double>(difference)),bound);
+        EXPECT_NEAR(difference,(i+1)*(interpolated-native),1.0);
         phase=(phase+400000+result.audibleOffset)&mask;
     }
 }
@@ -116,7 +116,7 @@ TEST(FmPhaseCorrection, CoefficientStepsTurnsAndJumpsRemainUnfiltered)
     }
 }
 
-TEST(FmPhaseCorrection, FractionalProductsHaveCompatibilityBoundAndReturnAfterSettling)
+TEST(FmPhaseCorrection, QuarterStepsAccumulateUntilModulationStops)
 {
     for(float sign:{-1.f,1.f})
     {
@@ -127,19 +127,16 @@ TEST(FmPhaseCorrection, FractionalProductsHaveCompatibilityBoundAndReturnAfterSe
             const float depth=frame<4096 ? sign*.25f : 0.f;
             const auto result=correction.advance(depth,1,400000,phase,true);
             difference+=offset(result.audibleOffset)-offset(result.referenceOffset);
-            EXPECT_LE(std::abs(difference),8);
+            EXPECT_EQ(difference,static_cast<int64_t>(sign*(std::min(frame+1,4096)/4)));
             fractionalProductRetained|=result.audibleOffset!=result.referenceOffset;
             phase=(phase+400000+result.audibleOffset)&mask;
-            // This intentionally follows the compatible trajectory rather than
-            // accumulating a quarter-unit pitch difference for the entire note.
-            if(frame==4095)EXPECT_NE(difference,static_cast<int64_t>(sign*1024));
         }
         EXPECT_TRUE(fractionalProductRetained);
-        EXPECT_LE(std::abs(difference),1);
+        EXPECT_EQ(difference,static_cast<int64_t>(sign*1024));
     }
 }
 
-TEST(FmPhaseCorrection, ControlChangesRetainTheReferenceAndOutstandingCorrection)
+TEST(FmPhaseCorrection, ControlChangesRetainBothPhaseHistories)
 {
     synth1x::dsp::FmPhaseCorrection correction;uint32_t phase=0;
     auto step=[&](float depth) {
@@ -153,10 +150,10 @@ TEST(FmPhaseCorrection, ControlChangesRetainTheReferenceAndOutstandingCorrection
     EXPECT_EQ(changed.referenceBefore,previous.referenceAfter);
     EXPECT_EQ(changed.referenceAfter,(previous.referenceAfter+500000)&mask);
     EXPECT_NE(phase,changed.referenceAfter);
-    // A new LFO/envelope coefficient cannot discard the existing phase debt.
+    // The new whole increment preserves the phase difference already accumulated.
     for(int i=0;i<2048;++i)previous=step(100000);
     const int32_t distance=static_cast<int32_t>((phase-previous.referenceAfter+0x04000000u)&mask)-0x04000000;
-    EXPECT_LE(std::abs(distance),1);
+    EXPECT_EQ(distance,16);
 }
 
 TEST(FmPhaseCorrection, ResetExternalPhaseAndDisableDiscardStaleCorrection)
@@ -166,16 +163,14 @@ TEST(FmPhaseCorrection, ResetExternalPhaseAndDisableDiscardStaleCorrection)
         const auto result=correction.advance(depth,1,400000,phase,enabled);
         phase=(phase+400000+result.audibleOffset)&mask;return result;
     };
-    for(int i=0;i<64;++i)step(.25f);
-    phase=1234;auto result=step(0);
+    step(.75f);
+    phase=1234;auto result=step(.5f);
     EXPECT_EQ(result.referenceBefore,1234u);EXPECT_EQ(result.audibleOffset,0u);
-    for(int i=0;i<64;++i)step(.25f);
-    correction.reset();const auto resetPhase=phase;result=step(0);
+    correction.reset();const auto resetPhase=phase;result=step(.75f);
     EXPECT_EQ(result.referenceBefore,resetPhase);EXPECT_EQ(result.audibleOffset,0u);
-    for(int i=0;i<64;++i)step(.25f);
     const auto disabledPhase=phase;result=step(0,false);
     EXPECT_EQ(result.referenceBefore,disabledPhase);EXPECT_EQ(result.audibleOffset,0u);
-    const auto enabledPhase=phase;result=step(0);
+    const auto enabledPhase=phase;result=step(.5f);
     EXPECT_EQ(result.referenceBefore,enabledPhase);EXPECT_EQ(result.audibleOffset,0u);
 }
 
@@ -298,6 +293,6 @@ TEST(FmPhaseCorrection, FractionalDepthInterpolatesAdjacentIntegerProductKnots)
         for(int i=0;i<1024;++i){auto result=state.advance(depth,source,400000,phase,true);
             delta+=offset(result.audibleOffset)-offset(result.referenceOffset);
             phase=(phase+400000+result.audibleOffset)&mask;}
-        EXPECT_NEAR(static_cast<double>(delta),31*(target-native),1.01);
+        EXPECT_NEAR(static_cast<double>(delta),1024*(target-native),1.0);
     }
 }
