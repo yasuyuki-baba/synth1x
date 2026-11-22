@@ -909,3 +909,44 @@ TEST(BoundedPrecision, CutoffEditUsesRealLevelsAtScheduledFrames)
     });
     cutoff.render(5,1,[](float level,int) { EXPECT_FLOAT_EQ(level,7.04f); });
 }
+
+TEST(BoundedPrecision, FractionalDecimationKeepsItsCadenceAfterMillionsOfSamples)
+{
+    synth1x::dsp::MultiEffect effect;
+    effect.prepare(44100);
+    effect.setDials(.5f,0,127);
+    std::array<float,64> block{};
+    constexpr int start=3*(1<<22);
+    for(int frame=0;frame<start;frame+=64)
+        effect.process(3,block.data(),nullptr,64,false);
+
+    for(int i=0;i<64;++i)block[i]=i/16.0f;
+    effect.process(3,block.data(),nullptr,64,false);
+    for(int i=0;i<64;++i)
+        EXPECT_EQ(block[i],(i%3==1 ? i-1 : i)/16.0f) << i;
+}
+
+TEST(BoundedPrecision, LongRunningSlewClocksRemainSettledAndCanRestart)
+{
+    using namespace synth1x::dsp;
+    constexpr int limit=std::numeric_limits<int>::max();
+    CutoffControl cutoff;
+    cutoff.prepare(44100);
+    cutoff.render(220,limit,[](float,int){});
+    EXPECT_EQ(cutoff.getElapsed(),limit);
+    cutoff.render(320,64,[](float value,int){ EXPECT_EQ(value,320); });
+    cutoff.restart();
+    cutoff.render(420,1,[](float value,int){ EXPECT_EQ(value,320); });
+
+    OscillatorCoarsePitch coarse;
+    coarse.elapsed=limit-1;
+    OscillatorControlSettings settings;
+    FrequencyModulation fm;
+    VoiceControlBuffer envelope{},depth{},exponents{};
+    VoiceSpanBuffer spans{};
+    spans[0]=64;
+    OscillatorControlRenderer::fm(settings,{},fm,64,envelope,spans,depth,&coarse,&exponents);
+    EXPECT_EQ(coarse.elapsed,limit);
+    coarse.set(1,true);
+    EXPECT_EQ(coarse.elapsed,0);
+}

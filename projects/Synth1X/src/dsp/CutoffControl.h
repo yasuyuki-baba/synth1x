@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <limits>
 #include "CompatibleControlCurve.h"
 
 namespace synth1x::dsp
@@ -56,7 +57,7 @@ namespace synth1x::dsp
                 }
                 else current = desired;
                 segment(current,count);
-                elapsed += count;
+                elapsed += std::min(count,std::numeric_limits<int>::max()-elapsed);
                 frames -= count;
             }
         }
