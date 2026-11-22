@@ -40,6 +40,8 @@ Preserve upstream LFO key/pedal tracking. Same-timestamp legato Off/On replaceme
 the sounding core through assignment, including partial/full ARP gates, bypass
 binding changes and intervening same-time ordinary controllers. An unmatched
 Note Off is flushed before audio advances; panic messages still take effect.
+In Mono mode, full-gate Random ARP preserves overlap across a same-timestamp
+Off/On replacement so Auto Glide can use the preceding note.
 Deterministic LFO waveforms do not by themselves invalidate the running ARP clock.
 
 Polyphonic admission collects the keyboard state for one timestamp before

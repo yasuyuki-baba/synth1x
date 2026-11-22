@@ -364,18 +364,18 @@ namespace synth1x
             }
             pendingPolyCount=0;
         };
-        std::optional<::synth1x::audio::MidiMessage> pendingLegatoOff;
-        int pendingLegatoPosition=0;
-        const auto flushLegatoOff=[&] {
-            if(!pendingLegatoOff)return;
+        std::optional<::synth1x::audio::MidiMessage> pendingMonoOff;
+        int pendingMonoOffPosition=0;
+        const auto flushMonoOff=[&] {
+            if(!pendingMonoOff)return;
             const ::synth1x::audio::ScopedValueSetter<bool> generated(dispatchingArpeggiator,true);
-            handleMidiEvent(*pendingLegatoOff);pendingLegatoOff.reset();
+            handleMidiEvent(*pendingMonoOff);pendingMonoOff.reset();
         };
         // Silent arp boundaries use the same render partition as MIDI events.
         const auto renderUntil=[&](int position) {
             if(position>cursor)
             {
-                flushPolyOns();flushLegatoOff();renderVoicesWithLfos(output,cursor,position-cursor,true);
+                flushPolyOns();flushMonoOff();renderVoicesWithLfos(output,cursor,position-cursor,true);
             }
             cursor=position;
             // The native VST bridge reuses its aligned workspace for each
@@ -403,26 +403,29 @@ namespace synth1x
                 if(message.isNoteOff() && !sustainDown[static_cast<size_t>(channel-1)])removePendingKey(channel,note);
                 if(message.isAllNotesOff() || message.isAllSoundOff())removePendingKey(channel,-1);
             }
-            if(pendingLegatoOff)
+            if(pendingMonoOff)
             {
-                if(message.isNoteOn() && position==pendingLegatoPosition
-                    && message.getChannel()==pendingLegatoOff->getChannel())
+                if(message.isNoteOn() && position==pendingMonoOffPosition
+                    && message.getChannel()==pendingMonoOff->getChannel())
                 {
-                    // A same-time native legato replacement retains the
-                    // sounding envelope even for a repeated pitch. Keep the
-                    // held-note overlap until its new assignment is installed.
+                    // Keep the held-note overlap through assignment so
+                    // legato retains the envelope and Mono Auto Glide can
+                    // see the preceding full-gate ARP note.
                     handleMidiEvent(message);
-                    if(message.getNoteNumber()!=pendingLegatoOff->getNoteNumber())handleMidiEvent(*pendingLegatoOff);
-                    pendingLegatoOff.reset();return;
+                    if(message.getNoteNumber()!=pendingMonoOff->getNoteNumber())handleMidiEvent(*pendingMonoOff);
+                    pendingMonoOff.reset();return;
                 }
-                if(message.isNoteOnOrOff() || message.isAllNotesOff() || message.isAllSoundOff())flushLegatoOff();
+                if(message.isNoteOnOrOff() || message.isAllNotesOff() || message.isAllSoundOff())flushMonoOff();
             }
-            // Native legato sees the final keyboard state at this timestamp.
-            // Keep same-time Off/On replacements connected across ordinary
-            // controller messages and ARP gate/keyboard binding changes.
-            if(message.isNoteOff() && params!=nullptr && params->playMode==2)
+            // Random ARP emits Off before On even at full gate. Preserve the
+            // overlap for Mono Auto Glide when the next note shares this frame.
+            const bool monoArpAutoGlide=params!=nullptr && params->playMode==1
+                && params->portamentoAuto && params->sourcePortamentoDial>0.0f
+                && params->arpeggiator.enabled && params->arpeggiator.type==4
+                && params->arpeggiator.gate==127;
+            if(message.isNoteOff() && params!=nullptr && (params->playMode==2 || monoArpAutoGlide))
             {
-                pendingLegatoOff=message;pendingLegatoPosition=position;return;
+                pendingMonoOff=message;pendingMonoOffPosition=position;return;
             }
             handleMidiEvent (message);
         },renderUntil,[&](const ::synth1x::audio::MidiMessage& message,int position) {
@@ -435,7 +438,7 @@ namespace synth1x
                 renderUntil(position);trackLfoKey(message);
             }
         },nativeOmniInput);
-        flushPolyOns();flushLegatoOff();
+        flushPolyOns();flushMonoOff();
         // The next MIDI region can begin exactly at this workspace end.
         // Its known boundary also caps projected ARP amplitude gain spans.
         const auto nextInput=midi.findNextSamplePosition(endSample);
