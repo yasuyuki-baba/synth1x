@@ -76,7 +76,10 @@ namespace synth1x::dsp
                 frames -= count;
                 if (pending==0 && counter >= boundary) updateResolution();
             }
-            if (pending==0 && (counter >= duration || level <= 0
+            // The native release completes when its integer target reaches
+            // zero. Finish the pending real-valued gain segment before
+            // retiring the core so its final oscillator phase is preserved.
+            if (pending==0 && (counter >= duration || level < 1.0f
                 || counter >= static_cast<int> (static_cast<float> (duration)*0.9f)))
             {
                 level = 0;
