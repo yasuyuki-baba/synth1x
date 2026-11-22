@@ -31,8 +31,9 @@ namespace synth1x::dsp
         static float timeSeconds(int dial,bool attack) noexcept
         {
             const float normalized=static_cast<float>(std::clamp(dial,0,127))*(1.0f/127.0f);
-            return static_cast<float>(std::exp(std::log(attack ? 56000.0f : 6000.0f)
-                       *static_cast<float>(normalized))*(attack ? .0005f : .01f));
+            // The native setter receives Float32 seconds after power and scaling in double.
+            return static_cast<float>(std::pow(attack ? 56000.0 : 6000.0,static_cast<double>(normalized))
+                *(attack ? .0005 : .01));
         }
         static float timeSeconds(float dial,bool attack) noexcept
         {return interpolateDial(dial,[&](int value){return timeSeconds(value,attack);});}

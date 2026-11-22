@@ -411,6 +411,31 @@ TEST(BoundedPrecision, AmplitudeSustainAndReleaseRetainSubLevelValues)
     EXPECT_EQ(release.getCounter(),1);
 }
 
+TEST(BoundedPrecision, OscillatorEnvelopeTimingMatchesNativeFrameCounts)
+{
+    using namespace synth1x::dsp;
+    struct Duration { int dial,sampleRate,attackFrames,decayFrames; };
+    const Duration cases[]{
+        {105,44100,185812,586282},
+        {124,44100,953750,2154478},
+        {127,44100,1234800,2646000},
+        {85,48000,36151,162153},
+        {98,96000,221410,790123}
+    };
+    for(const auto& [dial,sampleRate,attackFrames,decayFrames]:cases)
+    {
+        SCOPED_TRACE(::testing::Message()<<dial<<" at "<<sampleRate);
+        EXPECT_EQ(ReleaseRamp::durationFrames(ModulationEnvelope::timeSeconds(dial,true),sampleRate),attackFrames);
+        EXPECT_EQ(ReleaseRamp::durationFrames(ModulationEnvelope::timeSeconds(dial,false),sampleRate),decayFrames);
+    }
+    for(bool attack:{true,false})
+    {
+        const float first=ModulationEnvelope::timeSeconds(124,attack);
+        const float second=ModulationEnvelope::timeSeconds(125,attack);
+        EXPECT_FLOAT_EQ(ModulationEnvelope::timeSeconds(124.25f,attack),first+.25f*(second-first));
+    }
+}
+
 TEST(BoundedPrecision, FractionalModulationDepthSurvivesConfiguration)
 {
     using namespace synth1x::dsp;
