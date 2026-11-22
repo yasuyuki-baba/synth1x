@@ -425,8 +425,8 @@ independent sub phase or erase retained physical history.
 All LFO slots use one prepared physical-control block and shared clock/CRT state.
 Evidence validity is diagnostic, not an audio-implementation selector. Preserve
 native query/advance cadence and numerical knots across these consumers.
-When LFO 1 modulates oscillator pitch and LFO 2 modulates FM, query LFO 2 again at
-each LFO 1 held-span boundary.
+When both LFOs modulate oscillator pitch, pulse width or FM and at least one
+targets FM, query LFO 2 again at each LFO 1 held-span boundary.
 See [modulation input coordinates](modulation.md#input-coordinates-and-consumption).
 
 All amplitude LFO inputs reach independent per-slot physical VCA attenuation,

@@ -207,40 +207,54 @@ TEST(ModulationBehavior, ConsumerViewsAndBoundaryQueriesDoNotAdvanceClocks)
     }
 }
 
-TEST(ModulationBehavior, FmLfoQueriesAgainAtTheFirstPitchLfoBoundary)
+TEST(ModulationBehavior, OscillatorLfosWithFmNestTheSecondQueryAtFirstSlotBoundaries)
 {
     using namespace synth1x::dsp;
-    auto settings=sharedSettings();
-    settings.pitchReceiver=true;
-    settings.lfos[0].wave=2;
-    settings.lfos[0].speed=.8f;
-    settings.lfos[1].wave=0;
-    settings.lfos[1].dest=5;
-    settings.lfos[1].speed=.2f;
-    SharedModulationRuntime runtime;prepare(runtime,settings);
-    const LfoShape::DepthCurve fm(5,fractionalDial(settings.lfos[1].amount));
-    bool shortened=false;
-    for(int block=0;block<8;++block)
+    struct Scenario { int first,second; bool firstOn,nested; };
+    const Scenario scenarios[]{
+        {0,5,true,true},{1,5,true,true},{5,0,true,true},{5,1,true,true},
+        {4,5,true,true},{5,4,true,true},{5,5,true,true},
+        {5,5,false,false},{5,3,true,false}
+    };
+    for(const auto& [first,second,firstOn,nested]:scenarios)
     {
-        const auto clock=runtime.clock(1);
-        advance(runtime,settings);
-        const auto& output=runtime.block();
-        for(int i=0;i<64;)
+        SCOPED_TRACE(::testing::Message()<<first<<", "<<second<<", "<<firstOn);
+        auto settings=sharedSettings();
+        settings.pitchReceiver=first<=1 || second<=1;
+        settings.pulseWidthReceiver=first==4 || second==4;
+        settings.lfos[0].on=firstOn;
+        settings.lfos[0].dest=first;
+        settings.lfos[0].wave=2;
+        settings.lfos[0].speed=.8f;
+        settings.lfos[1].dest=second;
+        settings.lfos[1].wave=0;
+        settings.lfos[1].speed=.2f;
+        SharedModulationRuntime runtime;prepare(runtime,settings);
+        const LfoShape::DepthCurve secondLfo(second,fractionalDial(settings.lfos[1].amount));
+        bool shorterFirstSpan=false;
+        for(int block=0;block<8;++block)
         {
-            const auto [value,span]=fm.query(0,(clock.counter+i)%clock.period,clock.period,clock.step);
-            const int ownSpan=span<0 ? 64-i : std::min(span,64-i);
-            const int count=std::min(ownSpan,output.controlRemaining[0][i]);
-            ASSERT_GT(count,0);
-            shortened|=count<ownSpan;
-            for(int frame=0;frame<count;++frame)
+            const auto clock=runtime.clock(1);
+            advance(runtime,settings);
+            const auto& output=runtime.block();
+            for(int i=0;i<64;)
             {
-                EXPECT_EQ(output.controls[1][i+frame],value);
-                EXPECT_EQ(output.controlRemaining[1][i+frame],count-frame);
+                const auto [value,span]=secondLfo.query(0,(clock.counter+i)%clock.period,clock.period,clock.step);
+                const int ownSpan=span<0 ? 64-i : std::min(span,64-i);
+                const int firstSpan=output.controlRemaining[0][i];
+                shorterFirstSpan|=firstSpan<ownSpan;
+                const int count=nested ? std::min(ownSpan,firstSpan) : ownSpan;
+                ASSERT_GT(count,0);
+                for(int frame=0;frame<count;++frame)
+                {
+                    EXPECT_EQ(output.controls[1][i+frame],value);
+                    EXPECT_EQ(output.controlRemaining[1][i+frame],count-frame);
+                }
+                i+=count;
             }
-            i+=count;
         }
+        EXPECT_TRUE(shorterFirstSpan);
     }
-    EXPECT_TRUE(shortened);
 }
 
 TEST(ModulationBehavior, FirstKeyDoesNotResetAnUnsynchronizedReceiver)
