@@ -62,7 +62,7 @@ namespace synth1x::dsp
         }
         static void fm(const OscillatorControlSettings& config,const ReceiverLfoView& lfos,
             FrequencyModulation& state,int count,const VoiceControlBuffer& envelopePitch,
-            const VoiceSpanBuffer& remaining,VoiceControlBuffer& depth,
+            const VoiceSpanBuffer& remaining,FmControlBuffer& fm,
             OscillatorCoarsePitch* coarse=nullptr,std::array<float,256>* exponents=nullptr)
         {
             int position=0;
@@ -80,7 +80,7 @@ namespace synth1x::dsp
                 const int start=position;
                 state.render(FrequencyModulation::depth(static_cast<float>(fractionalDial(config.fmAmount)),control),
                     frames,static_cast<int>(config.sampleRate),
-                    [&](double value){depth[position++]=static_cast<float>(value);},coarse!=nullptr,!config.ringMod);
+                    [&](double value){fm[position++]={static_cast<float>(value),state.target!=0};},coarse!=nullptr,!config.ringMod);
                 if(coarse!=nullptr)
                 {
                     std::fill(exponents->begin()+start,exponents->begin()+position,coarse->cached);

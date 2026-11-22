@@ -207,6 +207,42 @@ TEST(ModulationBehavior, ConsumerViewsAndBoundaryQueriesDoNotAdvanceClocks)
     }
 }
 
+TEST(ModulationBehavior, FmLfoQueriesAgainAtTheFirstPitchLfoBoundary)
+{
+    using namespace synth1x::dsp;
+    auto settings=sharedSettings();
+    settings.pitchReceiver=true;
+    settings.lfos[0].wave=2;
+    settings.lfos[0].speed=.8f;
+    settings.lfos[1].wave=0;
+    settings.lfos[1].dest=5;
+    settings.lfos[1].speed=.2f;
+    SharedModulationRuntime runtime;prepare(runtime,settings);
+    const LfoShape::DepthCurve fm(5,fractionalDial(settings.lfos[1].amount));
+    bool shortened=false;
+    for(int block=0;block<8;++block)
+    {
+        const auto clock=runtime.clock(1);
+        advance(runtime,settings);
+        const auto& output=runtime.block();
+        for(int i=0;i<64;)
+        {
+            const auto [value,span]=fm.query(0,(clock.counter+i)%clock.period,clock.period,clock.step);
+            const int ownSpan=span<0 ? 64-i : std::min(span,64-i);
+            const int count=std::min(ownSpan,output.controlRemaining[0][i]);
+            ASSERT_GT(count,0);
+            shortened|=count<ownSpan;
+            for(int frame=0;frame<count;++frame)
+            {
+                EXPECT_EQ(output.controls[1][i+frame],value);
+                EXPECT_EQ(output.controlRemaining[1][i+frame],count-frame);
+            }
+            i+=count;
+        }
+    }
+    EXPECT_TRUE(shortened);
+}
+
 TEST(ModulationBehavior, FirstKeyDoesNotResetAnUnsynchronizedReceiver)
 {
     auto settings=sharedSettings(); settings.lfos[0].keySync=false;
@@ -474,20 +510,33 @@ TEST(ModulationInputs, RingRetainsPhysicalFmSlewAndResumesWhenDisabled)
     auto config=synth1x::render::oscillatorControls(controls,44100,false);
     FrequencyModulation state;state.settle=false;state.current=state.target=4096.25f;
     state.elapsed=44;
-    VoiceControlBuffer envelope{},depth{};VoiceSpanBuffer spans{};
+    VoiceControlBuffer envelope{};FmControlBuffer fm{};VoiceSpanBuffer spans{};
     for(int i=0;i<256;++i)spans[i]=256-i;
-    OscillatorControlRenderer::fm(config,{},state,256,envelope,spans,depth);
-    for(float value:depth)EXPECT_EQ(value,4096.25f);
+    OscillatorControlRenderer::fm(config,{},state,256,envelope,spans,fm);
+    for(auto sample:fm)
+    {
+        EXPECT_EQ(sample.depth,4096.25f);
+        EXPECT_FALSE(sample.targetActive);
+    }
     EXPECT_EQ(state.target,0);EXPECT_EQ(state.current,4096.25f);
     EXPECT_EQ(state.remaining,44);EXPECT_EQ(state.elapsed,44);
+    auto fromZero=state;fromZero.current=0;fromZero.remaining=0;
+    config.fmAmount=.5f;
+    OscillatorControlRenderer::fm(config,{},fromZero,256,envelope,spans,fm);
+    for(auto sample:fm)
+    {
+        EXPECT_EQ(sample.depth,0);
+        EXPECT_TRUE(sample.targetActive);
+    }
+    EXPECT_EQ(fromZero.remaining,44);
     // A different physical core must still advance while this core uses Ring.
     auto independent=state;
     controls.ringMod=0;config=synth1x::render::oscillatorControls(controls,44100,false);
-    OscillatorControlRenderer::fm(config,{},independent,256,envelope,spans,depth);
+    OscillatorControlRenderer::fm(config,{},independent,256,envelope,spans,fm);
     EXPECT_EQ(independent.current,0);EXPECT_EQ(independent.remaining,0);
     EXPECT_EQ(state.current,4096.25f);EXPECT_EQ(state.remaining,44);
-    OscillatorControlRenderer::fm(config,{},state,256,envelope,spans,depth);
-    EXPECT_EQ(depth.front(),4096.25f);EXPECT_EQ(depth.back(),0);
+    OscillatorControlRenderer::fm(config,{},state,256,envelope,spans,fm);
+    EXPECT_EQ(fm.front().depth,4096.25f);EXPECT_EQ(fm.back().depth,0);
     EXPECT_EQ(state.current,0);EXPECT_EQ(state.remaining,0);
 }
 
@@ -510,10 +559,10 @@ TEST(ModulationInputs, GlidePublishesNestedFmDispatchSpansWithoutChangingPitch)
     ASSERT_GT(ends.size(),2u);EXPECT_EQ(state.elapsed,reference.elapsed);
     // A pending FM transition must see the first glide request horizon, not 64.
     config.fmAmount=0;FrequencyModulation fm;fm.settle=false;fm.current=fm.target=1024.5f;
-    fm.elapsed=44;VoiceControlBuffer envelope{},actual{},manual{};
+    fm.elapsed=44;VoiceControlBuffer envelope{},manual{};FmControlBuffer actual{};
     auto expectedFm=fm;position=0;begin=0;
     for(int end:ends){expectedFm.render(0,end-begin,44100,[&](float value){manual[position++]=value;});begin=end;}
     OscillatorControlRenderer::fm(config,{},fm,64,envelope,spans,actual);
-    for(int i=0;i<64;++i)EXPECT_EQ(actual[i],manual[i]);
+    for(int i=0;i<64;++i)EXPECT_EQ(actual[i].depth,manual[i]);
     EXPECT_EQ(fm.elapsed,expectedFm.elapsed);EXPECT_EQ(fm.remaining,expectedFm.remaining);
 }

@@ -69,8 +69,9 @@ mono/stereo coefficient rules.
 
 Ring takes precedence over FM audio processing. Its control dispatch still updates
 FM targets and elapsed receiver time, but retains the physical FM slew value and
-remaining samples. Disabling Ring resumes that same slew. Retained FM depth also
-participates in waveform-specific Ring wrapper gain selection.
+remaining samples. Disabling Ring resumes that same slew. The FM renderer passes
+the current depth and whether the target is nonzero to the oscillator. Both
+inform the waveform-specific Ring wrapper gain selection.
 
 OscillatorControlRenderer refines modulation-envelope spans with each portamento
 region before FM rendering. Those spans are scheduling metadata, independent of

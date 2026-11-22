@@ -255,7 +255,7 @@ TEST(FmPhaseCorrection, AudioAdapterUsesFloatDepthWithCompatibleSyncReference)
     synth1x::dsp::OscillatorAudioInput input{};
     input.firstFrequency=input.secondFrequency=261.625f;
     input.pulseWidth=.5f;input.mix=1;input.sync=true;// This coordinate spans distinct float-product knots at wide depth.
-    input.fmDepth=67108861.25;
+    input.fm.depth=67108861.25;
     synth1x::dsp::OscillatorAudioSettings config{};config.correctFmPhase=true;
     config.subOctave=0;
     bool phaseDiffers=false;
@@ -266,8 +266,8 @@ TEST(FmPhaseCorrection, AudioAdapterUsesFloatDepthWithCompatibleSyncReference)
                 0,0,0,nullptr,-1,0,0,false,true);
         };
         const double output=synth1x::dsp::OscillatorAudioRenderer::process(adapted,config,input,{},0,nullptr);
-        EXPECT_EQ(output,render(wide,input.fmDepth));
-        EXPECT_EQ(output,render(narrow,static_cast<float>(input.fmDepth)));
+        EXPECT_EQ(output,render(wide,input.fm.depth));
+        EXPECT_EQ(output,render(narrow,static_cast<float>(input.fm.depth)));
         EXPECT_EQ(adapted.getOsc1Phase(),wide.getOsc1Phase());
         phaseDiffers|=wide.getOsc1Phase()!=narrow.getOsc1Phase();
     }

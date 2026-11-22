@@ -46,7 +46,7 @@ namespace synth1x::dsp {
         }
 
         float processSample(float f1, float f2, float pw, float mix, float fmAmt, bool sync, bool ring,
-                            float subGain, int subShape, int subOctaveMode, const WaveTableBank* bank, float nativePulseWidthBins = -1, float pitch1Control = 0, float pitch2Control = 0, bool nativePitchLfo = false, bool correctFmPhase = false, OscillatorFrameAdvance* frameAdvance = nullptr) {
+                            float subGain, int subShape, int subOctaveMode, const WaveTableBank* bank, float nativePulseWidthBins = -1, float pitch1Control = 0, float pitch2Control = 0, bool nativePitchLfo = false, bool correctFmPhase = false, OscillatorFrameAdvance* frameAdvance = nullptr, bool fmTargetActive = false) {
             const float base1=f1;
             const float pulseBins=nativePulseWidthBins>=0 ? nativePulseWidthBins
                 : resolvePulseWidth(pw,0.0f);
@@ -69,10 +69,11 @@ namespace synth1x::dsp {
             // The native dispatcher scales noise by .65 only without FM.
             // FM kernels apply it internally; Ring wins dispatch but retains
             // the unscaled noise gain when FM is selected.
-            if (params.osc2Wave == 4 && !(ring && fmAmt!=0)) {s2 *= .65f;}
+            const bool ringUsesFmGain=ring && (fmAmt!=0 || fmTargetActive);
+            if (params.osc2Wave == 4 && !ringUsesFmGain) {s2 *= .65f;}
             // Ring wins FM dispatch, but selecting FM also bypasses the
             // pulse modulator's wrapper half-gain (as for noise above).
-            if (params.osc2Wave == 1 && ring && fmAmt!=0) {s2 *= 2.0f;}
+            if (params.osc2Wave == 1 && ringUsesFmGain) {s2 *= 2.0f;}
             const float fmSource=s2;
 
             // Native isolated two-tone/noise captures use a linear crossfade.
@@ -189,11 +190,11 @@ namespace synth1x::dsp {
         void processFrame(float* output,int factor,float f1,float f2,float pw,float mix,
                           float fmAmt,bool sync,bool ring,float subGain,int subShape,int subOctaveMode,
                           const WaveTableBank* bank,float pulseBins=-1,float pitch1=0,float pitch2=0,
-                          bool pitchReceiver=false,bool correctFmPhase=false) {
+                          bool pitchReceiver=false,bool correctFmPhase=false,bool fmTargetActive=false) {
             const auto initial=*this;
             OscillatorFrameAdvance advance;
             output[0]=processSample(f1,f2,pw,mix,fmAmt,sync,ring,subGain,subShape,subOctaveMode,
-                                    bank,pulseBins,pitch1,pitch2,pitchReceiver,correctFmPhase,&advance);
+                                    bank,pulseBins,pitch1,pitch2,pitchReceiver,correctFmPhase,&advance,fmTargetActive);
             for(int step=1;step<factor;++step) {
                 auto view=initial;
                 const auto phase=[&](uint32_t start,int64_t delta) {
@@ -207,7 +208,7 @@ namespace synth1x::dsp {
                 // Noise reads use a disposable copy of the starting state, so
                 // they hold the base-frame sample and never advance the real RNG.
                 output[step]=view.processSample(f1,f2,pw,mix,fmAmt,sync,ring,subGain,subShape,subOctaveMode,
-                                                bank,pulseBins,pitch1,pitch2,pitchReceiver,correctFmPhase);
+                                                bank,pulseBins,pitch1,pitch2,pitchReceiver,correctFmPhase,nullptr,fmTargetActive);
             }
         }
 
