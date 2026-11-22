@@ -207,18 +207,20 @@ TEST(ModulationBehavior, ConsumerViewsAndBoundaryQueriesDoNotAdvanceClocks)
     }
 }
 
-TEST(ModulationBehavior, OscillatorLfosWithFmNestTheSecondQueryAtFirstSlotBoundaries)
+TEST(ModulationBehavior, OscillatorFmAndDualAmplitudeRoutesNestTheSecondLfoQuery)
 {
     using namespace synth1x::dsp;
-    struct Scenario { int first,second; bool firstOn,nested; };
+    struct Scenario { int first,second; bool firstOn,secondOn,nested; };
     const Scenario scenarios[]{
-        {0,5,true,true},{1,5,true,true},{5,0,true,true},{5,1,true,true},
-        {4,5,true,true},{5,4,true,true},{5,5,true,true},
-        {5,5,false,false},{5,3,true,false}
+        {0,5,true,true,true},{1,5,true,true,true},{5,0,true,true,true},{5,1,true,true,true},
+        {4,5,true,true,true},{5,4,true,true,true},{5,5,true,true,true},
+        {3,3,true,true,true},
+        {5,5,false,true,false},{5,3,true,true,false},
+        {3,3,false,true,false},{3,3,true,false,false}
     };
-    for(const auto& [first,second,firstOn,nested]:scenarios)
+    for(const auto& [first,second,firstOn,secondOn,nested]:scenarios)
     {
-        SCOPED_TRACE(::testing::Message()<<first<<", "<<second<<", "<<firstOn);
+        SCOPED_TRACE(::testing::Message()<<first<<", "<<second<<", "<<firstOn<<", "<<secondOn);
         auto settings=sharedSettings();
         settings.pitchReceiver=first<=1 || second<=1;
         settings.pulseWidthReceiver=first==4 || second==4;
@@ -226,6 +228,7 @@ TEST(ModulationBehavior, OscillatorLfosWithFmNestTheSecondQueryAtFirstSlotBounda
         settings.lfos[0].dest=first;
         settings.lfos[0].wave=2;
         settings.lfos[0].speed=.8f;
+        settings.lfos[1].on=secondOn;
         settings.lfos[1].dest=second;
         settings.lfos[1].wave=0;
         settings.lfos[1].speed=.2f;

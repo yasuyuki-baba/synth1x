@@ -172,12 +172,15 @@ namespace synth1x::dsp
                 && (controls[1]->dest == 0 || controls[1]->dest == 1);
             const bool dualFilter=settings.filterReceiver && controls[0]->on
                 && controls[0]->dest == 2 && controls[1]->dest == 2;
+            const bool dualAmplitude=controls[0]->on && controls[1]->on
+                && controls[0]->dest == 3 && controls[1]->dest == 3;
             const bool dualPulse=controls[0]->on && controls[0]->dest == 4 && controls[1]->dest == 4;
             const bool nestedPulse=settings.pulseWidthReceiver && (settings.pitchReceiver || dualPulse);
             const bool nestedFm=(controls[0]->dest == 5 || controls[1]->dest == 5)
                 && ReceiverLfoView::reachesOscillator({controls[0]->on,controls[0]->dest})
                 && ReceiverLfoView::reachesOscillator({controls[1]->on,controls[1]->dest});
-            const bool followFirstSpan=lfo == 1 && (dualPitch || dualFilter || nestedPulse || nestedFm);
+            const bool followFirstSpan=lfo == 1
+                && (dualPitch || dualFilter || dualAmplitude || nestedPulse || nestedFm);
             int remaining=0;float target=0;
             for (int i = 0; i < count; ++i)
             {
