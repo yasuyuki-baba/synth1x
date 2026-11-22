@@ -5,6 +5,7 @@
 #include <cstdint>
 #include "OverdriveKernel.h"
 #include "ControlTables.h"
+#include "FractionalDial.h"
 #include "ModulationStep.h"
 namespace synth1x::dsp
 {
@@ -83,10 +84,12 @@ namespace synth1x::dsp
     private:
         bool captureFrame() const noexcept
         {
+            // Integral dials follow the original wrapping 32-bit clock.
             if(downsample==std::floor(downsample))
-                return counter%static_cast<uint32_t>(downsample+1)==0;
-            const float period=static_cast<float>(downsample)+1.0f,frame=counter;
-            return std::floor(frame/period)!=std::floor((frame-1.0f)/period);
+                return static_cast<uint32_t>(counter)%static_cast<uint32_t>(downsample+1)==0;
+            const double period=static_cast<double>(downsample)+1.0;
+            const double frame=static_cast<double>(counter);
+            return std::floor(frame/period)!=std::floor((frame-1.0)/period);
         }
         void updateDynamics() noexcept
         {
@@ -101,7 +104,7 @@ namespace synth1x::dsp
         int audioFactor=1;
         OverdriveKernel overdrive;
         float sampleRate=44100;
-        float downsample=0;int bits=0;uint32_t counter=0;
+        float downsample=0;int bits=0;uint64_t counter=0;
         float mix=0,frequency=1000,cosine=0,sine=1,step=0;
         float threshold=1,makeup=1,level=1,milliseconds=1,coefficient=0;
         std::array<float,2> envelope{};

@@ -6,6 +6,7 @@
 #include "FrequencyModulation.h"
 #include "OscillatorCoarsePitch.h"
 #include <cmath>
+#include <limits>
 
 namespace synth1x::dsp
 {
@@ -84,7 +85,7 @@ namespace synth1x::dsp
                 if(coarse!=nullptr)
                 {
                     std::fill(exponents->begin()+start,exponents->begin()+position,coarse->cached);
-                    coarse->elapsed+=position-start;
+                    coarse->elapsed += std::min(position-start,std::numeric_limits<int>::max()-coarse->elapsed);
                 }
             }
         }
