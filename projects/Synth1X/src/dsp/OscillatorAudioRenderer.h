@@ -15,7 +15,8 @@ namespace synth1x::dsp
     {
         float firstFrequency {},secondFrequency {},pulseWidth {},mix {},subGain {};
         bool sync {},ring {};
-        float firstPitch {},secondPitch {},glidePitch {},envelope {},fmDepth {};
+        float firstPitch {},secondPitch {},glidePitch {},envelope {};
+        FmControl fm {};
         float pulseControl {};
     };
     struct OscillatorAudioRenderer
@@ -39,7 +40,6 @@ namespace synth1x::dsp
                     secondFrequency=ModulationEnvelope::pitchFrequency(secondFrequency,control);
                 }
             }
-            const float fm=input.fmDepth;
             float pulse=input.pulseControl;
             if(config.pulseReceiver && lfos.available)
                 for(size_t slot=0;slot<2;++slot)
@@ -51,13 +51,13 @@ namespace synth1x::dsp
             const float bins=oscillator.resolvePulseWidth(width,pulse);
             if(frame) {
                 oscillator.processFrame(frame,factor,firstFrequency,secondFrequency,input.pulseWidth,input.mix,
-                    fm,input.sync,input.ring,input.subGain,config.subWave,config.subOctave,bank,
-                    bins,firstPitch,secondPitch,config.pitchReceiver,config.correctFmPhase);
+                    input.fm.depth,input.sync,input.ring,input.subGain,config.subWave,config.subOctave,bank,
+                    bins,firstPitch,secondPitch,config.pitchReceiver,config.correctFmPhase,input.fm.targetActive);
                 return frame[0];
             }
             return oscillator.processSample(firstFrequency,secondFrequency,input.pulseWidth,input.mix,
-                fm,input.sync,input.ring,input.subGain,config.subWave,config.subOctave,bank,
-                bins,firstPitch,secondPitch,config.pitchReceiver,config.correctFmPhase);
+                input.fm.depth,input.sync,input.ring,input.subGain,config.subWave,config.subOctave,bank,
+                bins,firstPitch,secondPitch,config.pitchReceiver,config.correctFmPhase,nullptr,input.fm.targetActive);
         }
     };
 }

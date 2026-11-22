@@ -242,7 +242,8 @@ namespace synth1x
         const auto oscillatorAudio=render::oscillatorAudio(params,bypassEnv,bend!=0);
         const auto filterAudio=render::filterAudio(params,bypassEnv);
         std::array<std::array<float,256>,8> nativeCoarsePitch;
-        std::array<dsp::VoiceControlBuffer,8> nativeGlidePitch,nativeModPitch,nativeFmDepth,nativeCutoffIndices;
+        std::array<dsp::VoiceControlBuffer,8> nativeGlidePitch,nativeModPitch,nativeCutoffIndices;
+        std::array<dsp::FmControlBuffer,8> nativeFm;
         std::array<dsp::VoiceSpanBuffer,8> nativeModRemaining;
         // Preserve the native stage order across all cores. Child controllers
         // retain separate oscillator-envelope/glide/FM and filter partitions.
@@ -254,7 +255,7 @@ namespace synth1x
                 numSamples,nativeModRemaining[v],nativeGlidePitch[v]);
         for(int v=0;v<activeCoreCount();++v)if(renderCore[v])
             dsp::OscillatorControlRenderer::fm(oscillatorControl,lfoView,cores[v]->fm,
-                numSamples,nativeModPitch[v],nativeModRemaining[v],nativeFmDepth[v],
+                numSamples,nativeModPitch[v],nativeModRemaining[v],nativeFm[v],
                 &cores[v]->coarse,&nativeCoarsePitch[v]);
         for(int v=0;v<activeCoreCount();++v)if(renderCore[v])
             dsp::FilterControlRenderer::render(filterControl,lfoView,cores[v]->filterEnvelope,cores[v]->cutoff,
@@ -348,7 +349,7 @@ namespace synth1x
                     firstPitch+bend,
                     secondPitch+bend,
                     nativeGlidePitch[v][i],nativeModPitch[v][i],
-                    nativeFmDepth[v][i],
+                    nativeFm[v][i],
                     0};
                 float vEnveloped;
                 if(audioFactor==1)

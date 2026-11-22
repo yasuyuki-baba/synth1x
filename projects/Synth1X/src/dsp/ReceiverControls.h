@@ -9,6 +9,9 @@ namespace synth1x::dsp
     using VoiceControlBuffer=std::array<ControlSignal,256>;
     using VoiceSpanBuffer=std::array<int,256>;
 
+    struct FmControl { float depth; bool targetActive; };
+    using FmControlBuffer=std::array<FmControl,256>;
+
     struct ReceiverLfoView
     {
         struct Receiver { bool enabled {};int destination {}; };
