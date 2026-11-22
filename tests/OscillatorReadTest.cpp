@@ -72,21 +72,30 @@ TEST(OscillatorRead, DefaultVoiceAdapterAndDirectOscillatorUseTheSameReader)
 
 TEST(OscillatorRead, RingAlwaysUsesProductMixAndSuppressesFmPhaseOffsets)
 {
+    using namespace synth1x::dsp;
     const auto bank=generatedBank();
-    for(int shape:{0,1,2,3,4})for(float mix:{0.f,.25f,1.f})for(float depth:{0.,16384.5})
+    for(int shape:{0,1,2,3,4})for(float mix:{0.f,.25f,1.f})
+    for(FmControl fm:{FmControl{0,false},FmControl{16384.5f,false},FmControl{0,true}})
+    for(int factor:{1,2})
     {
-        synth1x::dsp::OscillatorSection ring;
+        OscillatorSection ring;
         ring.prepare({44100,64,2});ring.params.osc1Wave=3;ring.params.osc2Wave=shape;
-        synth1x::dsp::Oscillator first,second;first.setSampleRate(44100);second.setSampleRate(44100);
+        Oscillator first,second;first.setSampleRate(44100);second.setSampleRate(44100);
         first.updatePhaseIncrement(220);second.updatePhaseIncrement(330);
+        OscillatorAudioInput input;
+        input.firstFrequency=220;input.secondFrequency=330;input.pulseWidth=.5f;
+        input.mix=mix;input.ring=true;input.fm=fm;
+        const bool fmSelected=fm.depth!=0 || fm.targetActive;
+        std::array<float,2> frame{};
         for(int i=0;i<256;++i)
         {
             const float carrier=first.renderSample(3,.5f,0,&bank);
             float modulator=second.renderSample(shape,.5f,0,&bank);
-            if(shape==4 && depth==0)modulator*=.65f;
-            if(shape==1 && depth!=0)modulator*=2.f;
+            if(shape==4 && !fmSelected)modulator*=.65f;
+            if(shape==1 && fmSelected)modulator*=2.f;
             const float expected=(modulator*mix)*carrier+carrier*(1.f-mix);
-            EXPECT_EQ(ring.processSample(220,330,.5f,mix,depth,false,true,0,0,-1,&bank),expected);
+            EXPECT_EQ(OscillatorAudioRenderer::process(ring,{},input,{},0,&bank,
+                factor==1 ? nullptr : frame.data(),factor),expected);
             first.advancePhase();if(shape!=4)second.advancePhase();
             EXPECT_EQ(ring.osc1.getPhaseFixed27(),first.getPhaseFixed27());
             EXPECT_EQ(ring.osc2.getPhaseFixed27(),second.getPhaseFixed27());
@@ -124,14 +133,14 @@ TEST(OscillatorRead, PulseReceiverComposesSharedEnvelopeAndRemainingControlOnce)
     for(auto* oscillator:{&actual,&reference}){oscillator->prepare({44100,64,2});oscillator->params.osc1Wave=oscillator->params.osc2Wave=1;}
     synth1x::dsp::OscillatorAudioSettings config;config.pulseReceiver=config.pulseEnvelope=true;config.pulseWidth=.5f;
     synth1x::dsp::OscillatorAudioInput input;input.firstFrequency=input.secondFrequency=440;input.pulseWidth=.5f;
-    input.fmDepth=1234.5;input.envelope=8.25;input.pulseControl=4.5;
+    input.fm.depth=1234.5;input.envelope=8.25;input.pulseControl=4.5;
     synth1x::dsp::VoiceControlBuffer control{};control.fill(16.125);
     synth1x::dsp::ReceiverLfoView view;view.available=true;view.receivers[0]={true,4};view.values[0]=control.data();
     const double bins=synth1x::dsp::ModulationEnvelope::pulseWidthForDial(synth1x::dsp::fractionalDial(.5f),28.875);
     for(int frame=0;frame<256;++frame)
     {
         EXPECT_EQ(synth1x::dsp::OscillatorAudioRenderer::process(actual,config,input,view,frame,&bank),
-            reference.processSample(440,440,.5f,0,input.fmDepth,false,false,0,0,-1,&bank,bins));
+            reference.processSample(440,440,.5f,0,input.fm.depth,false,false,0,0,-1,&bank,bins));
         EXPECT_EQ(actual.readPhaseWords(),reference.readPhaseWords());
     }
 }

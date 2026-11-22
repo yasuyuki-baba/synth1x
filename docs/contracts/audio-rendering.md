@@ -411,9 +411,9 @@ establish perceptual improvement or unrestricted equivalence.
 ## Ring and sub composition
 
 Ring uses the same product-mix expression for every caller, before FM dispatch.
-Selecting Ring suppresses FM phase offsets. Pulse/noise wrapper gains can still
-change when FM is selected; these are device semantics rather than alternate
-Ring algorithms. Preserve the multiplication/addition order in the Float32 signal path.
+Selecting Ring suppresses FM phase offsets. In Ring mode, OSC2 pulse and noise
+wrapper gains use the FM-selected gain if either the current depth or the target
+depth is nonzero. Preserve the multiplication/addition order in the Float32 signal path.
 
 Sub uses one level mapping (four times the normalized source dial) and the
 compatible carrier/sub/mix normalizer for every render route. Its full OSC1-linked
@@ -425,6 +425,8 @@ independent sub phase or erase retained physical history.
 All LFO slots use one prepared physical-control block and shared clock/CRT state.
 Evidence validity is diagnostic, not an audio-implementation selector. Preserve
 native query/advance cadence and numerical knots across these consumers.
+When LFO 1 modulates oscillator pitch and LFO 2 modulates FM, query LFO 2 again at
+each LFO 1 held-span boundary.
 See [modulation input coordinates](modulation.md#input-coordinates-and-consumption).
 
 All amplitude LFO inputs reach independent per-slot physical VCA attenuation,
