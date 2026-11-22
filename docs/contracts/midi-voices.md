@@ -58,6 +58,11 @@ resume those retired notes; a later note may reuse their physical histories. A c
 resets the pool allocation cursor; an equal-count load preserves it. Neither
 operation implies erasing the retained physical state.
 
+In Mono and Legato, initialize the requested Unison group and render only the
+first cores allowed by Polyphony. A live Polyphony change releases held cores
+outside the new limit. Their DSP state stays paused until they are in range
+again, when any outstanding release can advance.
+
 A legato assignment binds the requested first physical Unison group. Continuing
 cores retain their envelopes and filter note; newly admitted cores receive an
 ordinary note start and their own filter note. A smaller group relinquishes its
