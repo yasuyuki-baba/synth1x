@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include "dsp/OutputPipeline.h"
 #include "dsp/FractionalDial.h"
+#include "SynthEngine.h"
 #include <array>
 #include <cmath>
 #include <memory>
@@ -39,6 +40,45 @@ TEST(EffectsBehavior, PipelineBypassPreservesDrySamplesWithAllEffectGroupsEnable
     pipeline->process(audio,0,64,settings,context,{});
     for(int ch=0;ch<2;++ch) for(int i=0;i<64;++i)
         EXPECT_EQ(audio.getSample(ch,i),(ch==0 ? 1.f : -1.f)*i/128);
+}
+
+TEST(EffectsBehavior, DecimatorAndRingPauseDuringRepeatedZeroAttackTargets)
+{
+    for(int type:{3,4})for(float mix:{64.0f,127.0f})
+    {
+        SCOPED_TRACE(type);
+        SCOPED_TRACE(mix);
+        auto synth=std::make_unique<synth1x::SynthEngine>();
+        auto& controls=synth->getParams();
+        controls.ampAttackSec=8.0f;
+        controls.ampGainMultiplier=100.0f;
+        controls.nativeMultiEffectType=type;
+        controls.nativeMultiEffectDials={60.0f,64.0f,mix};
+        synth->prepareToPlay(44100,64);
+
+        synth1x::audio::AudioBuffer<float> output(2,64);
+        synth1x::audio::MidiBuffer midi;
+        midi.addEvent(synth1x::audio::MidiMessage::noteOn(1,60,1.0f),0);
+        output.clear();
+        synth->render(output,midi,0,64);
+        const auto active=synth->getNativeMultiEffectState();
+        if(type==3)EXPECT_EQ(active[6],64);
+        else EXPECT_NE(active[3],0.0f);
+
+        midi.clear();
+        output.clear();
+        synth->render(output,midi,0,64);
+        EXPECT_EQ(synth->getNativeMultiEffectState(),active);
+        float peak=0.0f;
+        for(int sample=0;sample<64;++sample)peak=std::max(peak,std::abs(output.getSample(0,sample)));
+        if(mix<127.0f)EXPECT_GT(peak,0.0f);
+
+        output.clear();
+        synth->render(output,midi,0,64);
+        const auto resumed=synth->getNativeMultiEffectState();
+        EXPECT_NE(resumed,active);
+        if(type==3)EXPECT_EQ(resumed[6],128);
+    }
 }
 
 TEST(EffectsBehavior, DisabledDelayAndChorusPreserveDryAudio)

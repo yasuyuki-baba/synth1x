@@ -284,7 +284,7 @@ namespace synth1x
             gainBoundary=receiverBoundary ? std::min(count,next) : next<count+64 ? next : 0;
             if(gainBoundary>0)gainHorizon=std::min(gainHorizon,gainBoundary);
         }
-        bool renderedSignal=false;
+        bool renderedSignal=false,effectClockActive=false;
         for(int i=0;i<getNumVoices();++i)
         {
             if(auto* voice=dynamic_cast<SynthVoice*>(getVoice(i)))
@@ -296,7 +296,7 @@ namespace synth1x
                 voice->setAmplitudeGainHorizon(gainHorizon,gainBoundary);
                 voice->beginOutputObservation();
             }
-            else renderedSignal=renderedSignal || getVoice(i)->isVoiceActive();
+            else if(getVoice(i)->isVoiceActive())renderedSignal=effectClockActive=true;
         }
         if(nativeOmniInput && params!=nullptr && params->playMode!=0 && corePool!=nullptr)
         {
@@ -307,9 +307,12 @@ namespace synth1x
         else renderVoices(output,start,count);
         for(int i=0;i<getNumVoices();++i)
             if(auto* voice=dynamic_cast<SynthVoice*>(getVoice(i)))
+            {
                 renderedSignal=renderedSignal || voice->didRenderSignal();
+                effectClockActive=effectClockActive || voice->hasEffectClockInput();
+            }
         renderedVoicesInRegion=renderedVoicesInRegion || renderedSignal;
-        if(activeOutputSink)activeOutputSink(activeOutputContext,start,count,!renderedSignal);
+        if(activeOutputSink)activeOutputSink(activeOutputContext,start,count,!renderedSignal,!effectClockActive);
     }
 
     void VoiceDispatcher::renderRegion (::synth1x::audio::AudioBuffer<float>& output,

@@ -180,7 +180,10 @@ preservation and useful fractional resolution are separate checks. Do not infer
 that higher precision automatically sounds better or matches a native DLL at
 fractional settings it cannot represent. MultiFX and Phaser retain fractional
 controls; intentional decimator bit depth remains discrete, while its fractional
-sample period keeps the sample-clock remainder. Amplitude gain/velocity sensitivity
+sample period keeps the sample-clock remainder during sustained playback. At
+1x, Decimator and Ring pause their wet clocks across a repeated zero Attack
+dispatch when no sounding core requests an update. The first dispatch advances
+the clock and partial Mix continues to pass the dry signal. Amplitude gain/velocity sensitivity
 and saturation interpolate compatible integer anchors. Fine tuning retains
 fractional cents outside its native neutral band. Native LFO/FM/envelope control
 stepping remains where removing it violates the audio comparison bound.

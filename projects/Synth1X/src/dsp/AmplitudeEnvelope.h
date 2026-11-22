@@ -2,6 +2,7 @@
 
 #include "ReleaseRamp.h"
 #include "EnvelopeCurve.h"
+#include "CompatibleControlCurve.h"
 #include "FractionalDial.h"
 #include <algorithm>
 #include <array>
@@ -68,6 +69,7 @@ namespace synth1x::dsp
         std::array<float,3> readGainState() const noexcept { return {currentGain,targetGain,gainScale}; }
         float getCachedLevel() const noexcept { return lastLevel; }
         bool wasSilent() const noexcept { return silent; }
+        bool shouldAdvanceEffectClock() const noexcept { return advanceEffectClock; }
 
         // CVca applies the two native factors before normalizing its target.
         // Keep their product order while retaining Float32 signal precision.
@@ -111,9 +113,14 @@ namespace synth1x::dsp
         void render (float* gains,int frames,int gainHorizon = 0) noexcept
         {
             silent=true;
+            advanceEffectClock=false;
             // The native envelope's zero-duration release exit keeps its
             // non-silent dispatch flag, even though it invokes no CVca segment.
-            if(phase==Phase::Release && releaseDuration==0)silent=false;
+            if (phase == Phase::Release && releaseDuration == 0)
+            {
+                silent = false;
+                advanceEffectClock = true;
+            }
             int offset = 0;
             if (phase == Phase::Release)
             {
@@ -188,13 +195,18 @@ namespace synth1x::dsp
             if (count <= 0) return;
             if (lastLevel == target && rampRemaining==0)
             {
-                if(targetGain!=0.0f)silent=false;
+                if(targetGain!=0.0f)
+                {
+                    silent=false;
+                    observeEffectClock(target);
+                }
                 std::fill_n (output,count,targetGain);
                 return;
             }
             // CVca returns non-silent for every changed-control dispatch,
             // even when its new gain and every rendered sample are zero.
             silent=false;
+            observeEffectClock(target);
             if(lastLevel!=target)
             {
                 targetGain=static_cast<float>(target)*gainFirst;
@@ -237,10 +249,20 @@ namespace synth1x::dsp
             lastLevel = target;
         }
 
+        void observeEffectClock(float target) noexcept
+        {
+            // CVca's repeated zero Attack target pauses the downstream
+            // effect clocks. Keep this dispatch separate from the audio gain.
+            const bool unchangedZeroAttack=phase==Phase::Attack && target<1.0f
+                && lastLevel>=0.0f && lastLevel<1.0f && modulation1==0.0f && modulation2==0.0f;
+            advanceEffectClock = advanceEffectClock || !unchangedZeroAttack;
+        }
+
         int rampRemaining {};
         float rampDelta {};
         bool vectorRamp {};
         bool silent {true};
+        bool advanceEffectClock {};
         ReleaseRamp release;
         Phase phase {Phase::Idle};
         int attack {},decay {},releaseDuration {};
