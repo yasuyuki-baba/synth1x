@@ -215,12 +215,15 @@ namespace synth1x
         // Logical note activity and requested Unison layout remain separate.
         const bool bypassEnv = offline::bypassEnvelopes();
         bool amplitudeActive = false;
+        // Mono and Legato keep the requested Unison layout and its state.
+        // Polyphony limits which of those physical cores advance this span.
+        const int renderCount = params.playMode != 0 ? std::min(activeCoreCount(), params.polyphony) : activeCoreCount();
         std::array<bool,8> renderCore {};
         for(int v=0;v<activeCoreCount();++v)if(cores[v]!=nullptr)
         {
             const bool active=cores[v]->amplitude.isActive();
             amplitudeActive=amplitudeActive || active;
-            renderCore[v]=bypassEnv || active;
+            renderCore[v]=v<renderCount && (bypassEnv || active);
         }
         if (!bypassEnv && !amplitudeActive)
         {
