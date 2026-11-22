@@ -434,8 +434,9 @@ When both LFOs modulate oscillator pitch, pulse width or FM and at least one
 targets FM, query LFO 2 again at each LFO 1 held-span boundary.
 See [modulation input coordinates](modulation.md#input-coordinates-and-consumption).
 
-All amplitude LFO inputs reach independent per-slot physical VCA attenuation,
-with shared held spans retained. No Voice-level
+All amplitude LFO inputs reach independent per-slot physical VCA attenuation.
+When both LFOs target amplitude, query LFO 2 again at each LFO 1 held-span
+boundary before applying the two gains. No Voice-level
 postmix tremolo factor remains. Explicit offline envelope bypass bypasses the
 whole VCA and its modulation. StereoBalance shares static balance coefficients
 across core, unison, output and PanLfo callers while preserving their processing
