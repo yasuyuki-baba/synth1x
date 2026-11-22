@@ -1,12 +1,11 @@
 #pragma once
 #include <cstdint>
-#include "CompatibleControlCurve.h"
+#include <cmath>
 
 namespace synth1x::dsp
 {
     // Common FM product correction; no coefficient filter or waveform policy.
-    // The 32-frame feedback horizon retains proximity to compatible integer FM.
-    // This is a compatibility constraint, not unbiased fractional integration.
+    // Fractional audible increments accumulate independently of the Sync clock.
     class FmPhaseCorrection
     {
     public:
@@ -28,25 +27,19 @@ namespace synth1x::dsp
             }
             if(!ready || phase!=lastPhase)
             {
-                ready=true;reference=phase;phaseError=phaseCarry=0;
+                ready=true;reference=phase;phaseCarry=0;
             }
-            // Preserve compatible integer depth knots, interpolating real depth
-            // through the same mapping rather than changing the phase policy.
-            // Interpolate differences from the native word: absolute phase
-            // offsets can exceed Float32's exact integer range.
-            const float difference=compatibleControlCurve(depth,[&](int value){
-                return static_cast<int32_t>(static_cast<float>(value)*source)-native;
-            });
-            const float nextError=(phaseError+difference)*(31.0f/32.0f);
-            const float adjustment=nextError-phaseError+phaseCarry;
-            const int32_t whole=static_cast<int32_t>(adjustment);
-            int32_t audible=native+whole;
-            phaseCarry=adjustment-static_cast<float>(whole);
-            // Truncation applies to the signed sum, without promoting the
-            // large integer word to Float32 and losing its low phase bits.
-            if(audible>0 && phaseCarry<0){--audible;phaseCarry+=1;}
-            else if(audible<0 && phaseCarry>0){++audible;phaseCarry-=1;}
-            phaseError=nextError;
+            const float lower=std::floor(depth);
+            const double fraction=depth-lower;
+            double incrementWithCarry=native+phaseCarry;
+            if(fraction!=0)
+            {
+                const auto first=static_cast<int32_t>(lower*source);
+                const auto second=static_cast<int32_t>((lower+1.0f)*source);
+                incrementWithCarry=first+(second-first)*fraction+phaseCarry;
+            }
+            const auto audible=static_cast<int32_t>(incrementWithCarry);
+            phaseCarry=incrementWithCarry-audible;
             const uint32_t before=reference;
             // Sync/slave/noise follows the compatible online reference, separately
             // from the corrected audible oscillator phase. No recorded input.
@@ -57,6 +50,6 @@ namespace synth1x::dsp
     private:
         bool ready {};
         uint32_t reference {},lastPhase {};
-        float phaseError {},phaseCarry {};
+        double phaseCarry {};
     };
 }

@@ -888,3 +888,24 @@ TEST(BoundedPrecision, ModulationStepsRetainCompatibleFloatWordsAcrossRates)
                 EXPECT_EQ(synth1x::dsp::modulationStep(frequency,rate),expected)<<rate<<" "<<dial;
             }
 }
+
+TEST(BoundedPrecision, CutoffEditUsesRealLevelsAtScheduledFrames)
+{
+    synth1x::dsp::CutoffControl cutoff;
+    cutoff.prepare(1000);
+    cutoff.restart();
+    int elapsed=0;
+    cutoff.render(8,50,[&](float level,int count) {
+        EXPECT_FLOAT_EQ(level,8.0f*elapsed/50);
+        EXPECT_EQ(count,std::min(6,50-elapsed));
+        elapsed+=count;
+    });
+    EXPECT_EQ(elapsed,50);
+    cutoff.render(8,1,[](float level,int) { EXPECT_EQ(level,8); });
+    cutoff.restart();
+    cutoff.render(5,16,[](float level,int count) {
+        EXPECT_EQ(level,8);
+        EXPECT_EQ(count,16);
+    });
+    cutoff.render(5,1,[](float level,int) { EXPECT_FLOAT_EQ(level,7.04f); });
+}
