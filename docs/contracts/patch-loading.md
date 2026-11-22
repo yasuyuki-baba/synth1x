@@ -11,6 +11,8 @@ establish original-instrument equivalence. Reject versions outside 1–113 and 2
 malformed sources before replacing the current patch. Textual patch titles may
 contain commas; do not interpret those as parameter entries. Preserve original source integers and field presence;
 an omitted field and an explicitly supplied zero are different inputs.
+Filter selector 5 uses the same Diode renderer as selector 4. Preserve the
+source selector in readback, saved state and version 200 exports.
 
 Version 200 is a complete snapshot of resolved host dials, retaining fractional
 float values. It bypasses legacy file-version conversion. `ProcessorBridge::savePatch`

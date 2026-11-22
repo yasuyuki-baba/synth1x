@@ -105,6 +105,7 @@ std::optional<Synth1FilterType> decodeFilterKind(const Synth1PatchDocument& docu
     case 3:
         return Synth1FilterType::bp12;
     case 4:
+    case 5: // Synth1 renders selector 5 as Diode while retaining the source value.
         return Synth1FilterType::diode;
     default:
         return std::nullopt;

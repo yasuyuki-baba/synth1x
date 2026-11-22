@@ -6,6 +6,7 @@
 #include "support/StateDocument.h"
 #include <array>
 #include <bit>
+#include <cmath>
 #include <limits>
 #include <locale>
 #include <utility>
@@ -53,6 +54,38 @@ TEST(PatchFormat, Version200PreservesEveryFloatAndEscapedNameExactly)
     processor.prepare(44100,64);render(processor,0);
     EXPECT_EQ(processor.mappedVersion(),200);
     std::array<int,99> controls;EXPECT_FALSE(processor.readNativeControls(controls));
+}
+
+TEST(PatchFormat, LegacyDiodeAliasKeepsItsSourceValueAndRendersAsDiode)
+{
+    const auto patch=[](int filter)
+    {
+        return "Diode alias test\nver=106\n0,1\n5,0\n14," + std::to_string(filter)
+            + "\n19,60\n20,60\n25,0\n27,127\n29,100\n";
+    };
+    ProcessorBridge diode,alias,exported,restored;
+    std::string error;
+    ASSERT_TRUE(diode.loadPatch(patch(4),error))<<error;
+    ASSERT_TRUE(alias.loadPatch(patch(5),error))<<error;
+    const auto exportedText=alias.savePatch();
+    EXPECT_EQ(synth1x::parseContinuousPatch(exportedText).values[14],5.0f);
+    ASSERT_TRUE(exported.loadPatch(exportedText,error))<<error;
+    const auto state=alias.saveState();
+    restored.restoreState(state.data(),static_cast<int>(state.size()));
+    for(auto* processor:{&diode,&alias,&exported,&restored})processor->prepare(44100,64);
+    bool audible=false;
+    for(int block=0;block<40;++block)
+    {
+        const auto expected=render(diode,block);
+        EXPECT_EQ(render(alias,block),expected)<<block;
+        EXPECT_EQ(render(exported,block),expected)<<block;
+        EXPECT_EQ(render(restored,block),expected)<<block;
+        for(float sample:expected[0])audible=audible || std::abs(sample)>1e-5f;
+    }
+    EXPECT_TRUE(audible);
+    std::array<int,99> controls{};
+    ASSERT_TRUE(alias.readNativeControls(controls));
+    EXPECT_EQ(controls[14],5);
 }
 
 TEST(PatchFormat, DecimalParsingIsLocaleIndependentAndRejectsInvalidRanges)
