@@ -1,6 +1,7 @@
 #include "SharedModulationRuntime.h"
 #include "FractionalDial.h"
 #include "LfoShape.h"
+#include "ReceiverControls.h"
 
 namespace synth1x::dsp
 {
@@ -173,9 +174,10 @@ namespace synth1x::dsp
                 && controls[0]->dest == 2 && controls[1]->dest == 2;
             const bool dualPulse=controls[0]->on && controls[0]->dest == 4 && controls[1]->dest == 4;
             const bool nestedPulse=settings.pulseWidthReceiver && (settings.pitchReceiver || dualPulse);
-            const bool pitchThenFm=settings.pitchReceiver && controls[0]->on && controls[1]->on
-                && (controls[0]->dest == 0 || controls[0]->dest == 1) && controls[1]->dest == 5;
-            const bool followFirstSpan=lfo == 1 && (dualPitch || dualFilter || nestedPulse || pitchThenFm);
+            const bool nestedFm=(controls[0]->dest == 5 || controls[1]->dest == 5)
+                && ReceiverLfoView::reachesOscillator({controls[0]->on,controls[0]->dest})
+                && ReceiverLfoView::reachesOscillator({controls[1]->on,controls[1]->dest});
+            const bool followFirstSpan=lfo == 1 && (dualPitch || dualFilter || nestedPulse || nestedFm);
             int remaining=0;float target=0;
             for (int i = 0; i < count; ++i)
             {
