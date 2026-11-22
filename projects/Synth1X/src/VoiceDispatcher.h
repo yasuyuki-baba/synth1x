@@ -41,7 +41,7 @@ namespace synth1x
         void resetAllocation() noexcept { lastAllocatedVoice = -1; }
         bool renderedVoicesInRegion {false};
         bool nativeOmniInput {};
-        using OutputSink=void(*)(void*,int,int,bool);
+        using OutputSink=void(*)(void*,int,int,bool,bool);
         void renderRegion (::synth1x::audio::AudioBuffer<float>&, const ::synth1x::audio::MidiBuffer&, int startSample, int numSamples,
                            void* outputContext=nullptr,OutputSink outputSink=nullptr);
     protected:

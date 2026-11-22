@@ -37,7 +37,7 @@ namespace synth1x::dsp
             level=std::exp(((third*(1.0f/127.0f))*30.0f)*0.115129254758358f-2.3025851249694824f);
             previous={first,second,third};
         }
-        bool process(int type,float* left,float* right,int count,bool silent) noexcept
+        bool process(int type,float* left,float* right,int count,bool silent,bool pauseEffectClock=false) noexcept
         {
 #if defined(__clang__)
 #pragma clang fp contract(off)
@@ -45,6 +45,15 @@ namespace synth1x::dsp
             if(type>=0 && type<=2)return overdrive.process(type,left,right,count,silent);
             if(silent){if(type==5)envelope={};return true;}
             const float dry=1.0f-mix;
+            if((type==3 || type==4) && pauseEffectClock)
+            {
+                for(int i=0;i<count;++i)
+                {
+                    left[i]*=dry;
+                    if(right)right[i]*=dry;
+                }
+                return dry==0.0f;
+            }
             for(int i=0;i<count;++i)
             {
                 if(type==3)

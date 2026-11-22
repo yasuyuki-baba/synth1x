@@ -233,7 +233,7 @@ namespace synth1x
 
         updateEnvelopeConfiguration();
 
-        if(bypassEnv)renderedSignal=true;
+        if(bypassEnv)renderedSignal=effectClockActive=true;
 
         const auto lfoView=render::receiverLfos(globalLfoBlock,startSample,params.lfo1,params.lfo2);
         const auto oscillatorControl=render::oscillatorControls(params,sampleRate,bypassEnv);
@@ -272,10 +272,11 @@ namespace synth1x
             {
                 // Projected signals and generated ARP events retain gain progress.
                 // Ordinary receiver spans keep their actual dispatch length.
-                const bool coreRendered=dsp::AmplitudeBlockRenderer::render(
+                const auto dispatch=dsp::AmplitudeBlockRenderer::render(
                     render::amplitudeBlockSettings(gainOffset,amplitudeGainHorizon,amplitudeGainBoundary),lfoView,
                     cores[v]->amplitude,numSamples,amplitudeGains[v].data());
-                renderedSignal=renderedSignal || coreRendered;
+                renderedSignal=renderedSignal || dispatch.signalDispatched;
+                effectClockActive=effectClockActive || dispatch.advanceEffectClock;
             }
 
         for (auto* core : cores) if (core != nullptr) core->phase.setDial (params.oscillatorPhaseDial);

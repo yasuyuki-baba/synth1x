@@ -562,7 +562,7 @@ TEST(BoundedPrecision, FractionalAmplitudeModulationSurvivesTheReceiver)
     AmplitudeEnvelope amplitude;amplitude.setParameters(0,0,2048,0);amplitude.noteOn();
     float gain=0;
     AmplitudeBlockSettings config;
-    ASSERT_TRUE(AmplitudeBlockRenderer::render(config,view,amplitude,1,&gain));
+    ASSERT_TRUE(AmplitudeBlockRenderer::render(config,view,amplitude,1,&gain).signalDispatched);
     const float expected=((2048-.25f)*(2048-.5f))/4194304.0f;
     EXPECT_EQ(gain,expected);EXPECT_LT(gain,1);
 }
@@ -967,10 +967,11 @@ TEST(BoundedPrecision, LongRunningSlewClocksRemainSettledAndCanRestart)
     coarse.elapsed=limit-1;
     OscillatorControlSettings settings;
     FrequencyModulation fm;
-    VoiceControlBuffer envelope{},depth{},exponents{};
+    VoiceControlBuffer envelope{},exponents{};
+    FmControlBuffer fmBuffer{};
     VoiceSpanBuffer spans{};
     spans[0]=64;
-    OscillatorControlRenderer::fm(settings,{},fm,64,envelope,spans,depth,&coarse,&exponents);
+    OscillatorControlRenderer::fm(settings,{},fm,64,envelope,spans,fmBuffer,&coarse,&exponents);
     EXPECT_EQ(coarse.elapsed,limit);
     coarse.set(1,true);
     EXPECT_EQ(coarse.elapsed,0);

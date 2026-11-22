@@ -32,7 +32,7 @@ namespace synth1x::dsp
         bool graphSilent=settings.nativeSilenceGraph && context.inputSilent;
         if(!context.bypassEffects)
             graphSilent=processToneAndEffects(buffer,outputStart,outputFrames,settings,
-                context.inputSilent,graphSilent);
+                context.inputSilent,graphSilent,context.pauseEffectClock);
         processBalance(buffer,outputStart,outputFrames,settings,graphSilent,panControls);
         if(useWetEffects)processWetEffects(buffer,outputStart,outputFrames,settings,graphSilent);
         processGain(buffer,outputStart,outputFrames,context.gainBlockCapacity,
@@ -40,7 +40,7 @@ namespace synth1x::dsp
     }
 
     bool OutputPipeline::processToneAndEffects(::synth1x::audio::AudioBuffer<float>& buffer,int outputStart,int outputFrames,
-        const OutputPipelineSettings& settings,bool inputSilent,bool graphSilent)
+        const OutputPipelineSettings& settings,bool inputSilent,bool graphSilent,bool pauseEffectClock)
     {
         const bool nativeSilenceGraph=settings.nativeSilenceGraph;
         const bool nativeGainSilence=settings.nativeGainSilence;
@@ -66,6 +66,7 @@ namespace synth1x::dsp
                 nonzero=nonzero || output[0]!=0 || output[1]!=0;
             }
             inputSilent=!nonzero;
+            pauseEffectClock=false;
             graphSilent=false; // Prepared FIR/drive tails must drain during idle input.
         }
         if(!highRateDrive && settings.nativeMultiEffectType>=0 && settings.nativeMultiEffectType<=5)
@@ -74,7 +75,8 @@ namespace synth1x::dsp
             // voice trim represents the master stage after these devices.
             buffer.applyGain(outputStart,outputFrames,1.0f/OutputGain::defaultTarget);
             const bool effectSilent=nativeMultiEffect.process(settings.nativeMultiEffectType,buffer.getWritePointer(0,outputStart),
-                buffer.getNumChannels()>1 ? buffer.getWritePointer(1,outputStart) : nullptr,outputFrames,inputSilent);
+                buffer.getNumChannels()>1 ? buffer.getWritePointer(1,outputStart) : nullptr,outputFrames,inputSilent,
+                nativeSilenceGraph && pauseEffectClock);
             graphSilent=nativeSilenceGraph && effectSilent;
             buffer.applyGain(outputStart,outputFrames,OutputGain::defaultTarget);
         }

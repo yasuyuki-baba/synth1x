@@ -28,7 +28,7 @@ namespace synth1x::dsp
             const OutputProcessContext&,const ReceiverLfoView& panControls);
     private:
         bool processToneAndEffects(::synth1x::audio::AudioBuffer<float>&,int,int,const OutputPipelineSettings&,
-            bool inputSilent,bool graphSilent);
+            bool inputSilent,bool graphSilent,bool pauseEffectClock);
         void processBalance(::synth1x::audio::AudioBuffer<float>&,int,int,const OutputPipelineSettings&,bool graphSilent,const ReceiverLfoView&);
         void processWetEffects(::synth1x::audio::AudioBuffer<float>&,int,int,const OutputPipelineSettings&,bool graphSilent);
         void processGain(::synth1x::audio::AudioBuffer<float>&,int,int,int capacity,float target);

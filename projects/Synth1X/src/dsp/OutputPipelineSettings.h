@@ -23,5 +23,6 @@ namespace synth1x::dsp
         int gainBlockCapacity {256};
         bool bypassEffects {},inputSilent {};
         int midiVolume {64};
+        bool pauseEffectClock {};
     };
 }

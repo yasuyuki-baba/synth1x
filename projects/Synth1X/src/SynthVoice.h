@@ -45,7 +45,8 @@ namespace synth1x
         void setAmplitudeGainHorizon(int horizon,int boundary) noexcept
         { amplitudeGainHorizon=horizon;amplitudeGainBoundary=boundary; }
         void setRenderWorkspaceOrigin(int origin) noexcept { nativeWorkspaceOrigin=origin; }
-        void beginOutputObservation() noexcept { renderedSignal=false; }
+        bool hasEffectClockInput() const noexcept { return effectClockActive; }
+        void beginOutputObservation() noexcept { renderedSignal=effectClockActive=false; }
         bool didRenderSignal() const noexcept { return renderedSignal; }
         void setNextTransition(dsp::NoteTransition transition) noexcept { lifecycle.schedule(transition); }
         dsp::VoiceLifecycle::Phase getLifecyclePhase() const noexcept { return lifecycle.phase(); }
@@ -120,6 +121,7 @@ namespace synth1x
         int amplitudeGainHorizon {},amplitudeGainBoundary {};
         int audioFactor=1,audioChunkStart=0;float* audioLeft=nullptr;float* audioRight=nullptr;
         bool renderedSignal {};
+        bool effectClockActive {};
         int pitchBendOffset {};
         dsp::VoiceLifecycle lifecycle;
         float  level  { 0.0f };
