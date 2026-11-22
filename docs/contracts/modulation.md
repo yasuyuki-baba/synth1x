@@ -88,6 +88,11 @@ neutral. No normalized signal projection or second per-slot consumption route
 remains. Filter/FM inputs enter before transfer/slew, pitch composes before the
 common pitch curve, and pulse composes with the physical oscillator envelope.
 
+For OSC modulation Attack and Decay, normalize integer dials in Float32 and
+compute power and scale in Float64 before rounding to Float32 seconds.
+Interpolate fractional dials between these time values. Multiply by the
+sample rate in Float32 before truncating to whole frames.
+
 MIDI wheel and routed pitch use ControllerRuntime destination setters. Keep running
 inputs separate from mapped/source/getter/state values. There is no additional
 Voice wheel-target/amount route. Ordinary pitch bend has channel-owned receivers;
