@@ -75,3 +75,20 @@ TEST(LfoPhasePrecision, SlowClockKeepsPhaseWordWrappingWithoutLosingTheRemainder
     const auto amplitude=Curve(3,127).query(0,1,4000000,64);
     EXPECT_NE(amplitude.first,std::trunc(amplitude.first));
 }
+
+TEST(LfoPhasePrecision, FullAttenuationClockUsesTheHeldSineKnot)
+{
+    using synth1x::dsp::LfoShape;
+    const LfoShape::DepthCurve full(3,127),partial(3,126.75f),pan(6,127);
+    bool foundFractionalExit=false;
+    for(int phase=0;phase<2048;++phase)
+    {
+        const int counter=phase*2+1;
+        const bool muted=LfoShape::amplitude(2048,phase)==2048;
+        EXPECT_EQ(full.sineMutesAmplitude(counter,4096),muted);
+        EXPECT_FALSE(partial.sineMutesAmplitude(counter,4096));
+        EXPECT_FALSE(pan.sineMutesAmplitude(counter,4096));
+        if(muted && full.query(0,counter,4096,64).first<2048.0f)foundFractionalExit=true;
+    }
+    EXPECT_TRUE(foundFractionalExit);
+}

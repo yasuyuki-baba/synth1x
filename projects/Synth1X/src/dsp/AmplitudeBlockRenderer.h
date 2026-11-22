@@ -24,7 +24,7 @@ namespace synth1x::dsp
             Result result;
             for(int offset=0;offset<frames;)
             {
-                std::array<float,2> control{};int count=frames-offset;
+                std::array<float,2> control{};std::array<bool,2> clockMute{};int count=frames-offset;
                 int horizon=config.gainHorizon;
                 if(config.repeatHorizon>0)
                 {
@@ -37,12 +37,13 @@ namespace synth1x::dsp
                 {
                     if(lfos.available && lfos.receivers[slot].enabled && lfos.receivers[slot].destination==3)
                     {
+                        clockMute[slot]=lfos.sineAmplitudeMute[slot] && lfos.sineAmplitudeMute[slot][offset];
                         control[slot]=lfos.values[slot][offset];
                         count=std::min(count,lfos.remaining[slot][offset]);
                         if(horizon>0)horizon=std::min(horizon,lfos.remaining[slot][offset]);
                     }
                 }
-                amplitude.setModulation(control[0],control[1]);
+                amplitude.setModulation(control[0],control[1],clockMute);
                 amplitude.render(gains+config.gainOffset+offset,count,horizon);
                 result.signalDispatched = result.signalDispatched || !amplitude.wasSilent();
                 result.advanceEffectClock = result.advanceEffectClock || amplitude.shouldAdvanceEffectClock();

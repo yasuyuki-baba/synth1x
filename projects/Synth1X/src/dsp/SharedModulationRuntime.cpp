@@ -181,7 +181,7 @@ namespace synth1x::dsp
                 && ReceiverLfoView::reachesOscillator({controls[1]->on,controls[1]->dest});
             const bool followFirstSpan=lfo == 1
                 && (dualPitch || dualFilter || dualAmplitude || nestedPulse || nestedFm);
-            int remaining=0;float target=0;
+            int remaining=0;float target=0;bool muted=false;
             for (int i = 0; i < count; ++i)
             {
                 if (remaining==0)
@@ -196,12 +196,14 @@ namespace synth1x::dsp
                     }
                     else
                     {
+                        muted=controls[lfo]->wave==0 && depth.sineMutesAmplitude(static_cast<int>(counter),clock->period);
                         const auto query=depth.query(controls[lfo]->wave,static_cast<int>(counter),clock->period,step);
                         target=query.first;remaining=query.second<0 ? count-i : query.second;
                     }
                 }
                 if(followFirstSpan)
                     remaining=std::min(remaining,sharedBlock.controlRemaining[0][offset+i]);
+                sharedBlock.sineAmplitudeMute[lfo][offset+i]=muted;
                 sharedBlock.controls[lfo][offset+i]=target;
                 sharedBlock.controlRemaining[lfo][offset+i]=std::min(remaining,count-i);
                 --remaining;

@@ -58,7 +58,7 @@ namespace synth1x::dsp
         void reset() noexcept
         {
             phase = Phase::Idle; level = counter = boundary = 0;
-            currentGain = targetGain = 0; rampRemaining=0; lastLevel = -1; release.reset();
+            currentGain = targetGain = 0; rampRemaining=0; lastLevel = lastClockLevel = -1; release.reset();
         }
         bool isActive() const noexcept { return phase != Phase::Idle; }
         Phase getPhase() const noexcept { return phase; }
@@ -77,11 +77,15 @@ namespace synth1x::dsp
         {
             first=std::isfinite(first) ? std::max(0.0f,first) : 0.0f;
             second=std::isfinite(second) ? std::max(0.0f,second) : 0.0f;
-            if(first!=gainFirst || second!=gainScale){gainFirst=first;gainScale=second;lastLevel=-1;}
+            if(first!=gainFirst || second!=gainScale){gainFirst=first;gainScale=second;lastLevel=lastClockLevel=-1;}
         }
 
-        void setModulation (float first,float second) noexcept
+        void setModulation (float first,float second,std::array<bool,2> sineMute={}) noexcept
         {
+            const std::array<float,2> clockControls {sineMute[0] ? 2048.0f : first,sineMute[1] ? 2048.0f : second};
+            if(clockControls!=lastClockControls)lastClockLevel=-1;
+            lastClockControls=clockControls;
+            clockMuted=sineMute[0] || sineMute[1];
             // A reduced random-LFO depth retains its old target. Native CLFO
             // queries can then be negative; CVca consumes that signed value.
             if (first!=modulation1 || second!=modulation2)
@@ -193,12 +197,22 @@ namespace synth1x::dsp
         void segment (float* output,int count,float target,int horizon = 0) noexcept
         {
             if (count <= 0) return;
+            // A held full-attenuation knot gates the effect only after the
+            // first VCA ramp completes, even when a caller splits that ramp.
+            bool heldMute=false;
+            if(clockMuted)
+            {
+                if(target!=lastClockLevel)clockMuteRampRemaining=horizon>0 ? horizon : count;
+                heldMute=clockMuteRampRemaining==0;
+                clockMuteRampRemaining=std::max(0,clockMuteRampRemaining-count);
+            }
+            lastClockLevel=target;
             if (lastLevel == target && rampRemaining==0)
             {
                 if(targetGain!=0.0f)
                 {
                     silent=false;
-                    observeEffectClock(target);
+                    if(!heldMute)observeEffectClock(target);
                 }
                 std::fill_n (output,count,targetGain);
                 return;
@@ -206,7 +220,7 @@ namespace synth1x::dsp
             // CVca returns non-silent for every changed-control dispatch,
             // even when its new gain and every rendered sample are zero.
             silent=false;
-            observeEffectClock(target);
+            if(!heldMute)observeEffectClock(target);
             if(lastLevel!=target)
             {
                 targetGain=static_cast<float>(target)*gainFirst;
@@ -263,6 +277,10 @@ namespace synth1x::dsp
         bool vectorRamp {};
         bool silent {true};
         bool advanceEffectClock {};
+        bool clockMuted {};
+        int clockMuteRampRemaining {};
+        std::array<float,2> lastClockControls {};
+        float lastClockLevel {-1};
         ReleaseRamp release;
         Phase phase {Phase::Idle};
         int attack {},decay {},releaseDuration {};

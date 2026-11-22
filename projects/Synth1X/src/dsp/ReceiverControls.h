@@ -19,6 +19,7 @@ namespace synth1x::dsp
         std::array<const ControlSignal*,2> values {};
         std::array<const int*,2> remaining {};
         bool available {};
+        std::array<const bool*,2> sineAmplitudeMute {};
         static bool reachesOscillator(const Receiver& receiver) noexcept
         {
             return receiver.enabled && (receiver.destination==0 || receiver.destination==1
