@@ -85,23 +85,21 @@ public:
 
     std::array<float,2> process(float input) noexcept
     {
-        head=(head+1)&31;
-        history[head]=input*2;
+        head=(head+31)&31;
+        history[head]=history[head+32]=input*2;
         const auto& weights=OversamplingFilter::coefficients();
 
         // In the zero-stuffed FIR, even output positions use only the center
         // tap. The other phase uses the odd taps in the original summation order.
-        const float even=weights[32]*history[(head+16)&31]+0.0f;
+        const float even=weights[32]*history[head+16]+0.0f;
         float odd=0.0f;
-        int tap=1;
-        for(int index=head;index>=0;--index,tap+=2)
-            odd+=weights[tap]*history[index];
-        for(int index=31;index>head;--index,tap+=2)
-            odd+=weights[tap]*history[index];
+        for(int i=0;i<32;++i)
+            odd+=weights[2*i+1]*history[head+i];
         return {even,odd};
     }
 private:
-    std::array<float,32> history{};
+    // Mirror the ring so the 32-tap phase reads one contiguous span.
+    std::array<float,64> history{};
     int head=0;
 };
 
@@ -112,12 +110,40 @@ public:
     {
         if(!OversamplingSettings::valid(next) || next==factor)return;
         factor=next;
+        silentLinearFrames=0;
         for(auto& channel:up)for(auto& stage:channel)stage.reset();
         for(auto& channel:down)channel.setFactor(next);
     }
     int getFactor() const noexcept { return factor; }
-    void reset() noexcept {for(auto& channel:up)for(auto& stage:channel)stage.reset();for(auto& channel:down)channel.reset();}
+    void reset() noexcept
+    {
+        silentLinearFrames=0;
+        for(auto& channel:up)for(auto& stage:channel)stage.reset();
+        for(auto& channel:down)channel.reset();
+    }
+
+    std::array<float,2> processLinear(float left,float right) noexcept
+    {
+        // Each linear-phase FIR has a finite span of twice its group delay.
+        // Drain both FIR chains before skipping all-zero input frames.
+        const int drainFrames=4*OversamplingSettings::decimationLatency(factor)+1;
+        if(left==0.0f && right==0.0f)
+        {
+            if(silentLinearFrames==drainFrames)return {};
+            ++silentLinearFrames;
+        }
+        else silentLinearFrames=0;
+        return processFrame(left,right,[](float*,float*,int){});
+    }
+
     template<class Kernel> std::array<float,2> process(float left,float right,Kernel&& kernel) noexcept
+    {
+        silentLinearFrames=0;
+        return processFrame(left,right,kernel);
+    }
+
+private:
+    template<class Kernel> std::array<float,2> processFrame(float left,float right,Kernel&& kernel) noexcept
     {
         std::array<std::array<float,16>,2> values{};
         values[0][0]=left;values[1][0]=right;
@@ -136,8 +162,8 @@ public:
         kernel(values[0].data(),values[1].data(),factor);
         return {down[0].process(values[0]),down[1].process(values[1])};
     }
-private:
     int factor=1;
+    int silentLinearFrames=0;
     std::array<std::array<AudioUpsamplingStage,4>,2> up;
     std::array<AudioDownsampler,2> down;
 };
