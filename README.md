@@ -1,5 +1,11 @@
 # Synth1X
 
+[![CI](https://github.com/yasuyuki-baba/synth1x/actions/workflows/build.yml/badge.svg?branch=main&event=push)](https://github.com/yasuyuki-baba/synth1x/actions/workflows/build.yml)
+[![License: GPL-3.0-or-later](https://img.shields.io/badge/License-GPLv3%2B-blue.svg)](LICENSE)
+[![C++20](https://img.shields.io/badge/C%2B%2B-20-blue.svg)](DEVELOPMENT.md#build-and-test)
+[![iPlug2](https://img.shields.io/badge/Framework-iPlug2-orange.svg)](https://github.com/iPlug2/iPlug2)
+[![DeepWiki](https://img.shields.io/badge/DeepWiki-synth1x-blue.svg)](https://deepwiki.com/yasuyuki-baba/synth1x)
+
 Synth1X is a free, open-source virtual analog subtractive synthesizer with
 Synth1-compatible patch loading. Shape sounds in a single panel and organize
 them in a searchable library with tags and favorites. Synth1X starts with Init
@@ -112,6 +118,7 @@ between Synth1X and Synth1. The NRMSE labels use the full stereo renders.
 ## Development
 
 Build from source and run the tests with the [development guide](DEVELOPMENT.md).
+See the [contribution guide](CONTRIBUTING.md) for bug reports and pull requests.
 
 ## License
 
