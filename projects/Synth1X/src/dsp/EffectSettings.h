@@ -3,6 +3,24 @@
 // Value-only effect settings shared by loading and output components.
 namespace synth1x
 {
+    enum class MultiEffectType
+    {
+        Off = -1,
+        AnalogDistortion1 = 0,
+        AnalogDistortion2 = 1,
+        DigitalDistortion = 2,
+        Decimator = 3,
+        RingModulator = 4,
+        Compressor = 5
+    };
+
+    constexpr bool isDistortion(MultiEffectType type) noexcept
+    {
+        return type==MultiEffectType::AnalogDistortion1
+            || type==MultiEffectType::AnalogDistortion2
+            || type==MultiEffectType::DigitalDistortion;
+    }
+
     /**
         Delay components (p55-p58, p82, p83, p98)
     */

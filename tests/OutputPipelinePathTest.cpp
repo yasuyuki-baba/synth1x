@@ -107,7 +107,7 @@ TEST(PanInputs, CubicPanRunsAfterNonlinearEffectsForEverySourceHistory)
     auto actual=std::make_unique<OutputPipeline>(),reference=std::make_unique<OutputPipeline>(),wrongOrder=std::make_unique<OutputPipeline>();
     for(auto* pipeline:{actual.get(),reference.get(),wrongOrder.get()})
     {pipeline->prepareEffects({44100,64,2},false,false);pipeline->prepareProcessors(44100,false);settleGain(*pipeline,44100);}
-    OutputPipelineSettings settings;settings.panLfo=true;settings.pan=.25f;settings.nativeMultiEffectType=0;
+    OutputPipelineSettings settings;settings.panLfo=true;settings.pan=.25f;settings.nativeMultiEffectType=synth1x::MultiEffectType::AnalogDistortion1;
     settings.nativeMultiEffectDials={100,64,64};settings.chorus.enabled=false;settings.delay.enable=false;
     OutputPipelineSettings withoutPan=settings;withoutPan.panLfo=false;withoutPan.pan=0;
     OutputProcessContext context;context.sampleRate=44100;
@@ -138,7 +138,7 @@ TEST(StaticPanInputs, GlobalBalanceFollowsDriveForMonoAndStereo)
         auto actual=std::make_unique<OutputPipeline>(),reference=std::make_unique<OutputPipeline>(),wrongOrder=std::make_unique<OutputPipeline>();
         for(auto* pipeline:{actual.get(),reference.get(),wrongOrder.get()})
         {pipeline->prepareEffects({44100,64,static_cast<uint32_t>(channels)},false,false);pipeline->prepareProcessors(44100,false);settleGain(*pipeline,44100);}
-        synth1x::RenderControls p;p.pan=.5f;p.nativeMultiEffectType=0;
+        synth1x::RenderControls p;p.pan=.5f;p.nativeMultiEffectType=synth1x::MultiEffectType::AnalogDistortion1;
         p.nativeMultiEffectDials={100,64,64};p.chorus.enabled=false;p.delay.enable=false;
         const auto settings=synth1x::render::outputSettings(p);
         auto withoutPan=settings;withoutPan.pan=0;

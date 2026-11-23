@@ -225,17 +225,18 @@ namespace synth1x
             }
             return !nonzero;
         };
-        auto processOutput=[&](int outputStart,int outputFrames,bool inputSilent,bool pauseEffectClock) {
+        auto processOutput=[&](const VoiceDispatcher::OutputRegion& region) {
        #if defined(SYNTH1X_HOST_PROFILING)
         hostprofile::Scope phase(hostprofile::current.effects);
        #endif
-        if(audioFactor>1)inputSilent=convertAudio(outputStart,outputFrames);
+        const int outputStart=region.startSample,outputFrames=region.numSamples;
+        const bool inputSilent=audioFactor>1 ? convertAudio(outputStart,outputFrames) : region.inputSilent;
         const auto settings=render::outputSettings(params);
         const auto panControls=settings.panLfo
             ? render::outputPanControls(params,&sharedModulation.block(),outputStart) : dsp::ReceiverLfoView{};
         outputPipeline.process(buffer,outputStart,outputFrames,settings,
             {currentSampleRate,capacity,offline::bypassEffects(),inputSilent,synth.midiVolume(),
-             audioFactor==1 && pauseEffectClock},panControls);
+             audioFactor==1 && region.pauseEffectClock},panControls);
         };
         if (previousPlayMode != params.playMode)
         {
@@ -252,8 +253,8 @@ namespace synth1x
         previousPolyphony=params.polyphony;
         assert (capacity > 0);
         if (capacity <= 0) return;
-        const auto outputSink=[](void* context,int start,int count,bool silent,bool pauseEffectClock) {
-            (*static_cast<decltype(processOutput)*>(context))(start,count,silent,pauseEffectClock);
+        const auto outputSink=[](void* context,const VoiceDispatcher::OutputRegion& region) {
+            (*static_cast<decltype(processOutput)*>(context))(region);
         };
         auto nextMidi=midiMessages.findNextSamplePosition(startSample);
         for (int offset = 0; offset < numSamples;)

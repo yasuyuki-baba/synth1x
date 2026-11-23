@@ -27,7 +27,7 @@ namespace synth1x
     {
         ArpeggiatorSettings arpeggiator;
         // Oscillators
-        int nativeMultiEffectType {-1};
+        MultiEffectType nativeMultiEffectType {MultiEffectType::Off};
         std::array<float,3> nativeMultiEffectDials {};
         float osc1StackDial {0}; // Effective p76; rounded zero retains the scalar route.
         float osc1WaveIndex   { 0.0f };

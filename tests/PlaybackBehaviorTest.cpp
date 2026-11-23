@@ -1380,7 +1380,7 @@ TEST(PlaybackBehavior, StaticPanFollowsNonlinearEffectsWithRandomLfo)
             {
                 synth1x::RenderControls mapped;EXPECT_TRUE(synth1x::readMappedSynthParams(processor,mapped));
                 EXPECT_FALSE(((mapped.lfo1.on && mapped.lfo1.dest==6) || (mapped.lfo2.on && mapped.lfo2.dest==6)));
-                EXPECT_EQ(mapped.nativeMultiEffectType,2);EXPECT_FLOAT_EQ(mapped.pan,pan==64 ? 0.f : -.5f);
+                EXPECT_EQ(mapped.nativeMultiEffectType,synth1x::MultiEffectType::DigitalDistortion);EXPECT_FLOAT_EQ(mapped.pan,pan==64 ? 0.f : -.5f);
             }
             for(int i=0;i<64;++i)for(int channel=0;channel<2;++channel)
             {EXPECT_TRUE(std::isfinite(audio[channel][i]));if(n>=16)samples.push_back(audio[channel][i]);}

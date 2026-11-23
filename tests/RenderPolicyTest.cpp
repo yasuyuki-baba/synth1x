@@ -43,7 +43,7 @@ TEST(RenderPolicy, EffectsAndSubLevelKeepTheirMappingsAcrossRandomControls)
         p.lfo1.on=true;p.lfo1.wave=wave;p.ringMod=1;
         synth1x::render::selectRenderPolicy(input,p);
         EXPECT_EQ(p.subOscGain,float(dial*4)/127.0f);EXPECT_EQ(p.ringMod,1);
-        EXPECT_EQ(p.nativeMultiEffectType,effect<=5 ? effect : -1);
+        EXPECT_EQ(static_cast<int>(p.nativeMultiEffectType),effect<=5 ? effect : -1);
         EXPECT_EQ(p.nativePhaser,effect>=6);
         EXPECT_EQ(p.nativePhaserPairs,effect==7 ? 2 : effect==8 ? 4 : effect==9 ? 6 : 1);
     }

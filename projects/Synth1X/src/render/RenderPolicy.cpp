@@ -24,7 +24,8 @@ namespace synth1x::render
     void selectRenderPolicy(const RenderPolicyInputs& input,RenderControls& target)
     {
         const int type=input.effectType;
-        target.nativeMultiEffectType=input.effectEnabled && type<=5 ? type : -1;
+        target.nativeMultiEffectType=input.effectEnabled && type>=0 && type<=static_cast<int>(MultiEffectType::Compressor)
+            ? static_cast<MultiEffectType>(type) : MultiEffectType::Off;
         target.nativePhaser=input.effectEnabled && type>=6 && type<=9;
         target.nativePhaserPairs=type==7 ? 2 : type==8 ? 4 : type==9 ? 6 : 1;
         target.osc1StackDial=std::clamp(input.stackDial,0,127);

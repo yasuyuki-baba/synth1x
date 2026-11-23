@@ -8,7 +8,7 @@ namespace synth1x::dsp
     {
         bool panLfo {};
         bool nativeGainSilence {},nativeSilenceGraph {},nativePhaser {};
-        int nativeMultiEffectType {-1};
+        MultiEffectType nativeMultiEffectType {MultiEffectType::Off};
         std::array<float,3> nativeMultiEffectDials {};
         float nativePhaserDepth {},nativePhaserRate {},nativePhaserFeedback {64};
         int nativePhaserPairs {1};
