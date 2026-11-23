@@ -64,6 +64,35 @@ TEST(Oversampling, UpsamplingPhasesMatchZeroStuffedFirAcrossWrapAndReset)
     }
 }
 
+TEST(Oversampling, LinearSilenceSkipPreservesTailsAndResumesAcrossDriveChanges)
+{
+    using namespace synth1x::dsp;
+    for(int factor:{2,4,8,16})
+    {
+        SCOPED_TRACE(factor);
+        StereoOversampler continuous,skipping;
+        continuous.setFactor(factor);
+        skipping.setFactor(factor);
+        for(int frame=0;frame<1024;++frame)
+        {
+            if(frame==700){continuous.reset();skipping.reset();}
+            const float left=frame==12 || frame==650 ? 0.5f : 0.f;
+            const float right=frame==380 || frame==800 ? -0.75f : 0.f;
+            const bool useDrive=frame>=320 && frame<384;
+            const auto kernel=[&](float* l,float* r,int size)
+            {
+                if(useDrive)for(int i=0;i<size;++i){l[i]+=0.1f;r[i]-=0.1f;}
+            };
+            const auto expected=continuous.process(left,right,kernel);
+            const auto actual=useDrive ? skipping.process(left,right,kernel)
+                                       : skipping.processLinear(left,right);
+            for(int channel=0;channel<2;++channel)
+                EXPECT_EQ(std::bit_cast<uint32_t>(actual[channel]),std::bit_cast<uint32_t>(expected[channel]))
+                    <<frame<<" / "<<channel;
+        }
+    }
+}
+
 TEST(Oversampling, ImpulseDelayMatchesReportedLatencyAndDCGainStaysUnity)
 {
     for(int factor:synth1x::dsp::OversamplingSettings::factors)

@@ -53,15 +53,14 @@ namespace synth1x::dsp
             bool nonzero=false;
             for(int i=0;i<outputFrames;++i)
             {
-                const auto output=audioOversampler.process(left[i],right ? right[i] : left[i],
-                    [&](float* l,float* r,int count) {
-                        if(highRateDrive)
-                        {
-                            for(int k=0;k<count;++k){l[k]/=OutputGain::defaultTarget;r[k]/=OutputGain::defaultTarget;}
-                            nativeMultiEffect.process(settings.nativeMultiEffectType,l,r,count,false);
-                            for(int k=0;k<count;++k){l[k]*=OutputGain::defaultTarget;r[k]*=OutputGain::defaultTarget;}
-                        }
-                    });
+                const float inputRight=right ? right[i] : left[i];
+                const auto output=highRateDrive
+                    ? audioOversampler.process(left[i],inputRight,[&](float* l,float* r,int count) {
+                        for(int k=0;k<count;++k){l[k]/=OutputGain::defaultTarget;r[k]/=OutputGain::defaultTarget;}
+                        nativeMultiEffect.process(settings.nativeMultiEffectType,l,r,count,false);
+                        for(int k=0;k<count;++k){l[k]*=OutputGain::defaultTarget;r[k]*=OutputGain::defaultTarget;}
+                    })
+                    : audioOversampler.processLinear(left[i],inputRight);
                 left[i]=output[0];if(right)right[i]=output[1];
                 nonzero=nonzero || output[0]!=0 || output[1]!=0;
             }
