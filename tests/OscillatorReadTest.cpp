@@ -50,6 +50,34 @@ TEST(OscillatorRead, EveryTableReadUsesAdjacentSamplesWithoutAdvancingPhase)
     }
 }
 
+TEST(OscillatorRead, ReplacingTablesOrAliasBorderInvalidatesSelection)
+{
+    synth1x::WaveTableBank bank;
+    synth1x::dsp::Oscillator osc;
+    osc.updatePhaseIncrement(440.0f);
+    const auto tables=[](float lower,float upper) {
+        synth1x::ShapeTables result;
+        result.infos={{0,2048,300.0f},{2048,2048,1000.0f}};
+        result.data.resize(2048,lower);
+        result.data.resize(4096,upper);
+        return result;
+    };
+    EXPECT_EQ(osc.readSample(3,.5f,0,&bank),0.0f);
+    bank.setShapeTables(3,tables(1.0f,2.0f));
+    EXPECT_EQ(osc.readSample(3,.5f,0,&bank),2.0f);
+    bank.setAliasBorderHz(400.0f);
+    EXPECT_EQ(osc.readSample(3,.5f,0,&bank),1.0f);
+    bank.setShapeTables(3,tables(3.0f,4.0f));
+    EXPECT_EQ(osc.readSample(3,.5f,0,&bank),3.0f);
+    bank.setAliasBorderHz(1000.0f);
+    EXPECT_EQ(osc.readSample(3,.5f,0,&bank),4.0f);
+    osc.updatePhaseIncrement(200.0f);
+    EXPECT_EQ(osc.readSample(3,.5f,0,&bank),3.0f);
+    osc.setSampleRate(96000.0f);
+    osc.updatePhaseIncrement(440.0f);
+    EXPECT_EQ(osc.readSample(3,.5f,0,&bank),4.0f);
+}
+
 TEST(OscillatorRead, DefaultVoiceAdapterAndDirectOscillatorUseTheSameReader)
 {
     const auto bank=generatedBank();
