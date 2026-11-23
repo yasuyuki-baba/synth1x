@@ -77,29 +77,58 @@ private:
     std::array<OversamplingFilter,4> stages;
 };
 
-class AudioUpsamplingStage
+using StereoFrame=std::array<float,2>;
+
+class StereoHalfBandStage
 {
 public:
-    AudioUpsamplingStage() noexcept { (void)OversamplingFilter::coefficients(); }
-    void reset() noexcept { history={};head=0; }
+    StereoHalfBandStage() noexcept { (void)OversamplingFilter::coefficients(); }
 
-    std::array<float,2> process(float input) noexcept
+    void interpolate(StereoFrame input,StereoFrame& even,StereoFrame& odd) noexcept
     {
-        head=(head+31)&31;
-        history[head]=history[head+32]=input*2;
-        const auto& weights=OversamplingFilter::coefficients();
-
-        // In the zero-stuffed FIR, even output positions use only the center
-        // tap. The other phase uses the odd taps in the original summation order.
-        const float even=weights[32]*history[head+16]+0.0f;
-        float odd=0.0f;
-        for(int i=0;i<32;++i)
-            odd+=weights[2*i+1]*history[head+i];
-        return {even,odd};
+        push({input[0]*2,input[1]*2});
+        even=centerTap(16);
+        for(float& sample:even)sample+=0.0f;
+        odd=oddTaps({},0,1);
     }
+
+    StereoFrame decimate(StereoFrame even,StereoFrame odd) noexcept
+    {
+        push(even);
+        const auto output=oddTaps(centerTap(32),1,2);
+        push(odd);
+        return output;
+    }
+
 private:
-    // Mirror the ring so the 32-tap phase reads one contiguous span.
-    std::array<float,64> history{};
+    void push(StereoFrame frame) noexcept
+    {
+        head=(head+63)&63;
+        history[head]=history[head+64]=frame;
+    }
+
+    StereoFrame centerTap(int offset) const noexcept
+    {
+        const float center=OversamplingFilter::coefficients()[32];
+        const auto& frame=history[head+offset];
+        return {center*frame[0],center*frame[1]};
+    }
+
+    StereoFrame oddTaps(StereoFrame sum,int offset,int stride) const noexcept
+    {
+        const auto& weights=OversamplingFilter::coefficients();
+        for(int tap=0;tap<32;++tap)
+        {
+            const auto& frame=history[head+offset+tap*stride];
+            const float weight=weights[2*tap+1];
+            sum[0]+=weight*frame[0];
+            sum[1]+=weight*frame[1];
+        }
+        return sum;
+    }
+
+    // A mirrored ring keeps both channels contiguous across the wrap.
+    std::array<StereoFrame,128> history{};
     int head=0;
 };
 
@@ -110,16 +139,14 @@ public:
     {
         if(!OversamplingSettings::valid(next) || next==factor)return;
         factor=next;
-        silentLinearFrames=0;
-        for(auto& channel:up)for(auto& stage:channel)stage.reset();
-        for(auto& channel:down)channel.setFactor(next);
+        reset();
     }
     int getFactor() const noexcept { return factor; }
     void reset() noexcept
     {
         silentLinearFrames=0;
-        for(auto& channel:up)for(auto& stage:channel)stage.reset();
-        for(auto& channel:down)channel.reset();
+        up={};
+        down={};
     }
 
     std::array<float,2> processLinear(float left,float right) noexcept
@@ -145,26 +172,33 @@ public:
 private:
     template<class Kernel> std::array<float,2> processFrame(float left,float right,Kernel&& kernel) noexcept
     {
-        std::array<std::array<float,16>,2> values{};
-        values[0][0]=left;values[1][0]=right;
-        for(int channel=0;channel<2;++channel)
-            for(int count=1,stage=0;count<factor;count*=2,++stage)
-            {
-                std::array<float,16> next{};
-                for(int i=0;i<count;++i)
-                {
-                    const auto pair=up[channel][stage].process(values[channel][i]);
-                    next[i*2]=pair[0];
-                    next[i*2+1]=pair[1];
-                }
-                values[channel]=next;
-            }
-        kernel(values[0].data(),values[1].data(),factor);
-        return {down[0].process(values[0]),down[1].process(values[1])};
+        std::array<StereoFrame,16> frames{};
+        frames[0]={left,right};
+        for(int count=1,stage=0;count<factor;count*=2,++stage)
+        {
+            std::array<StereoFrame,16> next{};
+            for(int i=0;i<count;++i)
+                up[stage].interpolate(frames[i],next[2*i],next[2*i+1]);
+            frames=next;
+        }
+
+        std::array<float,16> leftSamples{},rightSamples{};
+        for(int i=0;i<factor;++i)
+        {
+            leftSamples[i]=frames[i][0];
+            rightSamples[i]=frames[i][1];
+        }
+        kernel(leftSamples.data(),rightSamples.data(),factor);
+        for(int i=0;i<factor;++i)frames[i]={leftSamples[i],rightSamples[i]};
+
+        for(int count=factor,stage=0;count>1;count/=2,++stage)
+            for(int i=0;i<count/2;++i)
+                frames[i]=down[stage].decimate(frames[2*i],frames[2*i+1]);
+        return frames[0];
     }
     int factor=1;
     int silentLinearFrames=0;
-    std::array<std::array<AudioUpsamplingStage,4>,2> up;
-    std::array<AudioDownsampler,2> down;
+    std::array<StereoHalfBandStage,4> up;
+    std::array<StereoHalfBandStage,4> down;
 };
 }

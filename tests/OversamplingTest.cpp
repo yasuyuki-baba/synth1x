@@ -41,12 +41,16 @@ TEST(Oversampling, FirMatchesOrderedConvolutionAcrossEveryCursorAndReset)
 
 TEST(Oversampling, UpsamplingPhasesMatchZeroStuffedFirAcrossWrapAndReset)
 {
-    synth1x::dsp::AudioUpsamplingStage split;
+    synth1x::dsp::StereoHalfBandStage split;
+    synth1x::dsp::StereoHalfBandStage decimator;
+    synth1x::dsp::OversamplingFilter downReference;
     synth1x::dsp::OversamplingFilter reference;
     uint32_t random=7;
     for(int epoch=0;epoch<3;++epoch)
     {
-        split.reset();
+        split={};
+        decimator={};
+        downReference.reset();
         reference.reset();
         for(int frame=0;frame<256;++frame)
         {
@@ -55,11 +59,16 @@ TEST(Oversampling, UpsamplingPhasesMatchZeroStuffedFirAcrossWrapAndReset)
             if(frame<32 || frame>=192)input=0.0f;
             if(frame%17==0)input=std::numeric_limits<float>::min();
             if(frame%53==0)input=-0.0f;
-            const auto actual=split.process(input);
+            synth1x::dsp::StereoFrame even,odd;
+            split.interpolate({input,-input},even,odd);
+            const auto filtered=decimator.decimate(even,odd);
+            downReference.push(even[1]);
+            EXPECT_EQ(std::bit_cast<uint32_t>(filtered[1]),std::bit_cast<uint32_t>(downReference.value()));
+            downReference.push(odd[1]);
             reference.push(input*2);
-            EXPECT_EQ(std::bit_cast<uint32_t>(actual[0]),std::bit_cast<uint32_t>(reference.value()));
+            EXPECT_EQ(std::bit_cast<uint32_t>(even[0]),std::bit_cast<uint32_t>(reference.value()));
             reference.push(0.0f);
-            EXPECT_EQ(std::bit_cast<uint32_t>(actual[1]),std::bit_cast<uint32_t>(reference.value()));
+            EXPECT_EQ(std::bit_cast<uint32_t>(odd[0]),std::bit_cast<uint32_t>(reference.value()));
         }
     }
 }
