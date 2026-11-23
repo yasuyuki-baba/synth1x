@@ -27,7 +27,11 @@ namespace synth1x::dsp {
     public:
         Oscillator() { reset(); }
         void setSampleRate(float sr) {
-            if(sampleRate!=sr)incrementReady=false;
+            if(sampleRate!=sr)
+            {
+                incrementReady=false;
+                cachedBank=nullptr;
+            }
             sampleRate=sr;
         }
 
@@ -69,16 +73,29 @@ namespace synth1x::dsp {
         {
             if(waveIndex==4)return {nullptr,noise.sample()};
             if(!bank)return {};
-            if(waveIndex==1 && bank->hasShape(5))
+            const auto revision=bank->tableRevision();
+            if(bank!=cachedBank || waveIndex!=cachedWave || revision!=cachedRevision)
+            {
+                cachedBank=bank;
+                cachedWave=waveIndex;
+                cachedRevision=revision;
+                cachedPulse=waveIndex==1 && bank->hasShape(5);
+                if(cachedPulse || waveIndex==0 || waveIndex==2)
+                    cachedTable=bank->getNativeTableFor(cachedPulse ? 5 : waveIndex,frequencyHz).first;
+                else
+                {
+                    const float frequency=phaseIncFixed27*sampleRate/kPhaseScale27;
+                    cachedTable=bank->getTableFor(waveIndex,frequency).first;
+                }
+            }
+            if(cachedPulse)
             {
                 const float bins=std::clamp(nativePulseWidthBins>=0 ? nativePulseWidthBins
                     : ModulationEnvelope::pulseWidthForDial(fractionalDial(pulseWidth),0.0f),10.0f,2037.0f);
                 const auto low=static_cast<uint32_t>(bins);
-                return {bank->getNativeTableFor(5,frequencyHz).first,0.0f,low<<16,bins-low};
+                return {cachedTable,0.0f,low<<16,bins-low};
             }
-            const float frequency=phaseIncFixed27*sampleRate/kPhaseScale27;
-            return {waveIndex==0 || waveIndex==2 ? bank->getNativeTableFor(waveIndex,frequencyHz).first
-                                                : bank->getTableFor(waveIndex,frequency).first};
+            return {cachedTable};
         }
 
         void advancePhase() noexcept {
@@ -93,13 +110,14 @@ namespace synth1x::dsp {
 
         void updatePhaseIncrement(float freqHz) noexcept {
             if(incrementReady && frequencyHz==freqHz)return;
+            cachedBank=nullptr;
             frequencyHz = freqHz;
             phaseIncFixed27=compatiblePhaseIncrement(freqHz,sampleRate);
             if (phaseIncFixed27 == 0) phaseIncFixed27 = 1;
             incrementReady=true;
         }
 
-        void reset() noexcept { phaseAcc32 = 0; noise.reset(); }
+        void reset() noexcept { phaseAcc32 = 0; noise.reset(); cachedBank=nullptr; }
         void resetPhase(float phase01, int waveIndex) noexcept {
             const float v = (float)phase01 * (float)kPhaseScale27;
             phaseAcc32 = (uint32_t)std::floor(v) & kPhaseMask27;
@@ -119,6 +137,11 @@ namespace synth1x::dsp {
         float sampleRate{44100.0f};
         float frequencyHz{440.0f};
         bool incrementReady{};
+        const WaveTableBank* cachedBank {};
+        const float* cachedTable {};
+        uint64_t cachedRevision {};
+        int cachedWave {};
+        bool cachedPulse {};
     };
 
 }

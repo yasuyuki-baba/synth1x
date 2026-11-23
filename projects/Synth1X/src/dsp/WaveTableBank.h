@@ -55,9 +55,16 @@ namespace synth1x
                 shapes.resize ((std::size_t) (shapeIndex + 1));
 
             shapes[(std::size_t) shapeIndex] = std::move (tables);
+            ++revision;
         }
 
-        void setAliasBorderHz (float borderHz) { freqAliasBorderHz = std::max (0.0f, borderHz); }
+        void setAliasBorderHz (float borderHz)
+        {
+            freqAliasBorderHz = std::max (0.0f, borderHz);
+            ++revision;
+        }
+
+        uint64_t tableRevision() const noexcept { return revision; }
 
         // 指定した shape / freq [Hz] に対応するテーブルの生ポインタと長さを返す。
         // テーブルが存在しない場合は {nullptr, 0} を返す。
@@ -138,6 +145,7 @@ namespace synth1x
 
     private:
         std::vector<ShapeTables> shapes;
+        uint64_t revision {};
         float freqAliasBorderHz = 20000.0f; // デフォルトは高めに設定しておく
     };
 
