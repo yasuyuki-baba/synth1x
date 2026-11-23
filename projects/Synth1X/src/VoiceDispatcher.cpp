@@ -180,7 +180,7 @@ namespace synth1x
                 if(modulation!=nullptr)
                 {
                     if(destination==44 || destination==49)
-                        modulation->applyHistory({4,destination,dial},params->hostBpm);
+                        modulation->applyHistory({dsp::LfoHistoryEvent::Kind::RandomEdit,destination,dial},params->hostBpm);
                     if(destination==43)modulation->touchRate(0);
                     if(destination==48)modulation->touchRate(1);
                     modulation->synchronize(render::sharedModulation(*params),getSampleRate());

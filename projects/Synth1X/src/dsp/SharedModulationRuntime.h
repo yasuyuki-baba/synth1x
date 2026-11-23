@@ -52,5 +52,6 @@ namespace synth1x::dsp
         float previousBpm {120};
         bool initial {true},reload {},loadAlreadyApplied {};
         void updateRate(size_t slot,float dial,float bpm) noexcept;
+        void applyLoadedRate(size_t slot,float dial,bool tempoSync,int routingRateCalls,float bpm) noexcept;
     };
 }
