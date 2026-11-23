@@ -6,18 +6,20 @@
 #include <thread>
 #include <barrier>
 
+using LfoHistoryKind=synth1x::dsp::LfoHistoryEvent::Kind;
+
 TEST(HistoryQueue, FullQueueRejectsNewEventsPreservesFifoAndReportsEveryDrop)
 {
     synth1x::dsp::LfoHistory<8> queue;
     synth1x::dsp::LfoHistoryEvent event;
     EXPECT_FALSE(queue.pop(event));
-    for(int i=0;i<8;++i) ASSERT_TRUE(queue.push({0,i,i+17,{}}));
-    for(int i=0;i<3;++i) EXPECT_FALSE(queue.push({3,99,i,{}}));
+    for(int i=0;i<8;++i) ASSERT_TRUE(queue.push({LfoHistoryKind::Rate,i,i+17,{}}));
+    for(int i=0;i<3;++i) EXPECT_FALSE(queue.push({LfoHistoryKind::TempoSync,99,i,{}}));
     EXPECT_EQ(queue.droppedEvents(),3u);
     for(int i=0;i<8;++i)
     {
         ASSERT_TRUE(queue.pop(event));
-        EXPECT_EQ(event.kind,0); EXPECT_EQ(event.a,i); EXPECT_EQ(event.b,i+17);
+        EXPECT_EQ(event.kind,LfoHistoryKind::Rate); EXPECT_EQ(event.a,i); EXPECT_EQ(event.b,i+17);
     }
     EXPECT_FALSE(queue.pop(event));
     EXPECT_EQ(queue.droppedEvents(),3u);
@@ -29,7 +31,7 @@ TEST(HistoryQueue, WrappedSlotsRemainReusableAfterRepeatedSaturation)
     for(int round=0;round<128;++round)
     {
         SCOPED_TRACE(round);
-        for(int i=0;i<8;++i) ASSERT_TRUE(queue.push({4,round,i,{}, {1,0},{{{1,2,3},{4,5,6}}},true,false}));
+        for(int i=0;i<8;++i) ASSERT_TRUE(queue.push({LfoHistoryKind::RandomEdit,round,i,{}, {1,0},{{{1,2,3},{4,5,6}}},true,false}));
         EXPECT_FALSE(queue.push({}));
         for(int i=0;i<8;++i)
         {
@@ -87,7 +89,7 @@ TEST(HistoryQueue, ConcurrentPublishersPreserveEveryAcceptedEventAndPerProducerO
     for(int producer=0;producer<2;++producer)
         writers[producer]=std::thread([&,producer] {
             start.arrive_and_wait();
-            for(int i=0;i<events;++i) accepted[producer][i]=queue.push({4,producer,i,{}});
+            for(int i=0;i<events;++i) accepted[producer][i]=queue.push({LfoHistoryKind::RandomEdit,producer,i,{}});
             finished.fetch_add(1,std::memory_order_release);
         });
     start.arrive_and_wait();

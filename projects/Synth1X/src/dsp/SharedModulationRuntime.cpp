@@ -59,10 +59,19 @@ namespace synth1x::dsp
         else slots[slot].clock.setRate(dial);
     }
 
+    void SharedModulationRuntime::applyLoadedRate(size_t slot,float dial,bool tempoSync,int routingRateCalls,float bpm) noexcept
+    {
+        // MIDI routes and the ordinary rate setter use the retained sync mode.
+        for(int call=0;call<1+routingRateCalls;++call)updateRate(slot,dial,bpm);
+        slots[slot].tempoSync=tempoSync;
+        updateRate(slot,dial,bpm);
+    }
+
     void SharedModulationRuntime::applyHistory(const LfoHistoryEvent& event,float bpm) noexcept
     {
-        if(event.kind==4){random.edit(event.a,event.b);return;}
-        if(event.kind==1 || event.kind==2)
+        using Kind=LfoHistoryEvent::Kind;
+        if(event.kind==Kind::RandomEdit){random.edit(event.a,event.b);return;}
+        if(event.kind==Kind::Load || event.kind==Kind::LoadWithMidiRouting)
         {
             // A subsequent program transaction after admitted random arp has
             // unverified keyboard/counter history. Do not invent a fresh seed.
@@ -80,11 +89,11 @@ namespace synth1x::dsp
         // Retain the established cold-start constructor protocol. Before the
         // first render there is no running clock; the final mapped load seeds it.
         if(initial)return;
-        if(event.kind==0 || event.kind==3)
+        if(event.kind==Kind::Rate || event.kind==Kind::TempoSync)
         {
             const auto slot=static_cast<size_t>(event.a);
             if(slot>=2)return;
-            if(event.kind==3)
+            if(event.kind==Kind::TempoSync)
             {
                 slots[slot].tempoSync=event.b!=0;
                 updateRate(slot,slots[slot].clock.rateDial,bpm);
@@ -93,15 +102,11 @@ namespace synth1x::dsp
         }
         else
         {
-            const auto calls=event.kind==2 ? midiRouting.load(event.routes) : std::array<int,2>{};
+            const auto calls=event.kind==Kind::LoadWithMidiRouting ? midiRouting.load(event.routes) : std::array<int,2>{};
             const int rates[]{event.a,event.b};
             for(size_t slot=0;slot<2;++slot)
             {
-                // MIDI routes re-dispatch the loaded rate under the old sync
-                // mode; the ordinary rate and sync setters follow them.
-                for(int call=0;call<1+calls[slot];++call)updateRate(slot,rates[slot],bpm);
-                slots[slot].tempoSync=event.sync[slot]!=0;
-                updateRate(slot,rates[slot],bpm);
+                applyLoadedRate(slot,rates[slot],event.sync[slot]!=0,calls[slot],bpm);
                 slots[slot].previousRate=rates[slot];
             }
             loadAlreadyApplied=true;
@@ -135,9 +140,7 @@ namespace synth1x::dsp
             }
             else if(reload && !loadAlreadyApplied)
             {
-                for (int call=0;call<1+routingRateCalls[i];++call)updateRate(i,dial,settings.hostBpm);
-                slots[i].tempoSync=lfoControls[i]->tempoSync;
-                updateRate(i,dial,settings.hostBpm);
+                applyLoadedRate(i,dial,lfoControls[i]->tempoSync,routingRateCalls[i],settings.hostBpm);
             }
             else if(slots[i].rateTouched || dial != slots[i].previousRate || (tempoChanged && slots[i].tempoSync))updateRate(i,dial,settings.hostBpm);
             slots[i].previousRate=dial;

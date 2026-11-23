@@ -26,6 +26,8 @@ namespace synth1x::host
 {
 namespace
 {
+using LfoHistoryKind=dsp::LfoHistoryEvent::Kind;
+
 struct NoDenormals
 {
 #if defined(__SSE__) || defined(_M_X64)
@@ -174,13 +176,13 @@ struct ProcessorBridge::Impl
                 const float next=static_cast<float>(info.minimum)+static_cast<float>(info.maximum-info.minimum)*value;
                 receiverEdits.push({index,previous/127.0f,next/127.0f,receiverGeneration.load()});
             }
-            if(!repeated && nativeRandomArpSeen.load())lfoHistory.push({4,-1,0,{}});
+            if(!repeated && nativeRandomArpSeen.load())lfoHistory.push({LfoHistoryKind::RandomEdit,-1,0,{}});
             if(!repeated && (index==43 || index==48))
-                lfoHistory.push({0,index==43 ? 0 : 1,dial,{}});
+                lfoHistory.push({LfoHistoryKind::Rate,index==43 ? 0 : 1,dial,{}});
             if(!repeated && (index==41 || index==42 || index==44 || index==46 || index==47 || index==49 || index==68 || index==70 || (index>=84 && index<=89) || index==31 || index==59))
-                lfoHistory.push({4,index,dial,{}});
+                lfoHistory.push({LfoHistoryKind::RandomEdit,index,dial,{}});
             if(!repeated && (index==67 || index==69))
-                lfoHistory.push({3,index==67 ? 0 : 1,dial,{}});
+                lfoHistory.push({LfoHistoryKind::TempoSync,index==67 ? 0 : 1,dial,{}});
         }
     }
 
@@ -206,7 +208,7 @@ struct ProcessorBridge::Impl
             return value!=nullptr ? static_cast<int>(std::lround(value->load())) : 0;
         };
         if(control(59)!=0 && control(31)==4)nativeRandomArpSeen.store(true);
-        lfoHistory.push({native ? 2 : 1,control(43),control(48),
+        lfoHistory.push({native ? LfoHistoryKind::LoadWithMidiRouting : LfoHistoryKind::Load,control(43),control(48),
             {control(86),control(87),control(88),control(89)},{control(67)!=0,control(69)!=0},
             {{{control(41),control(42),control(44)},{control(46),control(47),control(49)}}},
             native && (!(control(59)!=0 && control(31)==4) || synth1x::render::admitRandomArp({control(59)!=0,control(31),control(34),control(38),control(42),control(47)})),

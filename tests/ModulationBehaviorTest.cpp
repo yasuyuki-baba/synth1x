@@ -69,7 +69,7 @@ TEST(ModulationBehavior, FractionalRandomDepthPreservesSharedDrawSequenceAndKeyS
         a.lfos[0].dest=b.lfos[0].dest=synth1x::LfoDestination::Amplitude;a.lfos[0].wave=b.lfos[0].wave=wave;
         a.lfos[0].speed=b.lfos[0].speed=64.0f/127;
         a.lfos[0].amount=64.03125f/127;b.lfos[0].amount=64.0625f/127;
-        LfoHistoryEvent load;load.kind=1;load.randomAdmitted=true;
+        LfoHistoryEvent load;load.kind=LfoHistoryEvent::Kind::Load;load.randomAdmitted=true;
         load.randomControls={{{4,wave==4 ? 3 : 4,64},{1,0,0}}};
         SharedModulationRuntime first,second;
         first.applyHistory(load,120);second.applyHistory(load,120);
@@ -120,7 +120,7 @@ TEST(ModulationBehavior, FractionalSharedRateSurvivesBothSlotsSyncAndRepeatedUpd
         for(bool sync:{true,false})
         {
             a.lfos[slot].tempoSync=b.lfos[slot].tempoSync=sync;
-            first.applyHistory({3,slot,sync},120);second.applyHistory({3,slot,sync},120);
+            first.applyHistory({synth1x::dsp::LfoHistoryEvent::Kind::TempoSync,slot,sync},120);second.applyHistory({synth1x::dsp::LfoHistoryEvent::Kind::TempoSync,slot,sync},120);
             first.synchronize(a,48000);second.synchronize(b,48000);
             EXPECT_EQ(first.clock(slot).rateDial,64.03125f);
             EXPECT_EQ(second.clock(slot).rateDial,64.0625f);
@@ -295,12 +295,12 @@ TEST(ModulationBehavior, LoadRoutingRateRedispatchPrecedesTheSyncSetter)
         settings.lfos[slot].tempoSync=nextSync;
         // Compare a full load with its explicit ordered setter protocol. MIDI
         // routes and the ordinary rate use the retained sync mode first.
-        for(int call=0;call<routes+1;++call)explicitSetters.applyHistory({0,slot,dial},120);
-        explicitSetters.applyHistory({3,slot,nextSync},120);
+        for(int call=0;call<routes+1;++call)explicitSetters.applyHistory({synth1x::dsp::LfoHistoryEvent::Kind::Rate,slot,dial},120);
+        explicitSetters.applyHistory({synth1x::dsp::LfoHistoryEvent::Kind::TempoSync,slot,nextSync},120);
         if(queued)
         {
             synth1x::dsp::LfoHistoryEvent event;
-            event.kind=2;event.a=slot==0 ? dial : 0;event.b=slot==1 ? dial : 0;
+            event.kind=synth1x::dsp::LfoHistoryEvent::Kind::LoadWithMidiRouting;event.a=slot==0 ? dial : 0;event.b=slot==1 ? dial : 0;
             event.routes=settings.midiRoutingControls;
             event.sync={settings.lfos[0].tempoSync,settings.lfos[1].tempoSync};
             loaded.applyHistory(event,120);
@@ -321,7 +321,7 @@ TEST(ModulationBehavior, EveryWaveformUsesBoundedPhysicalControlsAndReplaysItsHi
         SCOPED_TRACE(::testing::Message()<<wave<<" "<<dest);
         auto settings=sharedSettings();settings.lfos[0].wave=wave;settings.lfos[0].dest=static_cast<synth1x::LfoDestination>(dest);
         settings.lfos[0].amount=47.f/127;settings.lfos[0].speed=1;
-        LfoHistoryEvent load;load.kind=1;load.randomAdmitted=true;
+        LfoHistoryEvent load;load.kind=LfoHistoryEvent::Kind::Load;load.randomAdmitted=true;
         load.randomControls={{{dest+1,wave==4 ? 3 : wave==5 ? 4 : 0,47},{1,0,0}}};
         SharedModulationRuntime first,replay;
         for(auto* runtime:{&first,&replay}){runtime->applyHistory(load,120);prepare(*runtime,settings);}
@@ -344,7 +344,7 @@ TEST(ModulationBehavior, UnknownHistoryKeepsTheSameClockAndCrtProcessing)
 {
     using namespace synth1x::dsp;
     auto settings=sharedSettings();settings.lfos[0].wave=4;
-    LfoHistoryEvent load;load.kind=1;load.randomAdmitted=true;load.randomControls={{{1,3,64},{1,0,0}}};
+    LfoHistoryEvent load;load.kind=LfoHistoryEvent::Kind::Load;load.randomAdmitted=true;load.randomControls={{{1,3,64},{1,0,0}}};
     SharedModulationRuntime known,unknown;
     for(auto* runtime:{&known,&unknown}){runtime->applyHistory(load,120);prepare(*runtime,settings);}
     unknown.invalidateRandomHistory();

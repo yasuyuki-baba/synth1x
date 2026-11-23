@@ -5,8 +5,12 @@ namespace synth1x::dsp
 {
     struct LfoHistoryEvent
     {
-        // kind0: rate; kind3: sync; kind4: random edit (parameter,value); kind1/2: load.
-        int kind{},a{},b{};
+        enum class Kind { Rate, Load, LoadWithMidiRouting, TempoSync, RandomEdit };
+
+        Kind kind {Kind::Rate};
+        // Slot and value for rate/sync, parameter and value for a random edit,
+        // or the two LFO rates for a load.
+        int a{},b{};
         std::array<int,4> routes{};
         std::array<int,2> sync{};
         // Native destination/wave/depth, captured with each load marker.
