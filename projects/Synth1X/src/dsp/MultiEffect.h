@@ -39,11 +39,12 @@ namespace synth1x::dsp
         }
         bool process(int type,float* left,float* right,int count,bool silent,bool pauseEffectClock=false) noexcept
         {
-#if defined(__clang__)
-#pragma clang fp contract(off)
-#endif
             if(type>=0 && type<=2)return overdrive.process(type,left,right,count,silent);
-            if(silent){if(type==5)envelope={};return true;}
+            if(silent)
+            {
+                if(type==5)envelope={};
+                return true;
+            }
             const float dry=1.0f-mix;
             if((type==3 || type==4) && pauseEffectClock)
             {
@@ -54,43 +55,69 @@ namespace synth1x::dsp
                 }
                 return dry==0.0f;
             }
-            for(int i=0;i<count;++i)
+            switch(type)
             {
-                if(type==3)
-                {
-                    if(captureFrame())
-                    {
-                        const uint32_t mask=~uint32_t{0}<<static_cast<unsigned>(bits+1);
-                        const auto quantize=[&](float value){const int32_t word=static_cast<int32_t>(value*65536.0f);return static_cast<float>(static_cast<int32_t>(static_cast<uint32_t>(word)&mask))*(1.0f/65536.0f);};
-                        held={quantize(left[i]),quantize(right ? right[i] : left[i])};
-                    }
-                    left[i]=held[0]*mix+left[i]*dry;
-                    if(right)right[i]=held[1]*mix+right[i]*dry;
-                    ++counter;
-                }
-                else if(type==5)
-                {
-                    const float gain=level*makeup;
-                    const auto compress=[&](float input,int channel){
-                        const float desired=std::max(std::abs(input)-threshold,0.0f);
-                        float next=(envelope[channel]-desired)*coefficient+desired;
-                        if(std::fpclassify(next)==FP_SUBNORMAL)next=0;
-                        envelope[channel]=next;
-                        return ((threshold*input)/(threshold+next))*gain;
-                    };
-                    left[i]=compress(left[i],0);if(right)right[i]=compress(right[i],1);
-                }
-                else if(type==4)
-                {
-                    cosine-=step*sine;sine+=cosine*step;
-                    const float gain=mix*cosine+dry;
-                    left[i]*=gain;if(right)right[i]*=gain;
-                }
+                case 3: processDecimator(left,right,count,dry); break;
+                case 4: processRing(left,right,count,dry); break;
+                case 5: processCompressor(left,right,count); break;
             }
             return false;
         }
         std::array<float,7> snapshot() const noexcept{return {mix,static_cast<float>(downsample),static_cast<float>(bits),cosine,sine,step,static_cast<float>(counter)};}
     private:
+        void processDecimator(float* left,float* right,int count,float dry) noexcept
+        {
+#if defined(__clang__)
+#pragma clang fp contract(off)
+#endif
+            const uint32_t mask=~uint32_t{0}<<static_cast<unsigned>(bits+1);
+            const auto quantize=[mask](float value)
+            {
+                const int32_t word=static_cast<int32_t>(value*65536.0f);
+                return static_cast<float>(static_cast<int32_t>(static_cast<uint32_t>(word)&mask))*(1.0f/65536.0f);
+            };
+            for(int i=0;i<count;++i)
+            {
+                if(captureFrame())held={quantize(left[i]),quantize(right ? right[i] : left[i])};
+                left[i]=held[0]*mix+left[i]*dry;
+                if(right)right[i]=held[1]*mix+right[i]*dry;
+                ++counter;
+            }
+        }
+        void processRing(float* left,float* right,int count,float dry) noexcept
+        {
+#if defined(__clang__)
+#pragma clang fp contract(off)
+#endif
+            for(int i=0;i<count;++i)
+            {
+                cosine-=step*sine;
+                sine+=cosine*step;
+                const float gain=mix*cosine+dry;
+                left[i]*=gain;
+                if(right)right[i]*=gain;
+            }
+        }
+        void processCompressor(float* left,float* right,int count) noexcept
+        {
+#if defined(__clang__)
+#pragma clang fp contract(off)
+#endif
+            const float gain=level*makeup;
+            const auto compress=[this,gain](float input,int channel)
+            {
+                const float desired=std::max(std::abs(input)-threshold,0.0f);
+                float next=(envelope[channel]-desired)*coefficient+desired;
+                if(std::fpclassify(next)==FP_SUBNORMAL)next=0;
+                envelope[channel]=next;
+                return ((threshold*input)/(threshold+next))*gain;
+            };
+            for(int i=0;i<count;++i)
+            {
+                left[i]=compress(left[i],0);
+                if(right)right[i]=compress(right[i],1);
+            }
+        }
         bool captureFrame() const noexcept
         {
             // Integral dials follow the original wrapping 32-bit clock.
