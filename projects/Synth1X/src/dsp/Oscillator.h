@@ -43,29 +43,42 @@ namespace synth1x::dsp {
         float readSample(int waveIndex,float pulseWidth,uint32_t phaseOffset27=0,
             const WaveTableBank* bank=nullptr,float nativePulseWidthBins=-1) noexcept
         {
-            if(waveIndex==4) {
-                return noise.sample();
+            return prepareRead(waveIndex,pulseWidth,bank,nativePulseWidthBins)
+                .at(phaseAcc32+phaseOffset27);
+        }
+
+        // The waveform and pulse width stay fixed throughout a host frame.
+        struct WaveRead {
+            const float* table {};
+            float held {};
+            uint32_t pulseOffset {};
+            float pulseFraction {};
+
+            float at(uint32_t phase) const noexcept {
+                if(!table)return held;
+                const float origin=readTable(table,phase);
+                if(!pulseOffset)return origin;
+                const float first=.5f*(origin-readTable(table,phase+pulseOffset));
+                const float second=.5f*(origin-readTable(table,phase+pulseOffset+(1u<<16)));
+                return interpolate(first,second,pulseFraction);
             }
-            if(bank==nullptr)return {};
-            const uint32_t phase=(phaseAcc32+phaseOffset27)&kPhaseMask27;
+        };
+
+        WaveRead prepareRead(int waveIndex,float pulseWidth,const WaveTableBank* bank,
+                             float nativePulseWidthBins) noexcept
+        {
+            if(waveIndex==4)return {nullptr,noise.sample()};
+            if(!bank)return {};
             if(waveIndex==1 && bank->hasShape(5))
             {
                 const float bins=std::clamp(nativePulseWidthBins>=0 ? nativePulseWidthBins
                     : ModulationEnvelope::pulseWidthForDial(fractionalDial(pulseWidth),0.0f),10.0f,2037.0f);
-                const auto table=bank->getNativeTableFor(5,static_cast<float>(frequencyHz));
-                if(table.first==nullptr)return {};
-                const auto origin=readTable(table.first,phase);
-                const auto shifted=[&](uint32_t offset) {
-                    const auto next=readTable(table.first,(phase+(offset<<16))&kPhaseMask27);
-                    return .5f*(origin-next);
-                };
                 const auto low=static_cast<uint32_t>(bins);
-                return interpolate(shifted(low),shifted(low+1),bins-low);
+                return {bank->getNativeTableFor(5,frequencyHz).first,0.0f,low<<16,bins-low};
             }
             const float frequency=phaseIncFixed27*sampleRate/kPhaseScale27;
-            const auto table=waveIndex==0 || waveIndex==2
-                ? bank->getNativeTableFor(waveIndex,static_cast<float>(frequencyHz)) : bank->getTableFor(waveIndex,frequency);
-            return table.first!=nullptr ? readTable(table.first,phase) : 0.0f;
+            return {waveIndex==0 || waveIndex==2 ? bank->getNativeTableFor(waveIndex,frequencyHz).first
+                                                : bank->getTableFor(waveIndex,frequency).first};
         }
 
         void advancePhase() noexcept {
