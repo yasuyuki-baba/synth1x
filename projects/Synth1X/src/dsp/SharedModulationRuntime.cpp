@@ -153,10 +153,32 @@ namespace synth1x::dsp
                 span=std::min(span,slots[slot].clock.period-slots[slot].clock.counter);
         return span;
     }
+    // Native graph 0xca70 re-queries LFO2 at LFO1 span boundaries
+    // for these receiver combinations.
+    static bool requerySecondLfoAtFirstBoundary(const SharedModulationSettings& settings) noexcept
+    {
+        const auto& first=settings.lfos[0];
+        const auto& second=settings.lfos[1];
+        const bool dualPitch=settings.pitchReceiver && first.on
+            && (first.dest == 0 || first.dest == 1)
+            && (second.dest == 0 || second.dest == 1);
+        const bool dualFilter=settings.filterReceiver && first.on
+            && first.dest == 2 && second.dest == 2;
+        const bool dualAmplitude=first.on && second.on
+            && first.dest == 3 && second.dest == 3;
+        const bool dualPulse=first.on && first.dest == 4 && second.dest == 4;
+        const bool nestedPulse=settings.pulseWidthReceiver && (settings.pitchReceiver || dualPulse);
+        const bool nestedFm=(first.dest == 5 || second.dest == 5)
+            && ReceiverLfoView::reachesOscillator({first.on,first.dest})
+            && ReceiverLfoView::reachesOscillator({second.on,second.dest});
+        return dualPitch || dualFilter || dualAmplitude || nestedPulse || nestedFm;
+    }
+
     void SharedModulationRuntime::renderSpan(int start,int count,const SharedModulationSettings& settings)
     {
         const LfoSettings* controls[] {&settings.lfos[0],&settings.lfos[1]};
         const int offset = start-sharedBlock.startSample;
+        const bool requerySecondLfo=requerySecondLfoAtFirstBoundary(settings);
         for (int lfo = 0; lfo < 2; ++lfo)
         {
             auto* clock=&slots[lfo].clock;
@@ -164,23 +186,7 @@ namespace synth1x::dsp
             // Receiver queries use the clock's actual synchronized step,
             // not the free-rate dial's threshold.
             const int step=clock->step;
-            // Native graph 0xca70 nests LFO2 queries inside each
-            // held LFO1 span. Re-query the second control at the
-            // outer boundary, even when its own span is longer.
-            const bool dualPitch=settings.pitchReceiver && controls[0]->on
-                && (controls[0]->dest == 0 || controls[0]->dest == 1)
-                && (controls[1]->dest == 0 || controls[1]->dest == 1);
-            const bool dualFilter=settings.filterReceiver && controls[0]->on
-                && controls[0]->dest == 2 && controls[1]->dest == 2;
-            const bool dualAmplitude=controls[0]->on && controls[1]->on
-                && controls[0]->dest == 3 && controls[1]->dest == 3;
-            const bool dualPulse=controls[0]->on && controls[0]->dest == 4 && controls[1]->dest == 4;
-            const bool nestedPulse=settings.pulseWidthReceiver && (settings.pitchReceiver || dualPulse);
-            const bool nestedFm=(controls[0]->dest == 5 || controls[1]->dest == 5)
-                && ReceiverLfoView::reachesOscillator({controls[0]->on,controls[0]->dest})
-                && ReceiverLfoView::reachesOscillator({controls[1]->on,controls[1]->dest});
-            const bool followFirstSpan=lfo == 1
-                && (dualPitch || dualFilter || dualAmplitude || nestedPulse || nestedFm);
+            const bool followFirstSpan=lfo==1 && requerySecondLfo;
             int remaining=0;float target=0;bool muted=false;
             for (int i = 0; i < count; ++i)
             {
