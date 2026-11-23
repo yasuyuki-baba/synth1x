@@ -29,7 +29,7 @@ TEST(EffectsBehavior, PipelineBypassPreservesDrySamplesWithAllEffectGroupsEnable
     pipeline->prepareEffects({48000,64,2},false,false);
     pipeline->prepareProcessors(48000,false);
     synth1x::dsp::OutputPipelineSettings settings;
-    settings.nativePhaser=true; settings.nativeMultiEffectType=2;
+    settings.nativePhaser=true; settings.nativeMultiEffectType=synth1x::MultiEffectType::DigitalDistortion;
     settings.eq.tone=0; settings.delay.enable=true; settings.chorus.enabled=true;
     synth1x::dsp::OutputProcessContext context;
     context.bypassEffects=true; context.sampleRate=48000;
@@ -45,9 +45,10 @@ TEST(EffectsBehavior, PipelineBypassPreservesDrySamplesWithAllEffectGroupsEnable
 
 TEST(EffectsBehavior, DecimatorAndRingPauseDuringRepeatedZeroAttackTargets)
 {
-    for(int type:{3,4})for(float mix:{64.0f,127.0f})
+    using synth1x::MultiEffectType;
+    for(auto type:{MultiEffectType::Decimator,MultiEffectType::RingModulator})for(float mix:{64.0f,127.0f})
     {
-        SCOPED_TRACE(type);
+        SCOPED_TRACE(static_cast<int>(type));
         SCOPED_TRACE(mix);
         auto synth=std::make_unique<synth1x::SynthEngine>();
         auto& controls=synth->getParams();
@@ -63,7 +64,7 @@ TEST(EffectsBehavior, DecimatorAndRingPauseDuringRepeatedZeroAttackTargets)
         output.clear();
         synth->render(output,midi,0,64);
         const auto active=synth->getNativeMultiEffectState();
-        if(type==3)EXPECT_EQ(active[6],64);
+        if(type==MultiEffectType::Decimator)EXPECT_EQ(active[6],64);
         else EXPECT_NE(active[3],0.0f);
 
         midi.clear();
@@ -78,7 +79,7 @@ TEST(EffectsBehavior, DecimatorAndRingPauseDuringRepeatedZeroAttackTargets)
         synth->render(output,midi,0,64);
         const auto resumed=synth->getNativeMultiEffectState();
         EXPECT_NE(resumed,active);
-        if(type==3)EXPECT_EQ(resumed[6],128);
+        if(type==MultiEffectType::Decimator)EXPECT_EQ(resumed[6],128);
     }
 }
 
@@ -168,9 +169,13 @@ TEST(EffectsBehavior, PhaserKeepsChannelHistorySeparateAndColdPrepareClearsIt)
 
 TEST(EffectsBehavior, AllMultiEffectsRemainFiniteAndColdPrepareRestoresFreshState)
 {
-    for(int type=0;type<=5;++type) for(int dial:{0,64,127}) for(float rate:{44100.f,96000.f})
+    using synth1x::MultiEffectType;
+    for(auto type:{MultiEffectType::AnalogDistortion1,MultiEffectType::AnalogDistortion2,
+                  MultiEffectType::DigitalDistortion,MultiEffectType::Decimator,
+                  MultiEffectType::RingModulator,MultiEffectType::Compressor})
+    for(int dial:{0,64,127}) for(float rate:{44100.f,96000.f})
     {
-        SCOPED_TRACE(type);
+        SCOPED_TRACE(static_cast<int>(type));
         SCOPED_TRACE(dial);
         SCOPED_TRACE(rate);
         synth1x::dsp::MultiEffect used,fresh;

@@ -652,7 +652,7 @@ TEST(BoundedPrecision, FractionalDecimationPeriodKeepsItsSampleClockRemainder)
 {
     synth1x::dsp::MultiEffect effect;effect.prepare(44100);effect.setDials(.5f,0,127);
     std::array<float,8> audio{0,.25f,.5f,.75f,1,1.25f,1.5f,1.75f};
-    effect.process(3,audio.data(),nullptr,audio.size(),false);
+    effect.process(synth1x::MultiEffectType::Decimator,audio.data(),nullptr,audio.size(),false);
     const std::array<float,8> expected{0,0,.5f,.75f,.75f,1.25f,1.5f,1.5f};
     EXPECT_EQ(audio,expected);
 }
@@ -943,10 +943,10 @@ TEST(BoundedPrecision, FractionalDecimationKeepsItsCadenceAfterMillionsOfSamples
     std::array<float,64> block{};
     constexpr int start=3*(1<<22);
     for(int frame=0;frame<start;frame+=64)
-        effect.process(3,block.data(),nullptr,64,false);
+        effect.process(synth1x::MultiEffectType::Decimator,block.data(),nullptr,64,false);
 
     for(int i=0;i<64;++i)block[i]=i/16.0f;
-    effect.process(3,block.data(),nullptr,64,false);
+    effect.process(synth1x::MultiEffectType::Decimator,block.data(),nullptr,64,false);
     for(int i=0;i<64;++i)
         EXPECT_EQ(block[i],(i%3==1 ? i-1 : i)/16.0f) << i;
 }

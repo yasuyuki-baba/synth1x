@@ -4,6 +4,7 @@
 #include <cmath>
 #include <cstdint>
 #include "OverdriveKernel.h"
+#include "EffectSettings.h"
 #include "ControlTables.h"
 #include "FractionalDial.h"
 #include "ModulationStep.h"
@@ -37,16 +38,16 @@ namespace synth1x::dsp
             level=std::exp(((third*(1.0f/127.0f))*30.0f)*0.115129254758358f-2.3025851249694824f);
             previous={first,second,third};
         }
-        bool process(int type,float* left,float* right,int count,bool silent,bool pauseEffectClock=false) noexcept
+        bool process(MultiEffectType type,float* left,float* right,int count,bool silent,bool pauseEffectClock=false) noexcept
         {
-            if(type>=0 && type<=2)return overdrive.process(type,left,right,count,silent);
+            if(isDistortion(type))return overdrive.process(static_cast<int>(type),left,right,count,silent);
             if(silent)
             {
-                if(type==5)envelope={};
+                if(type==MultiEffectType::Compressor)envelope={};
                 return true;
             }
             const float dry=1.0f-mix;
-            if((type==3 || type==4) && pauseEffectClock)
+            if((type==MultiEffectType::Decimator || type==MultiEffectType::RingModulator) && pauseEffectClock)
             {
                 for(int i=0;i<count;++i)
                 {
@@ -57,9 +58,10 @@ namespace synth1x::dsp
             }
             switch(type)
             {
-                case 3: processDecimator(left,right,count,dry); break;
-                case 4: processRing(left,right,count,dry); break;
-                case 5: processCompressor(left,right,count); break;
+                case MultiEffectType::Decimator: processDecimator(left,right,count,dry); break;
+                case MultiEffectType::RingModulator: processRing(left,right,count,dry); break;
+                case MultiEffectType::Compressor: processCompressor(left,right,count); break;
+                default: break;
             }
             return false;
         }

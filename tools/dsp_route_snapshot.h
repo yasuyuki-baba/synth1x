@@ -14,7 +14,7 @@ inline std::map<std::string,double> dspRouteSnapshot(const synth1x::MappedSynthS
         {"mod_env_on",p.modEnv.on},{"mod_env_dest",p.modEnv.dest},
         {"portamento_dial",p.sourcePortamentoDial},{"play_mode",p.playMode},
         {"unison_voices",p.unisonVoices},{"arp_on",p.arpeggiator.enabled},{"arp_type",p.arpeggiator.type},
-        {"multifx_type",p.nativeMultiEffectType},
+        {"multifx_type",static_cast<int>(p.nativeMultiEffectType)},
         {"native_phaser",p.nativePhaser},
         {"chorus_on",p.chorus.enabled},{"delay_on",p.delay.enable},{"eq_on",synth1x::dsp::fractionalDial(p.eq.tone)!=64 || synth1x::dsp::fractionalDial(p.eq.level)!=64},
         {"lfo1_on",p.lfo1.on},{"lfo1_wave",p.lfo1.wave},{"lfo1_dest",p.lfo1.dest},

@@ -312,7 +312,13 @@ namespace synth1x
                 effectClockActive=effectClockActive || voice->hasEffectClockInput();
             }
         renderedVoicesInRegion=renderedVoicesInRegion || renderedSignal;
-        if(activeOutputSink)activeOutputSink(activeOutputContext,start,count,!renderedSignal,!effectClockActive);
+        if(activeOutputSink)
+            activeOutputSink(activeOutputContext,{
+                .startSample=start,
+                .numSamples=count,
+                .inputSilent=!renderedSignal,
+                .pauseEffectClock=!effectClockActive
+            });
     }
 
     void VoiceDispatcher::renderRegion (::synth1x::audio::AudioBuffer<float>& output,

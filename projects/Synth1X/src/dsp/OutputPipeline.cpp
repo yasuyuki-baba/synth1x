@@ -45,7 +45,7 @@ namespace synth1x::dsp
         const bool nativeSilenceGraph=settings.nativeSilenceGraph;
         const bool nativeGainSilence=settings.nativeGainSilence;
         nativeMultiEffect.setDials(settings.nativeMultiEffectDials[0],settings.nativeMultiEffectDials[1],settings.nativeMultiEffectDials[2]);
-        const bool highRateDrive=audioOversampler.getFactor()>1 && settings.nativeMultiEffectType>=0 && settings.nativeMultiEffectType<=2;
+        const bool highRateDrive=audioOversampler.getFactor()>1 && isDistortion(settings.nativeMultiEffectType);
         if(audioOversampler.getFactor()>1)
         {
             auto* left=buffer.getWritePointer(0,outputStart);
@@ -69,7 +69,7 @@ namespace synth1x::dsp
             pauseEffectClock=false;
             graphSilent=false; // Prepared FIR/drive tails must drain during idle input.
         }
-        if(!highRateDrive && settings.nativeMultiEffectType>=0 && settings.nativeMultiEffectType<=5)
+        if(!highRateDrive && settings.nativeMultiEffectType!=MultiEffectType::Off)
         {
             // Nonlinear effects consume the native VCA level. The existing
             // voice trim represents the master stage after these devices.
