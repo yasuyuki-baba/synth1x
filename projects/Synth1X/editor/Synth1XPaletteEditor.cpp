@@ -33,9 +33,6 @@ void Synth1X::updatePaletteEditor()
 {
     if(!paletteWindow)return;
     const auto update=paletteWindow->poll();if(!update)return;
-#ifdef OS_LINUX
-    std::lock_guard lock(GfxMutex());
-#endif
     if(update->action==EditorPaletteWindow::Action::cancel) {
         paletteEdit.cancel(editorPalette);paletteWindow.reset();
     } else {

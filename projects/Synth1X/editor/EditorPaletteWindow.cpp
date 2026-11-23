@@ -372,9 +372,6 @@ void EditorPaletteWindow::submit(Action action,const EditorPalette& palette)
 std::optional<EditorPaletteWindow::Update> EditorPaletteWindow::poll()
 {
     if(shell->takeCloseRequest()) {
-#ifdef OS_LINUX
-        std::lock_guard lock(GfxMutex());
-#endif
         if(auto* graphics=GetUI())
             if(auto* control=dynamic_cast<PaletteEditorControl*>(graphics->GetControl(0)))control->requestCancel();
     }
@@ -382,9 +379,6 @@ std::optional<EditorPaletteWindow::Update> EditorPaletteWindow::poll()
 }
 void EditorPaletteWindow::reportError(const std::string& error)
 {
-#ifdef OS_LINUX
-    std::lock_guard lock(GfxMutex());
-#endif
     if(auto* graphics=GetUI())if(auto* control=dynamic_cast<PaletteEditorControl*>(graphics->GetControl(0)))control->setError(error);
 }
 }
