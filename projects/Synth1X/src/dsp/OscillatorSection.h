@@ -45,31 +45,45 @@ namespace synth1x::dsp {
             return pulseWidthBins;
         }
 
-        float processSample(float f1, float f2, float pw, float mix, float fmAmt, bool sync, bool ring,
-                            float subGain, int subShape, int subOctaveMode, const WaveTableBank* bank, float nativePulseWidthBins = -1, float pitch1Control = 0, float pitch2Control = 0, bool nativePitchLfo = false, bool correctFmPhase = false, OscillatorFrameAdvance* frameAdvance = nullptr, bool fmTargetActive = false) {
+        struct Input
+        {
+            float firstFrequency {},secondFrequency {};
+            float pulseWidth {0.5f},mix {},fmDepth {};
+            bool sync {},ring {};
+            float subGain {};
+            int subShape {},subOctave {-1};
+            const WaveTableBank* bank {};
+            float pulseWidthBins {-1},firstPitch {},secondPitch {};
+            bool pitchReceiver {},correctFmPhase {},fmTargetActive {};
+        };
+
+        float processSample(const Input& input,OscillatorFrameAdvance* frameAdvance=nullptr)
+        {
+            float f1=input.firstFrequency;
+            float f2=input.secondFrequency;
             const float base1=f1;
-            const float pulseBins=nativePulseWidthBins>=0 ? nativePulseWidthBins
-                : resolvePulseWidth(pw,0.0f);
-            if(nativePitchLfo)
+            const float pulseBins=input.pulseWidthBins>=0 ? input.pulseWidthBins
+                : resolvePulseWidth(input.pulseWidth,0.0f);
+            if(input.pitchReceiver)
             {
-                f1=ModulationEnvelope::pitchFrequency(f1,pitch1Control);
-                f2=ModulationEnvelope::pitchFrequency(f2,pitch2Control);
+                f1=ModulationEnvelope::pitchFrequency(f1,input.firstPitch);
+                f2=ModulationEnvelope::pitchFrequency(f2,input.secondPitch);
             }
             // The fixed VCO ceiling also applies without an active pitch receiver.
             // Limit after modulation, before table selection and phase advancement.
             f1=std::min(f1,22000.0f);
             f2=std::min(f2,22000.0f);
-            const bool nativeStack=std::lround(stackDial)>0 && bank != nullptr;
+            const bool nativeStack=std::lround(stackDial)>0 && input.bank != nullptr;
             uint32_t p1Old = osc1.getPhaseFixed27();
             osc1.updatePhaseIncrement(f1);
             osc2.updatePhaseIncrement(f2);
-            float s2=osc2.readSample(params.osc2Wave,pw,0,bank,pulseBins);
+            float s2=osc2.readSample(params.osc2Wave,input.pulseWidth,0,input.bank,pulseBins);
 
             // FM amount is in 27-bit phase-increment units.
             // The native dispatcher scales noise by .65 only without FM.
             // FM kernels apply it internally; Ring wins dispatch but retains
             // the unscaled noise gain when FM is selected.
-            const bool ringUsesFmGain=ring && (fmAmt!=0 || fmTargetActive);
+            const bool ringUsesFmGain=input.ring && (input.fmDepth!=0 || input.fmTargetActive);
             if (params.osc2Wave == 4 && !ringUsesFmGain) {s2 *= .65f;}
             // Ring wins FM dispatch, but selecting FM also bypasses the
             // pulse modulator's wrapper half-gain (as for noise above).
@@ -77,15 +91,15 @@ namespace synth1x::dsp {
             const float fmSource=s2;
 
             // Native isolated two-tone/noise captures use a linear crossfade.
-            float vol1 = 1.0f - mix;
-            float vol2 = mix;
-            float scale = SubOscillatorStack::normalizer(subGain,mix);
+            float vol1 = 1.0f - input.mix;
+            float vol2 = input.mix;
+            float scale = SubOscillatorStack::normalizer(input.subGain,input.mix);
 
             // Native Windows kernels use MULSS then CVTTSS2SI, not nearest rounding.
             // VCO dispatch tests Ring (+0x168) before its FM branch. The
             // audited ring kernel advances both phases without an FM offset.
-            const auto fmAdvance=fmPhase.advance(ring ? 0.0f : fmAmt,fmSource,
-                osc1.getPhaseIncFixed27(),p1Old,correctFmPhase && !ring);
+            const auto fmAdvance=fmPhase.advance(input.ring ? 0.0f : input.fmDepth,fmSource,
+                osc1.getPhaseIncFixed27(),p1Old,input.correctFmPhase && !input.ring);
             const uint32_t phaseAdd=fmAdvance.audibleOffset;
             if(frameAdvance) {
                 *frameAdvance={};
@@ -93,7 +107,7 @@ namespace synth1x::dsp {
                 frameAdvance->second=osc2.getPhaseIncFixed27();
             }
 
-            float s1 = osc1.renderSample(params.osc1Wave, pw, 0, bank,pulseBins);
+            float s1 = osc1.renderSample(params.osc1Wave, input.pulseWidth, 0, input.bank,pulseBins);
             float nativeSubSample=0.0f;
             if(nativeStack)
             {
@@ -104,7 +118,7 @@ namespace synth1x::dsp {
                 }
                 const int shape=params.osc1Wave == 1 ? 5 : params.osc1Wave;
                 const auto table=(shape == 0 || shape == 2 || shape == 5)
-                    ? bank->getNativeTableFor(shape,static_cast<float>(std::min(f1,22000.0f))) : bank->getTableFor(shape,std::min(f1,22000.0f));
+                    ? input.bank->getNativeTableFor(shape,static_cast<float>(std::min(f1,22000.0f))) : input.bank->getTableFor(shape,std::min(f1,22000.0f));
                 if(table.first != nullptr)
                 {
                     auto read=[&](uint32_t phase) {
@@ -119,12 +133,12 @@ namespace synth1x::dsp {
                     s1=read(stackPhases[0])+read(osc1.getPhaseFixed27());
                     for(int lane=1;lane<8;++lane)s1+=read(stackPhases[lane]);
                     s1*=params.osc1Wave == 1 ? 0.15f : 0.3f;
-                    if(subGain>0)
+                    if(input.subGain>0)
                     {
-                        const bool down=subOctaveMode < 0;
+                        const bool down=input.subOctave < 0;
                         const float subFrequency=std::min(f1,22000.0f)*(down ? 0.5f : 1.0f);
-                        const auto subTable=(subShape == 0 || subShape == 1 || subShape == 2)
-                            ? bank->getNativeTableFor(subShape,static_cast<float>(subFrequency)) : bank->getTableFor(subShape,subFrequency);
+                        const auto subTable=(input.subShape == 0 || input.subShape == 1 || input.subShape == 2)
+                            ? input.bank->getNativeTableFor(input.subShape,static_cast<float>(subFrequency)) : input.bank->getTableFor(input.subShape,subFrequency);
                         if(subTable.first != nullptr)
                         {
                             auto readSub=[&](uint32_t phase) { return subTable.first[SubOscillatorStack::tableIndex(phase,down)]; };
@@ -134,13 +148,13 @@ namespace synth1x::dsp {
                             // With stack, dispatch scales the sub gain by .3
                             // only outside Ring. Ring kernels scale their
                             // carrier sum internally and leave the sub unscaled.
-                            if(!ring)nativeSubSample*=0.3f;
+                            if(!input.ring)nativeSubSample*=0.3f;
                         }
                     }
                     for(int lane=0;lane<8;++lane)
                     {
-                        const float laneFrequency=pitch1Control != 0
-                            ? ModulationEnvelope::pitchFrequency(stackFrequencies[lane],pitch1Control) : std::min(stackFrequencies[lane],22000.0f);
+                        const float laneFrequency=input.firstPitch != 0
+                            ? ModulationEnvelope::pitchFrequency(stackFrequencies[lane],input.firstPitch) : std::min(stackFrequencies[lane],22000.0f);
                         const uint32_t increment=compatiblePhaseIncrement(laneFrequency,sampleRate);
                         if(frameAdvance)frameAdvance->stack[lane]=int64_t(static_cast<uint32_t>(increment))+static_cast<int32_t>(phaseAdd);
                         stackPhases[lane]+=static_cast<uint32_t>(increment)+phaseAdd;
@@ -148,33 +162,33 @@ namespace synth1x::dsp {
                 }
             }
 
-            float combined = ring ? ((s2 * (vol2*scale)) * s1 + s1 * (vol1*scale))
+            float combined = input.ring ? ((s2 * (vol2*scale)) * s1 + s1 * (vol1*scale))
                                         : (s1 * vol1 + s2 * vol2) * scale;
 
-            if(subGain>0 && nativeStack)
+            if(input.subGain>0 && nativeStack)
             {
-                combined+=(nativeSubSample*vol1*subGain)*scale;
+                combined+=(nativeSubSample*vol1*input.subGain)*scale;
             }
-            else if(subGain>0 && bank!=nullptr)
+            else if(input.subGain>0 && input.bank!=nullptr)
             {
-                const bool down=subOctaveMode<0;
+                const bool down=input.subOctave<0;
                 const float frequency=std::min(f1,22000.0f)*(down ? 0.5f : 1.0f);
-                const auto table=bank->getNativeTableFor(subShape,frequency);
+                const auto table=input.bank->getNativeTableFor(input.subShape,frequency);
                 if(table.first)
                 {
                     const uint32_t phase=down ? subSharedPhase>>1 : subSharedPhase;
                     const uint32_t index=(phase>>16)&2047u;
                     float value=table.first[(index+1)&2047u]-table.first[index];
                     value*=static_cast<float>(phase&65535u);value*=1.0f/65536.0f;value+=table.first[index];
-                    combined+=(value*(vol1*scale))*subGain;
+                    combined+=(value*(vol1*scale))*input.subGain;
                 }
             }
 
             subSharedPhase+=osc1.getPhaseIncFixed27()+phaseAdd;
             osc1.advancePhaseFixedWithOffset(phaseAdd);
             if (params.osc2Wave == 4) {
-                if(sync)osc2.synchronizeNoise(fmAdvance.referenceBefore,fmAdvance.referenceAfter);
-            } else if (sync) {
+                if(input.sync)osc2.synchronizeNoise(fmAdvance.referenceBefore,fmAdvance.referenceAfter);
+            } else if (input.sync) {
                 const auto next=OscillatorSync::advance(fmAdvance.referenceBefore,osc2.getPhaseFixed27(),
                     osc1.getPhaseIncFixed27(),osc2.getPhaseIncFixed27(),fmAdvance.referenceOffset);
                 osc2.setPhaseFixed27(next.second);
@@ -184,17 +198,15 @@ namespace synth1x::dsp {
             return combined;
         }
 
+
         // Advance the authoritative FM/Sync/noise state once at the host rate.
         // Fine reads follow that signed phase trajectory; Sync resets remain at
         // its boundary. Never infer direction from a shortest circular arc.
-        void processFrame(float* output,int factor,float f1,float f2,float pw,float mix,
-                          float fmAmt,bool sync,bool ring,float subGain,int subShape,int subOctaveMode,
-                          const WaveTableBank* bank,float pulseBins=-1,float pitch1=0,float pitch2=0,
-                          bool pitchReceiver=false,bool correctFmPhase=false,bool fmTargetActive=false) {
+        void processFrame(float* output,int factor,const Input& input)
+        {
             const auto initial=*this;
             OscillatorFrameAdvance advance;
-            output[0]=processSample(f1,f2,pw,mix,fmAmt,sync,ring,subGain,subShape,subOctaveMode,
-                                    bank,pulseBins,pitch1,pitch2,pitchReceiver,correctFmPhase,&advance,fmTargetActive);
+            output[0]=processSample(input,&advance);
             for(int step=1;step<factor;++step) {
                 auto view=initial;
                 const auto phase=[&](uint32_t start,int64_t delta) {
@@ -207,8 +219,7 @@ namespace synth1x::dsp {
                     view.stackPhases[lane]=phase(initial.stackPhases[lane],advance.stack[lane]);
                 // Noise reads use a disposable copy of the starting state, so
                 // they hold the base-frame sample and never advance the real RNG.
-                output[step]=view.processSample(f1,f2,pw,mix,fmAmt,sync,ring,subGain,subShape,subOctaveMode,
-                                                bank,pulseBins,pitch1,pitch2,pitchReceiver,correctFmPhase,nullptr,fmTargetActive);
+                output[step]=view.processSample(input);
             }
         }
 

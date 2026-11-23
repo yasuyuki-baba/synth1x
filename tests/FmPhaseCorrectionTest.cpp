@@ -82,8 +82,10 @@ TEST(FmPhaseCorrection, OscillatorUsesReferencePhaseForNoiseSync)
     {
         const float depth=static_cast<float>((frame/64)%16)*100000+.25f;
         const auto render=[&](auto& oscillator,bool correcting) {
-            return oscillator.processSample(261.625f,261.625f,.5f,1,depth,true,false,
-                0,0,0,nullptr,-1,0,0,false,correcting);
+            return oscillator.processSample({
+                .firstFrequency=261.625f, .secondFrequency=261.625f, .mix=1, .fmDepth=static_cast<float>(depth),
+                .sync=true, .subOctave=0, .correctFmPhase=correcting
+            });
         };
         // With no wavetable and full OSC2 mix, output is the synchronized noise.
         EXPECT_EQ(render(native,false),render(corrected,true));
@@ -208,8 +210,11 @@ TEST(FmPhaseCorrection, NativeRingDispatchBypassesFmCorrection)
     {
         const float depth=frame%64<32 ? 16384.25f : 65536.75f;
         const auto render=[&](auto& oscillator,bool correcting) {
-            return oscillator.processSample(261.625f,261.625f,.5f,.5f,depth,true,true,
-                0,0,0,nullptr,-1,0,0,false,correcting);
+            return oscillator.processSample({
+                .firstFrequency=261.625f, .secondFrequency=261.625f, .mix=.5f,
+                .fmDepth=static_cast<float>(depth), .sync=true, .ring=true, .subOctave=0,
+                .correctFmPhase=correcting
+            });
         };
         EXPECT_EQ(render(native,false),render(corrected,true));
         EXPECT_EQ(native.readPhaseWords(),corrected.readPhaseWords());
@@ -257,8 +262,10 @@ TEST(FmPhaseCorrection, AudioAdapterUsesFloatDepthWithCompatibleSyncReference)
     for(int frame=0;frame<4096;++frame)
     {
         const auto render=[&](auto& oscillator,double depth) {
-            return oscillator.processSample(261.625f,261.625f,.5f,1,depth,true,false,
-                0,0,0,nullptr,-1,0,0,false,true);
+            return oscillator.processSample({
+                .firstFrequency=261.625f, .secondFrequency=261.625f, .mix=1, .fmDepth=static_cast<float>(depth),
+                .sync=true, .subOctave=0, .correctFmPhase=true
+            });
         };
         const double output=synth1x::dsp::OscillatorAudioRenderer::process(adapted,config,input,{},0,nullptr);
         EXPECT_EQ(output,render(wide,input.fm.depth));

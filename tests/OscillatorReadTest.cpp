@@ -65,7 +65,9 @@ TEST(OscillatorRead, DefaultVoiceAdapterAndDirectOscillatorUseTheSameReader)
     for(int frame=0;frame<2048;++frame)
     {
         const double actual=synth1x::dsp::OscillatorAudioRenderer::process(adapted,config,input,{},0,&bank);
-        EXPECT_EQ(actual,direct.processSample(220,330,.5f,.5f,0,false,false,0,0,-1,&bank));
+        EXPECT_EQ(actual,direct.processSample({
+            .firstFrequency=220, .secondFrequency=330, .mix=.5f, .bank=&bank
+        }));
         EXPECT_EQ(adapted.readPhaseWords(),direct.readPhaseWords());
     }
 }
@@ -117,8 +119,14 @@ TEST(OscillatorRead, SubKeepsSharedPhaseAcrossMuteAndFractionalLevelEdits)
         }
         for(int frame=0;frame<4096;++frame)
         {
-            const double a=audible.processSample(440,330,.5f,.25f,16384.5,false,ring,level,3,octave,&bank);
-            const double b=muted.processSample(440,330,.5f,.25f,16384.5,false,ring,frame<2048 ? 0.f : level,3,octave,&bank);
+            const double a=audible.processSample({
+                .firstFrequency=440, .secondFrequency=330, .mix=.25f, .fmDepth=16384.5f, .ring=ring,
+                .subGain=level, .subShape=3, .subOctave=octave, .bank=&bank
+            });
+            const double b=muted.processSample({
+                .firstFrequency=440, .secondFrequency=330, .mix=.25f, .fmDepth=16384.5f, .ring=ring,
+                .subGain=frame<2048 ? 0.f : level, .subShape=3, .subOctave=octave, .bank=&bank
+            });
             EXPECT_EQ(audible.subSharedPhase,muted.subSharedPhase);
             EXPECT_EQ(audible.subSharedPhase&synth1x::dsp::kPhaseMask27,audible.getOsc1Phase());
             if(frame>=2048)EXPECT_EQ(a,b);
@@ -140,7 +148,10 @@ TEST(OscillatorRead, PulseReceiverComposesSharedEnvelopeAndRemainingControlOnce)
     for(int frame=0;frame<256;++frame)
     {
         EXPECT_EQ(synth1x::dsp::OscillatorAudioRenderer::process(actual,config,input,view,frame,&bank),
-            reference.processSample(440,440,.5f,0,input.fm.depth,false,false,0,0,-1,&bank,bins));
+            reference.processSample({
+                .firstFrequency=440, .secondFrequency=440, .fmDepth=input.fm.depth, .bank=&bank,
+                .pulseWidthBins=static_cast<float>(bins)
+            }));
         EXPECT_EQ(actual.readPhaseWords(),reference.readPhaseWords());
     }
 }
@@ -156,7 +167,9 @@ TEST(OscillatorRead, OscillatorTwoPitchEnvelopeUsesTheCommonOneOctaveControl)
         for(int frame=0;frame<256;++frame)
         {
             synth1x::dsp::OscillatorAudioRenderer::process(actual,config,input,{},0,nullptr);
-            reference.processSample(220,660,.5f,0,0,false,false,0,0,-1,nullptr);
+            reference.processSample({
+                .firstFrequency=220, .secondFrequency=660
+            });
             EXPECT_EQ(actual.readPhaseWords(),reference.readPhaseWords());
         }
     }
@@ -184,10 +197,14 @@ TEST(OscillatorRead, ScalarFrequenciesUseFixedCeilingAtEverySampleRate)
                 }
                 for(int frame=0;frame<128;++frame) {
                     const auto* selected=tables ? &bank : nullptr;
-                    const auto sample=actual.processSample(index==0 ? requested : 440.f,index==1 ? requested : 660.f,
-                        .5f,.5f,0,false,false,0,0,-1,selected);
-                    const auto match=reference.processSample(index==0 ? expected : 440.f,index==1 ? expected : 660.f,
-                        .5f,.5f,0,false,false,0,0,-1,selected);
+                    const auto sample=actual.processSample({
+                        .firstFrequency=index==0 ? requested : 440.f, .secondFrequency=index==1 ? requested : 660.f,
+                        .mix=.5f, .bank=selected
+                    });
+                    const auto match=reference.processSample({
+                        .firstFrequency=index==0 ? expected : 440.f, .secondFrequency=index==1 ? expected : 660.f,
+                        .mix=.5f, .bank=selected
+                    });
                     ASSERT_EQ(actual.readPhaseWords()[2+index],phaseReference.getPhaseIncFixed27());
                     ASSERT_EQ(actual.readPhaseWords(),reference.readPhaseWords());
                     ASSERT_EQ(sample,match);
@@ -218,8 +235,16 @@ TEST(OscillatorRead, CeilingPrecedesFmRingSyncStackAndSubDispatch)
         const double depth=mode>0 && mode<5 ? 1048576.25 : 0.;
         const double sub=mode==5 ? .25f : 0.f;
         for(int frame=0;frame<1024;++frame) {
-            const auto a=actual.processSample(440,34689,.5f,.3f,depth,sync,ring,sub,2,0,&bank,-1,0,0,false,true);
-            const auto b=reference.processSample(440,22000,.5f,.3f,depth,sync,ring,sub,2,0,&bank,-1,0,0,false,true);
+            const auto a=actual.processSample({
+                .firstFrequency=440, .secondFrequency=34689, .mix=.3f, .fmDepth=static_cast<float>(depth),
+                .sync=sync, .ring=ring, .subGain=static_cast<float>(sub), .subShape=2, .subOctave=0, .bank=&bank,
+                .correctFmPhase=true
+            });
+            const auto b=reference.processSample({
+                .firstFrequency=440, .secondFrequency=22000, .mix=.3f, .fmDepth=static_cast<float>(depth),
+                .sync=sync, .ring=ring, .subGain=static_cast<float>(sub), .subShape=2, .subOctave=0, .bank=&bank,
+                .correctFmPhase=true
+            });
             ASSERT_EQ(actual.readPhaseWords(),reference.readPhaseWords());ASSERT_EQ(a,b);
             ASSERT_EQ(actual.stackPhases,reference.stackPhases);ASSERT_EQ(actual.subSharedPhase,reference.subSharedPhase);
         }
@@ -234,8 +259,13 @@ TEST(OscillatorRead, CeilingAppliesAfterPitchModulation)
         synth1x::dsp::OscillatorSection actual,reference;
         for(auto* section:{&actual,&reference}){section->prepare({44100,64,2});section->params={0,2};}
         for(int frame=0;frame<128;++frame) {
-            const auto a=actual.processSample(440,input.base,.5f,.5f,0,false,false,0,0,-1,&bank,-1,0,input.control,true);
-            const auto b=reference.processSample(440,input.expected,.5f,.5f,0,false,false,0,0,-1,&bank);
+            const auto a=actual.processSample({
+                .firstFrequency=440, .secondFrequency=input.base, .mix=.5f, .bank=&bank,
+                .secondPitch=static_cast<float>(input.control), .pitchReceiver=true
+            });
+            const auto b=reference.processSample({
+                .firstFrequency=440, .secondFrequency=input.expected, .mix=.5f, .bank=&bank
+            });
             ASSERT_EQ(actual.readPhaseWords(),reference.readPhaseWords());ASSERT_EQ(a,b);
         }
     }
@@ -258,9 +288,15 @@ TEST(OscillatorRead, FineFramesPreserveBaseTrajectoryAcrossWaveformsAndControlCh
             const double f1=frame<64 ? 1046.5f : 35000.f,f2=frame<32 ? 2489.f : 10000.f;
             const double width=frame%2 ? .23f : .77f;
             const double depth=frame<8 ? 0 : 15400286.75;
-            const double expected=base.processSample(f1,f2,width,.35f,depth,sync,ring,sub,2,-1,&bank,-1,.1,-.2,true,true);
+            const synth1x::dsp::OscillatorSection::Input input {
+                .firstFrequency=static_cast<float>(f1), .secondFrequency=static_cast<float>(f2),
+                .pulseWidth=static_cast<float>(width), .mix=.35f,
+                .fmDepth=static_cast<float>(depth), .sync=sync, .ring=ring, .subGain=static_cast<float>(sub), .subShape=2,
+                .bank=&bank, .firstPitch=.1f, .secondPitch=-.2f, .pitchReceiver=true, .correctFmPhase=true
+            };
+            const double expected=base.processSample(input);
             std::array<float,16> actual{};
-            fine.processFrame(actual.data(),factor,f1,f2,width,.35f,depth,sync,ring,sub,2,-1,&bank,-1,.1,-.2,true,true);
+            fine.processFrame(actual.data(),factor,input);
             ASSERT_EQ(actual[0],expected);
             ASSERT_EQ(fine.readPhaseWords(),base.readPhaseWords());
             ASSERT_EQ(fine.subSharedPhase,base.subSharedPhase);
@@ -282,7 +318,7 @@ TEST(OscillatorRead, FineFrameFollowsSignedFmAdvanceIncludingMoreThanHalfACycle)
         synth1x::dsp::OscillatorSection o;o.prepare({48000,64,2});o.params={3,2};
         o.osc1.setPhaseFixed27(0x07000000);o.osc2.setPhaseFixed27(0);
         std::array<float,16> values{};
-        o.processFrame(values.data(),factor,22000,1000,.5f,0,67108864,true,false,0,0,-1,&bank);
+        o.processFrame(values.data(),factor,{.firstFrequency=22000, .secondFrequency=1000, .fmDepth=67108864, .sync=true, .bank=&bank});
         const int64_t increment=o.osc1.getPhaseIncFixed27();
         const int64_t delta=increment+(source<0 ? -67108864 : 67108864);
         for(int i=0;i<factor;++i)
@@ -309,7 +345,10 @@ TEST(OscillatorRead, FineFmTrajectorySuppressesAnAboveNyquistCarrierWithoutRetun
             std::array<float,16> samples{};
             // 12 kHz base + 20 kHz constant FM = 32 kHz. At 48 kHz it
             // folds to 16 kHz. A finer read must remove, not retune, this tone.
-            o.processFrame(samples.data(),factor,12000,1000,.5f,0,20000.*134217728./48000.,false,false,0,0,-1,&bank);
+            o.processFrame(samples.data(),factor,{
+                .firstFrequency=12000, .secondFrequency=1000,
+                .fmDepth=static_cast<float>(20000.*134217728./48000.), .bank=&bank
+            });
             const double value=down.process(samples);
             if(i>=4096){const double w=.5-.5*std::cos(2*std::acos(-1.)*(i-4096)/8191.);re+=w*value*std::cos(2*std::acos(-1.)*16000*i/48000.);im+=w*value*std::sin(2*std::acos(-1.)*16000*i/48000.);}
         }

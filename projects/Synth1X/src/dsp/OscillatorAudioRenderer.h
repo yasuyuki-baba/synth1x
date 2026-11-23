@@ -48,16 +48,22 @@ namespace synth1x::dsp
             if(config.pulseEnvelope)pulse+=input.envelope;
             const float width=config.pulseReceiver || config.pulseEnvelope
                 ? config.pulseWidth : input.pulseWidth;
-            const float bins=oscillator.resolvePulseWidth(width,pulse);
-            if(frame) {
-                oscillator.processFrame(frame,factor,firstFrequency,secondFrequency,input.pulseWidth,input.mix,
-                    input.fm.depth,input.sync,input.ring,input.subGain,config.subWave,config.subOctave,bank,
-                    bins,firstPitch,secondPitch,config.pitchReceiver,config.correctFmPhase,input.fm.targetActive);
+            const OscillatorSection::Input oscillatorInput {
+                .firstFrequency=firstFrequency, .secondFrequency=secondFrequency,
+                .pulseWidth=input.pulseWidth, .mix=input.mix, .fmDepth=input.fm.depth,
+                .sync=input.sync, .ring=input.ring, .subGain=input.subGain,
+                .subShape=config.subWave, .subOctave=config.subOctave, .bank=bank,
+                .pulseWidthBins=oscillator.resolvePulseWidth(width,pulse),
+                .firstPitch=firstPitch, .secondPitch=secondPitch,
+                .pitchReceiver=config.pitchReceiver, .correctFmPhase=config.correctFmPhase,
+                .fmTargetActive=input.fm.targetActive
+            };
+            if(frame)
+            {
+                oscillator.processFrame(frame,factor,oscillatorInput);
                 return frame[0];
             }
-            return oscillator.processSample(firstFrequency,secondFrequency,input.pulseWidth,input.mix,
-                input.fm.depth,input.sync,input.ring,input.subGain,config.subWave,config.subOctave,bank,
-                bins,firstPitch,secondPitch,config.pitchReceiver,config.correctFmPhase,nullptr,input.fm.targetActive);
+            return oscillator.processSample(oscillatorInput);
         }
     };
 }
