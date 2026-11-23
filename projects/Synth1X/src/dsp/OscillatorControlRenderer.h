@@ -75,7 +75,7 @@ namespace synth1x::dsp
                     for(size_t slot=0;slot<2;++slot)if(ReceiverLfoView::reachesOscillator(lfos.receivers[slot]))
                     {
                         frames=std::min(frames,lfos.remaining[slot][position]);
-                        if(lfos.receivers[slot].destination==5)control+=lfos.values[slot][position];
+                        if(lfos.receivers[slot].destination==LfoDestination::Fm)control+=lfos.values[slot][position];
                     }
                 if(coarse!=nullptr)frames=coarse->span(frames,static_cast<int>(config.sampleRate));
                 const int start=position;

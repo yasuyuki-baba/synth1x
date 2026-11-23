@@ -1,4 +1,5 @@
 #pragma once
+#include "ModulationSettings.h"
 #include <algorithm>
 #include <array>
 
@@ -14,7 +15,7 @@ namespace synth1x::dsp
 
     struct ReceiverLfoView
     {
-        struct Receiver { bool enabled {};int destination {}; };
+        struct Receiver { bool enabled {};LfoDestination destination {LfoDestination::Oscillator2}; };
         std::array<Receiver,2> receivers {};
         std::array<const ControlSignal*,2> values {};
         std::array<const int*,2> remaining {};
@@ -22,8 +23,8 @@ namespace synth1x::dsp
         std::array<const bool*,2> sineAmplitudeMute {};
         static bool reachesOscillator(const Receiver& receiver) noexcept
         {
-            return receiver.enabled && (receiver.destination==0 || receiver.destination==1
-                || receiver.destination==4 || receiver.destination==5);
+            return receiver.enabled && (receiver.destination==LfoDestination::Oscillator2 || receiver.destination==LfoDestination::BothOscillators
+                || receiver.destination==LfoDestination::PulseWidth || receiver.destination==LfoDestination::Fm);
         }
         int oscillatorFrames(int position,int frames) const noexcept
         {

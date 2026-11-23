@@ -35,7 +35,7 @@ TEST(ModulationBehavior, FractionalSharedDepthChangesSignalsWithoutChangingClock
     {
         SCOPED_TRACE(wave);
         auto a=sharedSettings(),b=a;
-        a.lfos[0].dest=b.lfos[0].dest=3;
+        a.lfos[0].dest=b.lfos[0].dest=synth1x::LfoDestination::Amplitude;
         a.lfos[0].wave=b.lfos[0].wave=wave;
         a.lfos[0].speed=b.lfos[0].speed=64.0f/127;
         a.lfos[0].amount=64.03125f/127;b.lfos[0].amount=64.0625f/127;
@@ -66,7 +66,7 @@ TEST(ModulationBehavior, FractionalRandomDepthPreservesSharedDrawSequenceAndKeyS
     {
         SCOPED_TRACE(wave);
         auto a=sharedSettings(),b=a;
-        a.lfos[0].dest=b.lfos[0].dest=3;a.lfos[0].wave=b.lfos[0].wave=wave;
+        a.lfos[0].dest=b.lfos[0].dest=synth1x::LfoDestination::Amplitude;a.lfos[0].wave=b.lfos[0].wave=wave;
         a.lfos[0].speed=b.lfos[0].speed=64.0f/127;
         a.lfos[0].amount=64.03125f/127;b.lfos[0].amount=64.0625f/127;
         LfoHistoryEvent load;load.kind=1;load.randomAdmitted=true;
@@ -225,15 +225,15 @@ TEST(ModulationBehavior, OscillatorFmAndDualAmplitudeRoutesNestTheSecondLfoQuery
         settings.pitchReceiver=first<=1 || second<=1;
         settings.pulseWidthReceiver=first==4 || second==4;
         settings.lfos[0].on=firstOn;
-        settings.lfos[0].dest=first;
+        settings.lfos[0].dest=static_cast<synth1x::LfoDestination>(first);
         settings.lfos[0].wave=2;
         settings.lfos[0].speed=.8f;
         settings.lfos[1].on=secondOn;
-        settings.lfos[1].dest=second;
+        settings.lfos[1].dest=static_cast<synth1x::LfoDestination>(second);
         settings.lfos[1].wave=0;
         settings.lfos[1].speed=.2f;
         SharedModulationRuntime runtime;prepare(runtime,settings);
-        const LfoShape::DepthCurve secondLfo(second,fractionalDial(settings.lfos[1].amount));
+        const LfoShape::DepthCurve secondLfo(settings.lfos[1].dest,fractionalDial(settings.lfos[1].amount));
         bool shorterFirstSpan=false;
         for(int block=0;block<8;++block)
         {
@@ -319,13 +319,13 @@ TEST(ModulationBehavior, EveryWaveformUsesBoundedPhysicalControlsAndReplaysItsHi
     for(int wave=0;wave<6;++wave)for(int dest=0;dest<7;++dest)
     {
         SCOPED_TRACE(::testing::Message()<<wave<<" "<<dest);
-        auto settings=sharedSettings();settings.lfos[0].wave=wave;settings.lfos[0].dest=dest;
+        auto settings=sharedSettings();settings.lfos[0].wave=wave;settings.lfos[0].dest=static_cast<synth1x::LfoDestination>(dest);
         settings.lfos[0].amount=47.f/127;settings.lfos[0].speed=1;
         LfoHistoryEvent load;load.kind=1;load.randomAdmitted=true;
         load.randomControls={{{dest+1,wave==4 ? 3 : wave==5 ? 4 : 0,47},{1,0,0}}};
         SharedModulationRuntime first,replay;
         for(auto* runtime:{&first,&replay}){runtime->applyHistory(load,120);prepare(*runtime,settings);}
-        const auto range=lfoDepthRange(dest+1,47);bool changes=false;float previous=0;
+        const auto range=lfoDepthRange(static_cast<synth1x::LfoDestination>(dest),47);bool changes=false;float previous=0;
         for(int block=0;block<128;++block)
         {
             for(auto* runtime:{&first,&replay})advance(*runtime,settings);
@@ -359,7 +359,7 @@ TEST(ModulationBehavior, UnknownHistoryKeepsTheSameClockAndCrtProcessing)
 }
 TEST(PanInputs, BothPreparedSlotsUseTheirOwnDepthAtTheOutputOffset)
 {
-    synth1x::RenderControls p;p.lfo1.on=p.lfo2.on=true;p.lfo1.dest=p.lfo2.dest=6;
+    synth1x::RenderControls p;p.lfo1.on=p.lfo2.on=true;p.lfo1.dest=p.lfo2.dest=synth1x::LfoDestination::Pan;
     synth1x::dsp::LfoBlock block;block.startSample=100;
     block.controls[0].fill(19);block.controls[1].fill(23);
     const auto view=synth1x::render::outputPanControls(p,&block,103);
@@ -377,7 +377,7 @@ namespace
         p.ampAttackSec=0;p.ampDecaySec=.001f;p.ampSustain=1;p.ampReleaseSec=.001f;
         p.filterEnvAmount=0;
         p.lfo1.on=amplitudeLfo;
-        p.lfo1.dest=3;p.lfo1.wave=wave;p.lfo1.amount=.7f;p.lfo1.speed=1;
+        p.lfo1.dest=synth1x::LfoDestination::Amplitude;p.lfo1.wave=wave;p.lfo1.amount=.7f;p.lfo1.speed=1;
         p.arpeggiator.enabled=arp;p.arpeggiator.type=2;
         p.arpeggiator.range=1;p.arpeggiator.beat=14;p.arpeggiator.gate=64;
         engine.prepareToPlay(48000,preparedFrames);
@@ -472,7 +472,7 @@ TEST(AmplitudeInputs, CompleteVoiceDispatchUsesItsDeclaredGainHorizon)
     {
         synth1x::SynthEngine engine;auto& p=engine.getParams();
         p.unisonVoices=1;p.ampAttackSec=0;p.ampDecaySec=0;p.ampSustain=1;
-        p.lfo1.on=mode!=0;p.lfo1.dest=mode==1 ? 0 : 3;
+        p.lfo1.on=mode!=0;p.lfo1.dest=mode==1 ? synth1x::LfoDestination::Oscillator2 : synth1x::LfoDestination::Amplitude;
         p.lfo1.amount=mode==2 ? .8f : 0;
         engine.prepareToPlay(44100,64);
         synth1x::audio::AudioBuffer<float> audio(2,1);audio.clear();

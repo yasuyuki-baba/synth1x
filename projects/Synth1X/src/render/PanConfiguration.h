@@ -6,7 +6,7 @@ namespace synth1x::render
 {
     inline bool outputPanLfo(const RenderControls& p) noexcept
     {
-        return p.hasLfo(6);
+        return p.hasLfo(LfoDestination::Pan);
     }
     inline dsp::ReceiverLfoView outputPanControls(const RenderControls& p,const dsp::LfoBlock* block,int start)
     {
@@ -17,7 +17,7 @@ namespace synth1x::render
         for(size_t slot=0;slot<2;++slot)
         {
             const auto& lfo=*lfos[slot];
-            view.receivers[slot]={lfo.on && lfo.dest==6,6};
+            view.receivers[slot]={lfo.on && lfo.dest==LfoDestination::Pan,LfoDestination::Pan};
             view.values[slot]=block->controls[slot].data()+offset;
             view.remaining[slot]=block->controlRemaining[slot].data()+offset;
         }

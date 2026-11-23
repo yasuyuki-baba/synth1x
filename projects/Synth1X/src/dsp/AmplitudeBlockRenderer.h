@@ -35,7 +35,7 @@ namespace synth1x::dsp
                 }
                 for(size_t slot=0;slot<2;++slot)
                 {
-                    if(lfos.available && lfos.receivers[slot].enabled && lfos.receivers[slot].destination==3)
+                    if(lfos.available && lfos.receivers[slot].enabled && lfos.receivers[slot].destination==LfoDestination::Amplitude)
                     {
                         clockMute[slot]=lfos.sineAmplitudeMute[slot] && lfos.sineAmplitudeMute[slot][offset];
                         control[slot]=lfos.values[slot][offset];

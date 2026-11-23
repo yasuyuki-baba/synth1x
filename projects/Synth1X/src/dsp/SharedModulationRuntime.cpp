@@ -70,7 +70,11 @@ namespace synth1x::dsp
             random.arpeggioSeen=random.arpeggioSeen || event.randomArpeggio;
             if(!event.randomAdmitted)random.valid=false;
             std::array<RandomLfoRuntime::Control,2> controls{};
-            for(size_t i=0;i<2;++i)controls[i]={event.randomControls[i][0],event.randomControls[i][1],event.randomControls[i][2]};
+            for(size_t i=0;i<2;++i)
+            {
+                const auto& source=event.randomControls[i];
+                controls[i]={RandomLfoRuntime::decodeDestination(source[0]),source[1],source[2]};
+            }
             random.load(event.routes,controls);
         }
         // Retain the established cold-start constructor protocol. Before the
@@ -160,15 +164,15 @@ namespace synth1x::dsp
         const auto& first=settings.lfos[0];
         const auto& second=settings.lfos[1];
         const bool dualPitch=settings.pitchReceiver && first.on
-            && (first.dest == 0 || first.dest == 1)
-            && (second.dest == 0 || second.dest == 1);
+            && (first.dest == LfoDestination::Oscillator2 || first.dest == LfoDestination::BothOscillators)
+            && (second.dest == LfoDestination::Oscillator2 || second.dest == LfoDestination::BothOscillators);
         const bool dualFilter=settings.filterReceiver && first.on
-            && first.dest == 2 && second.dest == 2;
+            && first.dest == LfoDestination::Filter && second.dest == LfoDestination::Filter;
         const bool dualAmplitude=first.on && second.on
-            && first.dest == 3 && second.dest == 3;
-        const bool dualPulse=first.on && first.dest == 4 && second.dest == 4;
+            && first.dest == LfoDestination::Amplitude && second.dest == LfoDestination::Amplitude;
+        const bool dualPulse=first.on && first.dest == LfoDestination::PulseWidth && second.dest == LfoDestination::PulseWidth;
         const bool nestedPulse=settings.pulseWidthReceiver && (settings.pitchReceiver || dualPulse);
-        const bool nestedFm=(first.dest == 5 || second.dest == 5)
+        const bool nestedFm=(first.dest == LfoDestination::Fm || second.dest == LfoDestination::Fm)
             && ReceiverLfoView::reachesOscillator({first.on,first.dest})
             && ReceiverLfoView::reachesOscillator({second.on,second.dest});
         return dualPitch || dualFilter || dualAmplitude || nestedPulse || nestedFm;

@@ -13,7 +13,16 @@ namespace synth1x::dsp
     class RandomLfoRuntime
     {
     public:
-        struct Control { int destination=1,wave=0,depth=0; };
+        struct Control
+        {
+            LfoDestination destination {LfoDestination::Oscillator2};
+            int wave {},depth {};
+        };
+
+        static LfoDestination decodeDestination(int nativeNumber) noexcept
+        {
+            return static_cast<LfoDestination>(std::clamp(nativeNumber,1,7)-1);
+        }
         std::array<Control,2> controls{};
         std::array<std::pair<int,int>,2> ranges{};
         std::array<RandomLfo,2> targets{};
@@ -29,7 +38,7 @@ namespace synth1x::dsp
             });
             for(size_t slot=0;slot<2;++slot)
             {
-                controls[slot].destination=std::clamp(next[slot].destination,1,7);recalculate(slot);
+                controls[slot].destination=next[slot].destination;recalculate(slot);
                 controls[slot].wave=next[slot].wave;
                 targets[slot].setWave(next[slot].wave,ranges[slot].first,ranges[slot].second,random);
                 setDepth(slot,next[slot].depth);
@@ -39,7 +48,7 @@ namespace synth1x::dsp
         {
             const size_t slot=parameter>=46 && parameter<=49 ? 1u:0u;
             if(parameter==44 || parameter==49)setDepth(slot,value);
-            else if(parameter==41 || parameter==46){controls[slot].destination=std::clamp(value,1,7);recalculate(slot);}
+            else if(parameter==41 || parameter==46){controls[slot].destination=decodeDestination(value);recalculate(slot);}
             else if(parameter==42 || parameter==47){controls[slot].wave=value;targets[slot].setWave(value,ranges[slot].first,ranges[slot].second,random);}
             else valid=false;
         }

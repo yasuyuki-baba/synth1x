@@ -8,8 +8,8 @@ TEST(LfoPhasePrecision, AmplitudeAndPanInterpolateBetweenSineCoordinates)
     for(int destination:{3,6})for(int dial:{64,127})
     {
         SCOPED_TRACE(::testing::Message()<<destination<<' '<<dial);
-        const LfoShape::DepthCurve curve(destination,dial);
-        const auto range=synth1x::dsp::lfoDepthRange(destination+1,dial);
+        const LfoShape::DepthCurve curve(static_cast<synth1x::LfoDestination>(destination),dial);
+        const auto range=synth1x::dsp::lfoDepthRange(static_cast<synth1x::LfoDestination>(destination),dial);
         const int depth=destination==3 ? range.first : range.second;
         bool fractional=false;
         for(int phase=0;phase<2048;++phase)
@@ -33,9 +33,9 @@ TEST(LfoPhasePrecision, OtherReceiversAndFallbackQueriesKeepCompatibleCoordinate
     for(int destination:{0,1,2,3,4,5,6})for(int wave:{0,4,5})
     {
         if(wave==0 && (destination==3 || destination==6))continue;
-        const auto range=synth1x::dsp::lfoDepthRange(destination+1,64);
+        const auto range=synth1x::dsp::lfoDepthRange(static_cast<synth1x::LfoDestination>(destination),64);
         const int depth=destination==3 ? range.first : range.second;
-        const LfoShape::DepthCurve curve(destination,64);
+        const LfoShape::DepthCurve curve(static_cast<synth1x::LfoDestination>(destination),64);
         for(int counter:{1,1235,4095})
         {
             const int phase=counter/2;
@@ -54,9 +54,9 @@ TEST(LfoPhasePrecision, FractionalDepthAndPhaseRemainIndependentCoordinates)
     using Curve=synth1x::dsp::LfoShape::DepthCurve;
     for(int destination:{3,6})for(int counter:{1,1235,4095})
     {
-        const auto low=Curve(destination,64).query(0,counter,4096,32);
-        const auto high=Curve(destination,65).query(0,counter,4096,32);
-        const auto fraction=Curve(destination,64.25).query(0,counter,4096,32);
+        const auto low=Curve(static_cast<synth1x::LfoDestination>(destination),64).query(0,counter,4096,32);
+        const auto high=Curve(static_cast<synth1x::LfoDestination>(destination),65).query(0,counter,4096,32);
+        const auto fraction=Curve(static_cast<synth1x::LfoDestination>(destination),64.25).query(0,counter,4096,32);
         EXPECT_DOUBLE_EQ(fraction.first,low.first+(high.first-low.first)*.25);
         EXPECT_EQ(fraction.second,32);
     }
@@ -67,19 +67,19 @@ TEST(LfoPhasePrecision, SlowClockKeepsPhaseWordWrappingWithoutLosingTheRemainder
     using Curve=synth1x::dsp::LfoShape::DepthCurve;
     for(int destination:{3,6})
     {
-        const Curve curve(destination,127);
+        const Curve curve(static_cast<synth1x::LfoDestination>(destination),127);
         const auto first=curve.query(0,1,4000000,64);
         const auto wrapped=curve.query(0,(1<<21)+1,4000000,64);
         EXPECT_EQ(wrapped,first);
     }
-    const auto amplitude=Curve(3,127).query(0,1,4000000,64);
+    const auto amplitude=Curve(synth1x::LfoDestination::Amplitude,127).query(0,1,4000000,64);
     EXPECT_NE(amplitude.first,std::trunc(amplitude.first));
 }
 
 TEST(LfoPhasePrecision, FullAttenuationClockUsesTheHeldSineKnot)
 {
     using synth1x::dsp::LfoShape;
-    const LfoShape::DepthCurve full(3,127),partial(3,126.75f),pan(6,127);
+    const LfoShape::DepthCurve full(synth1x::LfoDestination::Amplitude,127),partial(synth1x::LfoDestination::Amplitude,126.75f),pan(synth1x::LfoDestination::Pan,127);
     bool foundFractionalExit=false;
     for(int phase=0;phase<2048;++phase)
     {

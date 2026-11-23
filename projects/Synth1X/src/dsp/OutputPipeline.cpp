@@ -107,8 +107,8 @@ namespace synth1x::dsp
     {
         if(settings.panLfo && !graphSilent && buffer.getNumChannels() >= 2) {
             for(int i=0;i<outputFrames;++i) {
-                const float target=(panControls.receivers[0].enabled && panControls.receivers[0].destination == 6 ? panControls.values[0][i] : 0)
-                    +(panControls.receivers[1].enabled && panControls.receivers[1].destination == 6 ? panControls.values[1][i] : 0);
+                const float target=(panControls.receivers[0].enabled && panControls.receivers[0].destination == LfoDestination::Pan ? panControls.values[0][i] : 0)
+                    +(panControls.receivers[1].enabled && panControls.receivers[1].destination == LfoDestination::Pan ? panControls.values[1][i] : 0);
                 float l=buffer.getSample(0,outputStart+i),r=buffer.getSample(1,outputStart+i);
                 nativePan.process(l,r,target,settings.pan);
                 buffer.setSample(0,outputStart+i,l);buffer.setSample(1,outputStart+i,r);

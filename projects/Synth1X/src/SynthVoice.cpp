@@ -317,8 +317,8 @@ namespace synth1x
                 {
                     const auto destination=lfoView.receivers[slot].destination;
                     const float value=lfoView.values[slot][i];
-                    if(destination==1)firstPitch+=value;
-                    if(destination==0 || destination==1)secondPitch+=value;
+                    if(destination==LfoDestination::BothOscillators)firstPitch+=value;
+                    if(destination==LfoDestination::Oscillator2 || destination==LfoDestination::BothOscillators)secondPitch+=value;
                 }
 
             float combinedL = 0.0f;
