@@ -77,6 +77,34 @@ private:
     std::array<OversamplingFilter,4> stages;
 };
 
+class AudioUpsamplingStage
+{
+public:
+    AudioUpsamplingStage() noexcept { (void)OversamplingFilter::coefficients(); }
+    void reset() noexcept { history={};head=0; }
+
+    std::array<float,2> process(float input) noexcept
+    {
+        head=(head+1)&31;
+        history[head]=input*2;
+        const auto& weights=OversamplingFilter::coefficients();
+
+        // In the zero-stuffed FIR, even output positions use only the center
+        // tap. The other phase uses the odd taps in the original summation order.
+        const float even=weights[32]*history[(head+16)&31]+0.0f;
+        float odd=0.0f;
+        int tap=1;
+        for(int index=head;index>=0;--index,tap+=2)
+            odd+=weights[tap]*history[index];
+        for(int index=31;index>head;--index,tap+=2)
+            odd+=weights[tap]*history[index];
+        return {even,odd};
+    }
+private:
+    std::array<float,32> history{};
+    int head=0;
+};
+
 class StereoOversampler
 {
 public:
@@ -99,9 +127,9 @@ public:
                 std::array<float,16> next{};
                 for(int i=0;i<count;++i)
                 {
-                    up[channel][stage].push(values[channel][i]*2);
-                    next[i*2]=up[channel][stage].value();
-                    up[channel][stage].push(0);next[i*2+1]=up[channel][stage].value();
+                    const auto pair=up[channel][stage].process(values[channel][i]);
+                    next[i*2]=pair[0];
+                    next[i*2+1]=pair[1];
                 }
                 values[channel]=next;
             }
@@ -110,7 +138,7 @@ public:
     }
 private:
     int factor=1;
-    std::array<std::array<OversamplingFilter,4>,2> up;
+    std::array<std::array<AudioUpsamplingStage,4>,2> up;
     std::array<AudioDownsampler,2> down;
 };
 }
