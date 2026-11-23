@@ -43,12 +43,12 @@ TEST(BoundedPrecision, FractionalStackDetuneSurvivesLoadingAndFrequencyCacheUpda
     for(int i=0;i<2048;++i)tables.data.push_back(static_cast<float>(std::sin(2*std::acos(-1.0f)*i/2048)));
     synth1x::WaveTableBank bank;bank.setShapeTables(0,std::move(tables));
     OscillatorSection section;section.prepare({44100,64,2});section.stackDial=mapped.osc1StackDial;
-    const auto sample=[&] {return section.processSample(440,440,.5f,0,0,false,false,0,0,-1,&bank,false);};
+    const auto sample=[&] {return section.processSample({.firstFrequency=440, .secondFrequency=440, .bank=&bank, .pulseWidthBins=0});};
     EXPECT_TRUE(std::isfinite(sample()));EXPECT_EQ(section.cachedStackDial,64.125f);EXPECT_EQ(section.stackFrequencies,first);
     section.stackDial=64.375f;
     EXPECT_TRUE(std::isfinite(sample()));EXPECT_EQ(section.cachedStackDial,64.375f);EXPECT_EQ(section.stackFrequencies,second);
     OscillatorSection off;off.prepare({44100,64,2});off.stackDial=.25f;
-    off.processSample(440,440,.5f,0,0,false,false,0,0,-1,&bank,false);
+    off.processSample({.firstFrequency=440, .secondFrequency=440, .bank=&bank, .pulseWidthBins=0});
     EXPECT_EQ(off.cachedStackDial,-1); // Rounded-zero stack mode remains scalar.
 }
 
@@ -894,7 +894,7 @@ TEST(BoundedPrecision, StackFrequencyCacheUsesFloatBaseWords)
     tables.data.resize(2048);
     synth1x::WaveTableBank bank;bank.setShapeTables(0,std::move(tables));
     OscillatorSection section;section.prepare({44100,64,2});section.stackDial=64.25f;
-    const auto render=[&](float base) {section.processSample(base,440,.5f,0,0,false,false,0,0,-1,&bank);};
+    const auto render=[&](float base) {section.processSample({.firstFrequency=base, .secondFrequency=440, .bank=&bank});};
     render(low);EXPECT_EQ(section.stackFrequencies,first);
     render(edited);EXPECT_EQ(section.stackFrequencies,fractional);EXPECT_EQ(first,fractional);
     render(high);EXPECT_EQ(section.stackFrequencies,last);

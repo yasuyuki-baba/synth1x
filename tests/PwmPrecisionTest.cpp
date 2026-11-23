@@ -100,8 +100,10 @@ TEST(PwmPrecision, DirectAndExplicitCoordinateEntryPointsAgree)
         const float bins=synth1x::dsp::ModulationEnvelope::pulseWidthForDial(synth1x::dsp::fractionalDial(width),0);
         for(int frame=0;frame<256;++frame)
         {
-            EXPECT_EQ(direct.processSample(220,330,width,.25f,0,false,false,0,0,-1,&bank),
-                explicitCoordinate.processSample(220,330,width,.25f,0,false,false,0,0,-1,&bank,bins));
+            EXPECT_EQ(direct.processSample({.firstFrequency=220, .secondFrequency=330,
+                    .pulseWidth=width, .mix=.25f, .bank=&bank}),
+                explicitCoordinate.processSample({.firstFrequency=220, .secondFrequency=330,
+                    .pulseWidth=width, .mix=.25f, .bank=&bank, .pulseWidthBins=bins}));
             EXPECT_EQ(direct.getOsc1Phase(),explicitCoordinate.getOsc1Phase());
         }
     }
