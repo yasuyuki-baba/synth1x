@@ -56,10 +56,10 @@ C++11 requirement; C archive support is independent of C++ settings.
 
 `iPlug2/` is a Git submodule pinned to the revision in
 [dependencies.lock.json](../dependencies.lock.json). Windows, macOS and Linux all
-use [yasuyuki-baba/iPlug2](https://github.com/yasuyuki-baba/iPlug2/tree/integration),
-branch `integration`. This SDK branch is under development; use
-the recorded commit rather than its moving tip. Initialize the recorded
-revision from the product repository root:
+use [yasuyuki-baba/iPlug2](https://github.com/yasuyuki-baba/iPlug2/tree/integration2),
+branch `integration2`. Its current tree is based on upstream `master` with the
+[AUv2 host-resize changes](https://github.com/iPlug2/iPlug2/pull/1456) applied.
+Builds use the recorded commit. Initialize it from the product repository root:
 
 ```sh
 git submodule sync -- iPlug2
