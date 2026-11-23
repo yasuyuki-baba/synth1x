@@ -143,7 +143,7 @@ TEST(OscillatorRead, PulseReceiverComposesSharedEnvelopeAndRemainingControlOnce)
     synth1x::dsp::OscillatorAudioInput input;input.firstFrequency=input.secondFrequency=440;input.pulseWidth=.5f;
     input.fm.depth=1234.5;input.envelope=8.25;input.pulseControl=4.5;
     synth1x::dsp::VoiceControlBuffer control{};control.fill(16.125);
-    synth1x::dsp::ReceiverLfoView view;view.available=true;view.receivers[0]={true,4};view.values[0]=control.data();
+    synth1x::dsp::ReceiverLfoView view;view.available=true;view.receivers[0]={true,synth1x::LfoDestination::PulseWidth};view.values[0]=control.data();
     const double bins=synth1x::dsp::ModulationEnvelope::pulseWidthForDial(synth1x::dsp::fractionalDial(.5f),28.875);
     for(int frame=0;frame<256;++frame)
     {

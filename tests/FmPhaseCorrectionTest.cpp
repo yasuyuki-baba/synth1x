@@ -180,7 +180,7 @@ TEST(FmPhaseCorrection, PhaseCorrectionIsEnabledAcrossWaveformsAndEnvelopeDestin
 {
     synth1x::RenderControls settings;
     settings.lfo1.on=settings.lfo2.on=true;
-    settings.lfo1.dest=settings.lfo2.dest=5;
+    settings.lfo1.dest=settings.lfo2.dest=synth1x::LfoDestination::Fm;
     for(int first=0;first<6;++first)for(int second=0;second<6;++second)
         for(bool envelope:{false,true})
         {

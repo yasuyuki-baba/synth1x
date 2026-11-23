@@ -311,7 +311,8 @@ TEST(BoundedPrecision, FractionalRandomDepthDoesNotRedrawHeldHistory)
 {
     using synth1x::dsp::RandomLfoRuntime;
     RandomLfoRuntime state;
-    std::array<RandomLfoRuntime::Control,2> controls{{{4,3,64},{1,0,0}}};
+    std::array<RandomLfoRuntime::Control,2> controls{{{synth1x::LfoDestination::Amplitude,3,64},
+                                                      {synth1x::LfoDestination::Oscillator2,0,0}}};
     state.load({},controls);
     const auto seed=state.random.state;const float held=state.targets[0].current;
     const auto range=state.effectiveRange(0,64.03125f);
@@ -341,17 +342,17 @@ TEST(BoundedPrecision, FractionalGlideHistorySurvivesRetriggerAndReceiverTranspo
 TEST(BoundedPrecision, LfoDepthCurvesKeepSubUnitValuesAcrossFourWaveforms)
 {
     using Curve=synth1x::dsp::LfoShape::DepthCurve;
-    const auto sine=Curve(4,.125f).query(0,250,1000,32);
+    const auto sine=Curve(synth1x::LfoDestination::PulseWidth,.125f).query(0,250,1000,32);
     EXPECT_DOUBLE_EQ(sine.first,.125f);EXPECT_EQ(sine.second,32);
-    const auto triangle=Curve(5,64.125f).query(1,333,1000,32);
+    const auto triangle=Curve(synth1x::LfoDestination::Fm,64.125f).query(1,333,1000,32);
     EXPECT_DOUBLE_EQ(triangle.first,171.375f);EXPECT_EQ(triangle.second,32);
-    const auto saw=Curve(2,64.125f).query(2,1200,4096,32);
+    const auto saw=Curve(synth1x::LfoDestination::Filter,64.125f).query(2,1200,4096,32);
     EXPECT_DOUBLE_EQ(saw.first,365.75f);EXPECT_EQ(saw.second,32);
-    const auto square=Curve(3,.03125f).query(3,750,1000,32);
+    const auto square=Curve(synth1x::LfoDestination::Amplitude,.03125f).query(3,750,1000,32);
     EXPECT_DOUBLE_EQ(square.first,.5f);EXPECT_EQ(square.second,250);
     for(int wave=0;wave<4;++wave)
     {
-        const auto silent=Curve(2,0).query(wave,123,1000,32);
+        const auto silent=Curve(synth1x::LfoDestination::Filter,0).query(wave,123,1000,32);
         EXPECT_EQ(silent.first,0);EXPECT_EQ(silent.second,-1);
     }
 }
@@ -537,7 +538,7 @@ TEST(BoundedPrecision, FractionalFilterModulationReachesCoefficients)
     modulation.fill(1.5f);
     VoiceSpanBuffer spans{};
     for(int i=0;i<64;++i)spans[i]=64-i;
-    ReceiverLfoView view;view.available=true;view.receivers[0]={true,2};
+    ReceiverLfoView view;view.available=true;view.receivers[0]={true,synth1x::LfoDestination::Filter};
     view.values[0]=modulation.data();view.remaining[0]=spans.data();
     FilterEnvelope envelope;CutoffControl cutoff;cutoff.prepare(44100);
     FilterControlRenderer::render({true,true,512},view,envelope,cutoff,0,0,64,indices);
@@ -557,7 +558,7 @@ TEST(BoundedPrecision, FractionalAmplitudeModulationSurvivesTheReceiver)
     VoiceControlBuffer first{},second{};first.fill(.25f);second.fill(.5f);
     VoiceSpanBuffer spans{};spans.fill(1);
     ReceiverLfoView view;view.available=true;
-    view.receivers[0]={true,3};view.receivers[1]={true,3};
+    view.receivers[0]={true,synth1x::LfoDestination::Amplitude};view.receivers[1]={true,synth1x::LfoDestination::Amplitude};
     view.values={first.data(),second.data()};view.remaining={spans.data(),spans.data()};
     AmplitudeEnvelope amplitude;amplitude.setParameters(0,0,2048,0);amplitude.noteOn();
     float gain=0;

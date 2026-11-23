@@ -56,7 +56,8 @@ namespace synth1x
             // lower bound1 (OSC2), not the CLFO destination0/no-receiver path.
             // Keep the raw/resolved source0 separate from this receiver choice.
             // See docs/lfo-zero-loading.md for stock/observer donor captures.
-            out.dest = static_cast<int> (patch.destination.value_or (Synth1LfoDestination::osc2)) - 1;
+            out.dest = static_cast<LfoDestination>(static_cast<int>(
+                patch.destination.value_or(Synth1LfoDestination::osc2))-1);
             // Synth1 and the current DSP use different waveform enumerations.
             switch (patch.wave.value_or (Synth1LfoWaveform::sine))
             {

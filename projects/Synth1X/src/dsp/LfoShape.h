@@ -175,7 +175,8 @@ namespace synth1x::dsp
         {
             struct Knot
             {
-                int destination {},depth {};
+                LfoDestination destination {LfoDestination::Oscillator2};
+                int depth {};
                 std::pair<int,int> range {};
                 std::pair<float,int> query(int wave,int counter,int period,int minimumStep) const noexcept
                 {
@@ -183,8 +184,8 @@ namespace synth1x::dsp
                     if(wave==3)return square(range.first,range.second,counter,period,minimumStep);
                     if(wave==1)
                     {
-                        if(destination==3)return triangleAmplitude(depth,counter,period,minimumStep);
-                        if(destination==2 || destination==5)return triangleFilter(depth,counter,period,minimumStep);
+                        if(destination==LfoDestination::Amplitude)return triangleAmplitude(depth,counter,period,minimumStep);
+                        if(destination==LfoDestination::Filter || destination==LfoDestination::Fm)return triangleFilter(depth,counter,period,minimumStep);
                         return trianglePitch(depth,counter,period,minimumStep);
                     }
                     // Preserve the clock's native word wrapping and held span.
@@ -192,27 +193,27 @@ namespace synth1x::dsp
                     const uint32_t position=static_cast<uint32_t>(counter)<<11;
                     const int phase=static_cast<int>(position/static_cast<uint32_t>(period));
                     const auto atPhase=[&](int index) {
-                        return destination==0 || destination==1 || destination==4 ? pitch(depth,index)
-                            : destination==2 || destination==5 ? filter(depth,index)
-                            : destination==6 ? pan(depth,index) : amplitude(depth,index);
+                        return destination==LfoDestination::Oscillator2 || destination==LfoDestination::BothOscillators || destination==LfoDestination::PulseWidth ? pitch(depth,index)
+                            : destination==LfoDestination::Filter || destination==LfoDestination::Fm ? filter(depth,index)
+                            : destination==LfoDestination::Pan ? pan(depth,index) : amplitude(depth,index);
                     };
                     const float first=atPhase(phase);
-                    if(wave!=0 || (destination!=3 && destination!=6))
+                    if(wave!=0 || (destination!=LfoDestination::Amplitude && destination!=LfoDestination::Pan))
                         return {first,depth==0 ? -1 : minimumStep};
                     const float fraction=static_cast<float>(position%static_cast<uint32_t>(period))/period;
                     const float value=first+(static_cast<float>(atPhase(phase+1))-first)*fraction;
                     return {value,depth==0 ? -1 : minimumStep};
                 }
             };
-            static Knot knot(int destination,int dial) noexcept
+            static Knot knot(LfoDestination destination,int dial) noexcept
             {
-                const auto range=lfoDepthRange(destination+1,dial);
-                return {destination,destination==3 ? range.first : range.second,range};
+                const auto range=lfoDepthRange(destination,dial);
+                return {destination,destination==LfoDestination::Amplitude ? range.first : range.second,range};
             }
             Knot first,second;
             float fraction {};
         public:
-            DepthCurve(int destination,float dial) noexcept
+            DepthCurve(LfoDestination destination,float dial) noexcept
             {
                 dial=std::clamp(dial,0.0f,127.0f);
                 const int low=static_cast<int>(dial);
@@ -222,7 +223,7 @@ namespace synth1x::dsp
             // At full depth the held sine-table endpoint also controls the wet effect clock.
             bool sineMutesAmplitude(int counter,int period) const noexcept
             {
-                if(first.destination!=3 || first.depth!=2048)return false;
+                if(first.destination!=LfoDestination::Amplitude || first.depth!=2048)return false;
                 const auto phase=(static_cast<uint32_t>(counter)<<11)/static_cast<uint32_t>(period);
                 return amplitude(first.depth,static_cast<int>(phase))==2048;
             }

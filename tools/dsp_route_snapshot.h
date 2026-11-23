@@ -17,8 +17,8 @@ inline std::map<std::string,double> dspRouteSnapshot(const synth1x::MappedSynthS
         {"multifx_type",static_cast<int>(p.nativeMultiEffectType)},
         {"native_phaser",p.nativePhaser},
         {"chorus_on",p.chorus.enabled},{"delay_on",p.delay.enable},{"eq_on",synth1x::dsp::fractionalDial(p.eq.tone)!=64 || synth1x::dsp::fractionalDial(p.eq.level)!=64},
-        {"lfo1_on",p.lfo1.on},{"lfo1_wave",p.lfo1.wave},{"lfo1_dest",p.lfo1.dest},
+        {"lfo1_on",p.lfo1.on},{"lfo1_wave",p.lfo1.wave},{"lfo1_dest",static_cast<int>(p.lfo1.dest)},
         {"lfo1_depth",p.lfo1.amount},{"lfo2_on",p.lfo2.on},{"lfo2_wave",p.lfo2.wave},
-        {"lfo2_dest",p.lfo2.dest},{"lfo2_depth",p.lfo2.amount},{"reset_idle_filter",p.resetIdleFilter},
+        {"lfo2_dest",static_cast<int>(p.lfo2.dest)},{"lfo2_depth",p.lfo2.amount},{"reset_idle_filter",p.resetIdleFilter},
     };
 }

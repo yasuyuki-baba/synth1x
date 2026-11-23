@@ -16,11 +16,11 @@ namespace synth1x::render
     inline dsp::OscillatorControlSettings oscillatorControls(const RenderControls& p,float rate,bool bypass)
     {
         return {p.modEnv.on && p.modEnv.dest>=0 && p.modEnv.dest<=3 && !bypass,
-            p.hasPitchLfo() || p.hasLfo(4) || p.hasLfo(5),p.sourcePortamentoDial>0,
-            p.modEnv.dest==2,p.hasLfo(5),p.sourcePortamentoDial,rate,p.osc1FmAmount,p.ringMod>0.0f};
+            p.hasPitchLfo() || p.hasLfo(LfoDestination::PulseWidth) || p.hasLfo(LfoDestination::Fm),p.sourcePortamentoDial>0,
+            p.modEnv.dest==2,p.hasLfo(LfoDestination::Fm),p.sourcePortamentoDial,rate,p.osc1FmAmount,p.ringMod>0.0f};
     }
     inline dsp::FilterControlSettings filterControls(const RenderControls& p,bool bypass)
-    { return {!bypass,p.hasLfo(2),filterControlIndex(p)}; }
+    { return {!bypass,p.hasLfo(LfoDestination::Filter),filterControlIndex(p)}; }
 
 
 }

@@ -105,9 +105,9 @@ namespace synth1x
         float pitchBendRange  { 2.0f };   // p72 (semitones)
         float globalFineTune  { 0.0f };   // p72: OSC1/2 Fine Tune, cents
         float hostBpm         { 120.0f };
-        bool hasLfo(int destination) const noexcept
+        bool hasLfo(LfoDestination destination) const noexcept
         { return (lfo1.on && lfo1.dest==destination) || (lfo2.on && lfo2.dest==destination); }
-        bool hasPitchLfo() const noexcept { return hasLfo(0) || hasLfo(1); }
+        bool hasPitchLfo() const noexcept { return hasLfo(LfoDestination::Oscillator2) || hasLfo(LfoDestination::BothOscillators); }
 
     };
 }

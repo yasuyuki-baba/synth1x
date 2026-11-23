@@ -115,7 +115,7 @@ TEST(PanInputs, CubicPanRunsAfterNonlinearEffectsForEverySourceHistory)
     for(int channel=0;channel<2;++channel)for(int i=0;i<64;++i)
     {const float sample=static_cast<float>((i*17+channel*7)%31-15)/16;got.setSample(channel,i,sample);expected.setSample(channel,i,sample);wrong.setSample(channel,i,sample);}
     VoiceControlBuffer control{};control.fill(32);
-    ReceiverLfoView view;view.available=true;view.receivers[0]={true,6};view.values[0]=control.data();
+    ReceiverLfoView view;view.available=true;view.receivers[0]={true,synth1x::LfoDestination::Pan};view.values[0]=control.data();
     actual->process(got,0,64,settings,context,view);reference->process(expected,0,64,withoutPan,context,{});
     PanLfo post,pre;post.prepare(44100);pre.prepare(44100);
     for(int i=0;i<64;++i)

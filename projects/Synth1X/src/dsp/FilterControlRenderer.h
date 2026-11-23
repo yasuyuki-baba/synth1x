@@ -24,7 +24,7 @@ namespace synth1x::dsp
             {
                 int frames=count-position;float modulation=0;
                 if(config.filterLfo && lfos.available)
-                    for(size_t slot=0;slot<2;++slot)if(lfos.receivers[slot].enabled && lfos.receivers[slot].destination==2)
+                    for(size_t slot=0;slot<2;++slot)if(lfos.receivers[slot].enabled && lfos.receivers[slot].destination==LfoDestination::Filter)
                     {
                         modulation+=lfos.values[slot][position];
                         frames=std::min(frames,lfos.remaining[slot][position]);

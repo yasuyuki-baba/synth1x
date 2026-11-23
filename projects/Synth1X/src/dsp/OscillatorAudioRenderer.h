@@ -43,7 +43,7 @@ namespace synth1x::dsp
             float pulse=input.pulseControl;
             if(config.pulseReceiver && lfos.available)
                 for(size_t slot=0;slot<2;++slot)
-                    if(lfos.receivers[slot].enabled && lfos.receivers[slot].destination==4)
+                    if(lfos.receivers[slot].enabled && lfos.receivers[slot].destination==LfoDestination::PulseWidth)
                         pulse+=lfos.values[slot][position];
             if(config.pulseEnvelope)pulse+=input.envelope;
             const float width=config.pulseReceiver || config.pulseEnvelope

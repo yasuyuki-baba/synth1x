@@ -10,14 +10,14 @@ TEST(RenderPolicy, EveryWaveformAndDestinationRetainsCommonControls)
     {
         synth1x::RenderControls p;synth1x::render::RenderPolicyInputs input;
         p.lfo1.on=p.lfo2.on=true;p.lfo1.wave=first;p.lfo2.wave=second;
-        p.lfo1.dest=p.lfo2.dest=destination;p.playMode=mode;p.unisonVoices=4;
+        p.lfo1.dest=p.lfo2.dest=static_cast<synth1x::LfoDestination>(destination);p.playMode=mode;p.unisonVoices=4;
         input.stackDial=7;input.modulationAmountDial=42;
         input.modulationAttackDial=23;input.modulationDecayDial=91;
         p.modEnv.on=true;p.modEnv.dest=2;
         synth1x::render::selectRenderPolicy(input,p);
         EXPECT_EQ(p.hasPitchLfo(),destination==0 || destination==1);
-        EXPECT_EQ(p.hasLfo(2),destination==2);EXPECT_EQ(p.hasLfo(5),destination==5);
-        EXPECT_EQ(p.hasLfo(6),destination==6);EXPECT_EQ(p.hasLfo(4),destination==4);
+        EXPECT_EQ(p.hasLfo(synth1x::LfoDestination::Filter),destination==2);EXPECT_EQ(p.hasLfo(synth1x::LfoDestination::Fm),destination==5);
+        EXPECT_EQ(p.hasLfo(synth1x::LfoDestination::Pan),destination==6);EXPECT_EQ(p.hasLfo(synth1x::LfoDestination::PulseWidth),destination==4);
         EXPECT_EQ(p.osc1StackDial,7);EXPECT_EQ(p.modEnv.amountDial,42);
         EXPECT_EQ(p.modEnv.attackDial,23);EXPECT_EQ(p.modEnv.decayDial,91);
         const auto config=synth1x::render::oscillatorControls(p,44100,false);

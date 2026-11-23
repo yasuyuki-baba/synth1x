@@ -797,7 +797,7 @@ TEST(PlaybackBehavior, PitchLfoUsesCommonDepthForLocalAndSharedSources)
             {
                 synth1x::RenderControls controls;
                 EXPECT_TRUE(synth1x::readMappedSynthParams(processor,controls));
-                EXPECT_EQ(controls.lfo1.wave,3);EXPECT_EQ(controls.lfo1.dest,destination);
+                EXPECT_EQ(controls.lfo1.wave,3);EXPECT_EQ(static_cast<int>(controls.lfo1.dest),destination);
                 EXPECT_EQ(controls.lfo1.keySync,keySync);EXPECT_EQ(controls.unisonVoices,1);
                 EXPECT_NEAR(controls.lfo1.amount,depth/127.f,1e-6);
 
@@ -864,7 +864,7 @@ TEST(PlaybackBehavior, PulseWidthLfoKeepsBoundsEnvelopeCompositionAndKeySync)
             {
                 synth1x::RenderControls controls;
                 EXPECT_TRUE(synth1x::readMappedSynthParams(processor,controls));
-                EXPECT_EQ(controls.lfo1.wave,3);EXPECT_EQ(controls.lfo1.dest,4);
+                EXPECT_EQ(controls.lfo1.wave,3);EXPECT_EQ(controls.lfo1.dest,synth1x::LfoDestination::PulseWidth);
                 EXPECT_TRUE(controls.lfo1.on);EXPECT_EQ(controls.lfo1.keySync,keySync);
 
                 if(envelope>=0){EXPECT_TRUE(controls.modEnv.on);EXPECT_EQ(controls.modEnv.dest,3);}
@@ -937,7 +937,7 @@ TEST(PlaybackBehavior, FmLfoUsesCommonDepthForLocalAndSharedSources)
             if(callback==0)
             {
                 synth1x::RenderControls controls;EXPECT_TRUE(synth1x::readMappedSynthParams(processor,controls));
-                EXPECT_EQ(controls.lfo1.wave,3);EXPECT_EQ(controls.lfo1.dest,5);
+                EXPECT_EQ(controls.lfo1.wave,3);EXPECT_EQ(controls.lfo1.dest,synth1x::LfoDestination::Fm);
                 EXPECT_TRUE(controls.lfo1.on);EXPECT_EQ(controls.lfo1.keySync,keySync);
 
             }
@@ -999,7 +999,7 @@ TEST(PlaybackBehavior, FilterLfoUsesCommonCutoffAndEnvelopeComposition)
             if(callback==0)
             {
                 synth1x::RenderControls controls;EXPECT_TRUE(synth1x::readMappedSynthParams(processor,controls));
-                EXPECT_EQ(controls.lfo1.wave,3);EXPECT_EQ(controls.lfo1.dest,2);
+                EXPECT_EQ(controls.lfo1.wave,3);EXPECT_EQ(controls.lfo1.dest,synth1x::LfoDestination::Filter);
                 EXPECT_TRUE(controls.lfo1.on);EXPECT_EQ(controls.lfo1.keySync,keySync);
 
             }
@@ -1058,7 +1058,7 @@ Stereo lfoReceiverRms(double rate,int version,bool keySync,int destination,int d
         if(callback==0)
         {
             synth1x::RenderControls controls;EXPECT_TRUE(synth1x::readMappedSynthParams(processor,controls));
-            EXPECT_EQ(controls.lfo1.dest,destination);EXPECT_EQ(controls.lfo1.wave,3);
+            EXPECT_EQ(static_cast<int>(controls.lfo1.dest),destination);EXPECT_EQ(controls.lfo1.wave,3);
             EXPECT_TRUE(controls.lfo1.on);EXPECT_EQ(controls.lfo1.keySync,keySync);
 
         }
@@ -1141,7 +1141,7 @@ TEST(PlaybackBehavior, ZeroDepthRandomLfoDoesNotChangeSteadyOscillatorReadout)
             {
                 synth1x::RenderControls controls;EXPECT_TRUE(synth1x::readMappedSynthParams(processor,controls));
                 EXPECT_EQ(controls.lfo1.on,enabled);EXPECT_EQ(controls.lfo1.wave,4);
-                EXPECT_EQ(controls.lfo1.amount,0);EXPECT_EQ(controls.lfo1.dest,3);
+                EXPECT_EQ(controls.lfo1.amount,0);EXPECT_EQ(controls.lfo1.dest,synth1x::LfoDestination::Amplitude);
             }
             for(const auto& channel:audio)for(float value:channel)
             {
@@ -1379,7 +1379,7 @@ TEST(PlaybackBehavior, StaticPanFollowsNonlinearEffectsWithRandomLfo)
             if(n==0)
             {
                 synth1x::RenderControls mapped;EXPECT_TRUE(synth1x::readMappedSynthParams(processor,mapped));
-                EXPECT_FALSE(((mapped.lfo1.on && mapped.lfo1.dest==6) || (mapped.lfo2.on && mapped.lfo2.dest==6)));
+                EXPECT_FALSE(((mapped.lfo1.on && mapped.lfo1.dest==synth1x::LfoDestination::Pan) || (mapped.lfo2.on && mapped.lfo2.dest==synth1x::LfoDestination::Pan)));
                 EXPECT_EQ(mapped.nativeMultiEffectType,synth1x::MultiEffectType::DigitalDistortion);EXPECT_FLOAT_EQ(mapped.pan,pan==64 ? 0.f : -.5f);
             }
             for(int i=0;i<64;++i)for(int channel=0;channel<2;++channel)
@@ -1423,7 +1423,7 @@ TEST(PlaybackBehavior, MidCallbackToneControlCannotChangeEarlierOutput)
         Stereo audio{};
         for(int n=0;n<32;++n)EXPECT_TRUE(processor.process(audio[0].data(),audio[1].data(),64,120));
         synth1x::RenderControls mapped;EXPECT_TRUE(synth1x::readMappedSynthParams(processor,mapped));
-        EXPECT_FALSE(((mapped.lfo1.on && mapped.lfo1.dest==6) || (mapped.lfo2.on && mapped.lfo2.dest==6)));
+        EXPECT_FALSE(((mapped.lfo1.on && mapped.lfo1.dest==synth1x::LfoDestination::Pan) || (mapped.lfo2.on && mapped.lfo2.dest==synth1x::LfoDestination::Pan)));
         const auto& routes=processor.engineForInspection().getRenderHistory().controllerRoutes;
         EXPECT_EQ(routes[0].source,45057);EXPECT_EQ(routes[0].destination,60);EXPECT_EQ(routes[0].sensitivity,1);
         if(edited)EXPECT_TRUE(processor.enqueueMidi(32,0xb0,1,127));

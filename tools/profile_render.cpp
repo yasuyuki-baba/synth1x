@@ -138,7 +138,7 @@ int main(int argc,char** argv) try
         synth1x::RenderControls mapped;
         if(!synth1x::readMappedSynthParams(*p,mapped) || mapped.filterType!=c.mode
             || std::abs(mapped.resonanceNorm-c.resonance/127.f)>1e-6f || mapped.unisonVoices!=c.unison
-            || mapped.lfo1.on!=c.lfo || (c.lfo && mapped.lfo1.dest!=2))throw std::runtime_error("Unexpected mapped controls");
+            || mapped.lfo1.on!=c.lfo || (c.lfo && mapped.lfo1.dest!=synth1x::LfoDestination::Filter))throw std::runtime_error("Unexpected mapped controls");
         const int cores=hostvalidation::activeCores(*p);
         if(cores!=std::min(32,c.notes*c.unison))throw std::runtime_error("Unexpected core count");
         control.set(true);
@@ -154,8 +154,8 @@ int main(int argc,char** argv) try
         for(int ch=0;ch<2;++ch)for(int i=0;i<64;++i)
         {uint32_t word{};const float value=audio.getSample(ch,i);std::memcpy(&word,&value,4);hash=(hash^word)*1099511628211uLL;}
         csv<<round<<','<<version<<','<<c.mode<<','<<c.resonance<<','<<c.notes<<','<<c.unison<<','<<c.lfo<<','<<cores<<','<<blocks<<','<<cpu/blocks<<','<<wall/blocks<<','
-            <<mapped.hasPitchLfo()<<','<<mapped.hasLfo(2)<<','<<mapped.hasLfo(5)<<','<<mapped.hasLfo(4)<<','
-            <<mapped.hasLfo(3)<<','<<mapped.hasLfo(6)<<','<<peak<<','<<hash<<'\n';
+            <<mapped.hasPitchLfo()<<','<<mapped.hasLfo(synth1x::LfoDestination::Filter)<<','<<mapped.hasLfo(synth1x::LfoDestination::Fm)<<','<<mapped.hasLfo(synth1x::LfoDestination::PulseWidth)<<','
+            <<mapped.hasLfo(synth1x::LfoDestination::Amplitude)<<','<<mapped.hasLfo(synth1x::LfoDestination::Pan)<<','<<peak<<','<<hash<<'\n';
         csv.flush();if(!csv)throw std::runtime_error("Cannot finish profile CSV");
     }
     return 0;

@@ -305,7 +305,7 @@ TEST(StereoBalance, VoiceAndSmoothedPanUseTheSameStaticLawAtTheirOwnStages)
 TEST(PanInputs, VoiceRetainsUnisonPlacementWithoutApplyingTheGlobalPanLfo)
 {
     synth1x::RenderControls p;p.pan=.5f;p.osc1WaveIndex=1.1f;p.unisonVoices=3;p.unisonPan=.75f;
-    p.lfo1.on=true;p.lfo1.dest=6;p.lfo1.amount=1;
+    p.lfo1.on=true;p.lfo1.dest=synth1x::LfoDestination::Pan;p.lfo1.amount=1;
     auto reference=p;reference.lfo1.on=false;reference.pan=0;
     auto actual=std::make_unique<synth1x::test::PooledTestVoice>(p),expected=std::make_unique<synth1x::test::PooledTestVoice>(reference);
     synth1x::dsp::LfoBlock lfos;lfos.controls[0].fill(64);
@@ -322,7 +322,7 @@ TEST(PanInputs, VoiceRetainsUnisonPlacementWithoutApplyingTheGlobalPanLfo)
 TEST(PanInputs, OversizeUnknownHistoryCallbacksKeepEveryChunkAndSurroundingSamples)
 {
     auto engine=std::make_unique<synth1x::SynthEngine>();auto& p=engine->getParams();
-    p.osc1WaveIndex=1.1f;p.lfo1.on=true;p.lfo1.dest=6;p.lfo1.amount=.5f;
+    p.osc1WaveIndex=1.1f;p.lfo1.on=true;p.lfo1.dest=synth1x::LfoDestination::Pan;p.lfo1.amount=.5f;
 
     engine->prepareToPlay(44100,64);
     synth1x::audio::AudioBuffer<float> audio(2,1040);audio.clear();
