@@ -83,18 +83,6 @@ void Synth1X::reconcileEditorWindowSize()
     if (!graphics)
         return;
 
-#if defined(__linux__) && (defined(CLAP_API) || defined(VST3_API))
-    // An X11 host can resize the embedding window without a plugin size callback
-    // or a ConfigureNotify on our child. Only react to changes in its dimensions.
-    const auto bounds = editorWindowBounds(graphics->GetWindow(), false);
-    if (!bounds)
-        return;
-    const bool parentChanged = bounds->width != observedParentWidth || bounds->height != observedParentHeight;
-    observedParentWidth = bounds->width;
-    observedParentHeight = bounds->height;
-    if (parentChanged || reconcileEditorScale)
-        OnParentWindowResize(bounds->width, bounds->height);
-#else
     if (!reconcileEditorScale)
         return;
 
@@ -105,7 +93,6 @@ void Synth1X::reconcileEditorWindowSize()
 #endif
     if (const auto bounds = editorWindowBounds(graphics->GetWindow(), standalone))
         OnParentWindowResize(bounds->width, bounds->height);
-#endif
 }
 
 void Synth1X::refreshEditorScale()
@@ -463,7 +450,6 @@ void Synth1X::OnIdle()
 void Synth1X::OnUIOpen()
 {
     releaseKeyboardNotes();
-    observedParentWidth=observedParentHeight=0;
     dialogLifetime=std::make_shared<int>(0);
     iplug::Plugin::OnUIOpen();
     setKeyboardVisible(keyboardVisible);
