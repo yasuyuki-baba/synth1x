@@ -19,6 +19,18 @@ using namespace iplug;
 using namespace iplug::igraphics;
 using namespace synth1x::editor::native;
 
+#if defined(CLAP_API) && defined(__linux__)
+bool Synth1X::guiGetResizeHints(clap_gui_resize_hints_t* hints) noexcept
+{
+    if(!HasUI() || !GetUI())return false;
+    // X11 hosts can cache the aspect ratio as a window-manager constraint.
+    // Keyboard visibility changes the canvas ratio. Accept arbitrary host bounds
+    // and let OnParentWindowResize fit the canvas uniformly inside them.
+    *hints={true,true,false,0,0};
+    return true;
+}
+#endif
+
 void Synth1X::OnParentWindowResize(int width,int height)
 {
     auto* graphics=GetUI();
@@ -27,7 +39,9 @@ void Synth1X::OnParentWindowResize(int width,int height)
     const auto scale=synth1x::editor::editorResizeScale(width,height,
         graphics->GetPlatformWindowScale(),keyboardVisible,graphics->GetDrawScale());
     if(!scale)return;
+#if defined(__APPLE__) && defined(AU_API)
     observedParentWidth=width;observedParentHeight=height;
+#endif
     resizingParentWindow=true;
     // The parent already changed size. Suppress the SDK's relative parent
     // adjustment, which would otherwise apply the size delta a second time.
@@ -80,6 +94,18 @@ void Synth1X::reconcileEditorWindowSize()
     if (!graphics)
         return;
 
+#if defined(__linux__) && (defined(CLAP_API) || defined(VST3_API))
+    // An X11 host can resize the embedding window without a plugin size callback
+    // or a ConfigureNotify on our child. Only react to changes in its dimensions.
+    const auto bounds = editorWindowBounds(graphics->GetWindow(), false);
+    if (!bounds)
+        return;
+    const bool parentChanged = bounds->width != observedParentWidth || bounds->height != observedParentHeight;
+    observedParentWidth = bounds->width;
+    observedParentHeight = bounds->height;
+    if (parentChanged || reconcileEditorScale)
+        OnParentWindowResize(bounds->width, bounds->height);
+#else
 #if !defined(__APPLE__) || !defined(AU_API)
     // AU hosts can resize the Cocoa view or its parent without an SDK notification.
     if (!reconcileEditorScale)
@@ -110,6 +136,7 @@ void Synth1X::reconcileEditorWindowSize()
     observedParentHeight = bounds->height;
 #else
     OnParentWindowResize(bounds->width, bounds->height);
+#endif
 #endif
 }
 
