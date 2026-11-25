@@ -39,9 +39,6 @@ void Synth1X::OnParentWindowResize(int width,int height)
     const auto scale=synth1x::editor::editorResizeScale(width,height,
         graphics->GetPlatformWindowScale(),keyboardVisible,graphics->GetDrawScale());
     if(!scale)return;
-#if defined(__APPLE__) && defined(AU_API)
-    observedParentWidth=width;observedParentHeight=height;
-#endif
     resizingParentWindow=true;
     // The parent already changed size. Suppress the SDK's relative parent
     // adjustment, which would otherwise apply the size delta a second time.
@@ -64,14 +61,9 @@ void Synth1X::requestEditorScale(float scale)
             graphics->GetPlatformWindowScale(),keyboardVisible))scale=std::min(scale,*fit);
 #endif
     releaseComputerNotes();
-#if defined(__APPLE__) && defined(AU_API)
-    // Remember the pre-request parent even before the first UI timer tick.
-    // Its unchanged size must not undo the explicitly resized editor view.
-    if(const auto bounds=editorWindowBounds(graphics->GetWindow(),false)) {
-        observedParentWidth=bounds->width;observedParentHeight=bounds->height;
-    }
-#endif
-    reconcileEditorScale=true;
+    const auto api=GetAPI();
+    // Re-read the bounds for formats that negotiate a parent resize.
+    reconcileEditorScale=api==kAPIAPP || api==kAPIVST3 || api==kAPICLAP;
 #if defined(APP_API)
     // Request an exact client size, including when the old parent contains
     // unused space. The SDK's relative parent delta would retain that space.
@@ -82,9 +74,6 @@ void Synth1X::requestEditorScale(float scale)
 #else
     graphics->Resize(PLUG_WIDTH,keyboardVisible ? 936 : PLUG_HEIGHT,scale);
 #endif
-    // Hosts/WM may reject or adjust the request, or deliver their size later.
-    // Re-read the parent on the next UI tick rather than displaying a request
-    // as though it were the accepted scale.
     refreshEditorScale();
 }
 
@@ -106,37 +95,16 @@ void Synth1X::reconcileEditorWindowSize()
     if (parentChanged || reconcileEditorScale)
         OnParentWindowResize(bounds->width, bounds->height);
 #else
-#if !defined(__APPLE__) || !defined(AU_API)
-    // AU hosts can resize the Cocoa view or its parent without an SDK notification.
     if (!reconcileEditorScale)
         return;
-#endif
 
-    reconcileEditorScale = false;
 #if defined(APP_API)
     constexpr bool standalone = true;
 #else
     constexpr bool standalone = false;
 #endif
-    const auto bounds = editorWindowBounds(graphics->GetWindow(), standalone);
-    if (!bounds)
-        return;
-
-#if defined(__APPLE__) && defined(AU_API)
-    // A host can resize the returned editor view while leaving its container fixed.
-    // Ignore a fitted view that we already sized on a previous tick.
-    const auto dpi = graphics->GetPlatformWindowScale();
-    const auto target = synth1x::editor::editorObservedResize(
-        {bounds->width, bounds->height}, {observedParentWidth, observedParentHeight},
-        {bounds->viewWidth, bounds->viewHeight},
-        {static_cast<int>(graphics->WindowWidth() * dpi), static_cast<int>(graphics->WindowHeight() * dpi)});
-    if (target)
-        OnParentWindowResize(target->width, target->height);
-    observedParentWidth = bounds->width;
-    observedParentHeight = bounds->height;
-#else
-    OnParentWindowResize(bounds->width, bounds->height);
-#endif
+    if (const auto bounds = editorWindowBounds(graphics->GetWindow(), standalone))
+        OnParentWindowResize(bounds->width, bounds->height);
 #endif
 }
 
@@ -499,6 +467,9 @@ void Synth1X::OnUIOpen()
     dialogLifetime=std::make_shared<int>(0);
     iplug::Plugin::OnUIOpen();
     setKeyboardVisible(keyboardVisible);
+    // The host may attach the editor after OnUIOpen. Fit once when its bounds
+    // become available; subsequent host resizes arrive through the delegate.
+    reconcileEditorScale=true;
     if(!libraryJob.valid()) {
         auto root=synth1x::host::PatchCatalog::userDirectory();
         if(!root.empty() && root!=catalog.root()){catalog=synth1x::host::PatchCatalog(root);catalogLoaded=false;libraryFilter={};selectedPatchId.clear();resultOffset=0;}
