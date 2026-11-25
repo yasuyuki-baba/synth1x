@@ -35,6 +35,9 @@ public:
     void OnUIOpen() override;
     void OnParentWindowResize(int width,int height) override;
     void OnUIClose() override;
+#if defined(CLAP_API) && defined(__linux__)
+    bool guiGetResizeHints(clap_gui_resize_hints_t* hints) noexcept override;
+#endif
 #if defined(VST3_API)
     Steinberg::tresult PLUGIN_API initialize(Steinberg::FUnknown* context) override;
     Steinberg::tresult PLUGIN_API process(Steinberg::Vst::ProcessData& data) override;

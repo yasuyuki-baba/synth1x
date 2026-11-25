@@ -91,9 +91,13 @@ std::optional<EditorWindowBounds> editorWindowBounds(void* view,bool standalone)
     if(!XQueryTree(display,editor,&root,&parent,&children,&count))return {};
     if(children)XFree(children);
     XWindowAttributes client{},child{};
-    if(!parent || !XGetWindowAttributes(display,parent,&client) || !XGetWindowAttributes(display,editor,&child))return {};
-    const int menu=standalone ? std::max(0,child.y) : 0;
-    bounds.width=client.width;bounds.height=client.height-menu;
+    if(!parent || !XGetWindowAttributes(display,parent,&client))return {};
+    bounds.width=client.width;bounds.height=client.height;
+    if(!standalone)
+        return bounds.width>0 && bounds.height>0 ? std::optional{bounds} : std::nullopt;
+    if(!XGetWindowAttributes(display,editor,&child))return {};
+    const int menu=std::max(0,child.y);
+    bounds.height-=menu;
     bounds.maximumWidth=DisplayWidth(display,DefaultScreen(display));
     bounds.maximumHeight=DisplayHeight(display,DefaultScreen(display))-menu;
     // EWMH work area excludes desktop panels; frame extents exclude decorations.
