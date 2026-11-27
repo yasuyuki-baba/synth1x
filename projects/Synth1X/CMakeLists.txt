@@ -73,6 +73,11 @@ if(NOT TARGET iPlug2::Extras::IWebViewControl)
 endif()
 include("${IPLUG2_DIR}/iPlug2.cmake")
 find_package(iPlug2 REQUIRED)
+if(NOT IGRAPHICS_BACKEND STREQUAL "SKIA")
+    # Only the NanoVG validator needs the SDK's pinned stb_image header.
+    set_source_files_properties(editor/EditorBackgroundImage.cpp PROPERTIES
+        INCLUDE_DIRECTORIES "${IPLUG2_DIR}/Dependencies/IGraphics/NanoVG/src")
+endif()
 if(TARGET iPlug2_Extras_IWebViewControl_obj)
     set_target_properties(iPlug2_Extras_IWebViewControl_obj PROPERTIES EXCLUDE_FROM_ALL TRUE)
 endif()
