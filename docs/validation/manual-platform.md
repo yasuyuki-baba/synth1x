@@ -145,7 +145,7 @@ callback-visible. PlaybackBehavior compares cached callbacks with explicit refre
 For non-gating DSP profiling, build `Synth1XRenderProfile` and run:
 
 ```sh
-./build-oos-core/Synth1XRenderProfile render-profile.csv --blocks 1024 --rounds 3
+./build/core/Synth1XRenderProfile render-profile.csv --blocks 1024 --rounds 3
 ```
 
 The CSV records thread CPU/wall means and a final-block hash. These offline

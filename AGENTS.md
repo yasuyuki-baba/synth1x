@@ -44,6 +44,7 @@
 
 ## Validation
 
+- Keep generated build trees under the Git-ignored `build/` directory.
 - Use the [test guide](tests/README.md) for focused checks while developing.
   Once changes settle, build affected targets and run the applicable suite.
   Portable tests use the actual bridge and self-authored inputs and run without
@@ -60,7 +61,7 @@
   Keep allocation, blocking locks and I/O out of audio callbacks.
 - For shared synthesis changes, build the Probe, LoadingProbe, tests and affected
   native formats/APP where the toolchain is available. After changing component
-  boundaries, run `python3 tools/audit_dsp_headers.py --build-dir build-oos-core`.
+  boundaries, run `python3 tools/audit_dsp_headers.py --build-dir build/core`.
   Report the checks actually run and their scope. Use the [manual platform
   guide](docs/validation/manual-platform.md) for GUI, DAW and device checks.
 

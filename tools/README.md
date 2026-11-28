@@ -44,7 +44,7 @@ overrides are not applied to these diagnostic suggestions.
 
 ```sh
 cmake --preset core
-cmake --build build-oos-core --target Synth1XTagProbe
+cmake --build build/core --target Synth1XTagProbe
 python3 tools/tag_patches.py scan path/to/patches --output before.json
 # After changing and rebuilding the inference/loading implementation:
 python3 tools/tag_patches.py scan path/to/patches --output after.json
@@ -81,11 +81,11 @@ record compiler/binary/CPU/run context and compare like-for-like conditions.
 
 ```sh
 cmake --preset core
-cmake --build build-oos-core --target Synth1XHostBenchmark
-./build-oos-core/Synth1XHostBenchmark build-oos-core/host-benchmark.csv 128
+cmake --build build/core --target Synth1XHostBenchmark
+./build/core/Synth1XHostBenchmark build/core/host-benchmark.csv 128
 ```
 
-On Windows, invoke `build-oos-core/Synth1XHostBenchmark.exe` instead. The CSV path
+On Windows, invoke `build/core/Synth1XHostBenchmark.exe` instead. The CSV path
 must not exist; choose a fresh filename for each run.
 
 Offline over-budget observations are not detected audio-device underruns. Neither
@@ -100,7 +100,7 @@ align or gain-fit them when reporting raw audio comparisons.
 
 Normal product targets and `Synth1XProbe` do not read DSP bypass environment
 variables. To isolate envelopes, filters or output effects, explicitly build
-`cmake --build build-oos-core --target Synth1XDiagnosticProbe`. This optional target
+`cmake --build build/core --target Synth1XDiagnosticProbe`. This optional target
 links a separate diagnostic core and is excluded from normal builds. Invoke it
 with `--bypass-env`, `--bypass-filter` or `--bypass-fx`; the normal probe rejects
 these switches. Bypass state belongs to the diagnostic rendering thread, is set

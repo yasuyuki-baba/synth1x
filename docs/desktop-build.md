@@ -103,12 +103,12 @@ Return to the repository root and select the preset for the desired format:
 
 | Platform | Configure/build preset | Build directory | Formats |
 | --- | --- | --- | --- |
-| Windows | `windows` | `build-oos-win` | VST3, CLAP |
-| Windows | `windows-app` | `build-oos-app` | APP |
-| macOS | `macos` | `build-oos-mac` | VST3, CLAP, AUv2 |
-| macOS | `macos-app` | `build-oos-mac-app` | APP |
-| Linux | `linux` | `build-oos-linux` | VST3, CLAP |
-| Linux | `linux-app` | `build-oos-linux-app` | APP |
+| Windows | `windows` | `build/windows` | VST3, CLAP |
+| Windows | `windows-app` | `build/windows-app` | APP |
+| macOS | `macos` | `build/macos` | VST3, CLAP, AUv2 |
+| macOS | `macos-app` | `build/macos-app` | APP |
+| Linux | `linux` | `build/linux` | VST3, CLAP |
+| Linux | `linux-app` | `build/linux-app` | APP |
 
 For example:
 

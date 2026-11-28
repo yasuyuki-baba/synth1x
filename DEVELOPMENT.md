@@ -14,7 +14,7 @@ cmake --build --preset core --parallel 4
 ctest --preset core
 ```
 
-The `core` preset uses `build-oos-core` and fetches GoogleTest for testing.
+The `core` preset uses `build/core` and fetches GoogleTest for testing.
 No plugin SDK, display, audio device, Synth1 DLL or Wine is required.
 
 Build switches can also be set explicitly:
@@ -28,12 +28,12 @@ Build switches can also be set explicitly:
 
 `core` enables tools and tests; native presets disable both. Tests build the Probe
 and WAV comparator they require even with optional tools disabled. Use a separate
-build directory for each configuration; for example:
+directory under the Git-ignored `build/` directory for each configuration:
 
 ```sh
-cmake -S . -B build-oos-tests -DSYNTH1X_BUILD_IPLUG2=OFF -DSYNTH1X_BUILD_TOOLS=OFF -DSYNTH1X_BUILD_TESTS=ON
-cmake --build build-oos-tests --parallel 4
-ctest --test-dir build-oos-tests --output-on-failure
+cmake -S . -B build/tests -DSYNTH1X_BUILD_IPLUG2=OFF -DSYNTH1X_BUILD_TOOLS=OFF -DSYNTH1X_BUILD_TESTS=ON
+cmake --build build/tests --parallel 4
+ctest --test-dir build/tests --output-on-failure
 ```
 
 Local builds receive a dated development version. Release builds derive their

@@ -126,7 +126,7 @@ def main():
     commands = parser.add_subparsers(dest="command", required=True)
     inspect = commands.add_parser("scan", help="Inspect a .sy1, ZIP/RAR/7z bank or recursive directory")
     inspect.add_argument("source", type=Path)
-    inspect.add_argument("--probe", type=Path, default=ROOT / "build-oos-core" /
+    inspect.add_argument("--probe", type=Path, default=ROOT / "build" / "core" /
                          ("Synth1XTagProbe.exe" if sys.platform == "win32" else "Synth1XTagProbe"))
     difference = commands.add_parser("compare", help="Compare two reports, including reasons and source edits")
     difference.add_argument("before", type=Path)
