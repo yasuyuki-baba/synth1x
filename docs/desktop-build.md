@@ -58,8 +58,9 @@ C++11 requirement; C archive support is independent of C++ settings.
 [dependencies.lock.json](../dependencies.lock.json). Windows, macOS and Linux all
 use [yasuyuki-baba/iPlug2](https://github.com/yasuyuki-baba/iPlug2/tree/integration2),
 branch `integration2`. Its current tree is based on upstream `master` with the
-[AUv2 host-resize changes](https://github.com/iPlug2/iPlug2/pull/1456) and
-[X11 host-resize notifications](https://github.com/yasuyuki-baba/iPlug2/pull/12) applied.
+[AUv2 host-resize changes](https://github.com/iPlug2/iPlug2/pull/1456),
+[X11 host-resize notifications](https://github.com/yasuyuki-baba/iPlug2/pull/12),
+and [Linux CLAP X11 floating editors](https://github.com/iPlug2/iPlug2/pull/1490) applied.
 Builds use the recorded commit. Initialize it from the product repository root:
 
 ```sh
