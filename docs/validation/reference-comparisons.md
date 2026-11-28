@@ -39,7 +39,7 @@ is involved.
 
 ```sh
 cmake --preset core
-cmake --build build-oos-core --target Synth1XProbe Synth1XLoadingProbe CompareWaves
+cmake --build build/core --target Synth1XProbe Synth1XLoadingProbe CompareWaves
 ```
 
 ### Prepare immutable inputs
@@ -51,7 +51,7 @@ run it once, before changing the implementation:
 python3 - <<'PY'
 from pathlib import Path
 
-inputs = Path("build-oos-core/comparison-example/inputs")
+inputs = Path("build/core/comparison-example/inputs")
 inputs.mkdir(parents=True, exist_ok=False)
 case = inputs / "basic"
 case.mkdir()
@@ -94,12 +94,12 @@ from measurement_common import built_executable, clean_environment, digest, run_
 stage = sys.argv[1]
 if stage not in ("before", "after"):
     raise SystemExit("Expected before or after")
-work = Path("build-oos-core/comparison-example")
+work = Path("build/core/comparison-example")
 inputs = work / "inputs"
 output = work / stage
 output.mkdir()
-probe = built_executable("build-oos-core", "Synth1XProbe")
-loading = built_executable("build-oos-core", "Synth1XLoadingProbe")
+probe = built_executable("build/core", "Synth1XProbe")
+loading = built_executable("build/core", "Synth1XLoadingProbe")
 env = clean_environment()
 env.update(SYNTH1X_PROBE_SAMPLE_RATE="44100", SYNTH1X_PROBE_BLOCK_SIZE="64",
            SYNTH1X_PROBE_VELOCITY="100")
@@ -162,7 +162,7 @@ import sys
 sys.path.insert(0, str(Path("tools").resolve()))
 from measurement_common import digest, raw_stereo_nrmse, read_wav
 
-work = Path("build-oos-core/comparison-example")
+work = Path("build/core/comparison-example")
 before, after = work / "before", work / "after"
 contexts = [json.loads((p / "context.json").read_text()) for p in (before, after)]
 if contexts[0]["inputs"] != contexts[1]["inputs"]:

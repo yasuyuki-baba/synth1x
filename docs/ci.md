@@ -48,10 +48,10 @@ native SDK uses its static-runtime configuration.
 ## Local equivalents
 
 ```sh
-cmake -S . -B build-oos-ci -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DSYNTH1X_BUILD_IPLUG2=OFF -DSYNTH1X_BUILD_TOOLS=OFF -DSYNTH1X_BUILD_TESTS=ON
-cmake --build build-oos-ci --config Release --parallel 4
-ctest --test-dir build-oos-ci -C Release -L portable --output-on-failure --no-tests=error
-python tools/audit_dsp_headers.py --build-dir build-oos-ci
+cmake -S . -B build/ci -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DSYNTH1X_BUILD_IPLUG2=OFF -DSYNTH1X_BUILD_TOOLS=OFF -DSYNTH1X_BUILD_TESTS=ON
+cmake --build build/ci --config Release --parallel 4
+ctest --test-dir build/ci -C Release -L portable --output-on-failure --no-tests=error
+python tools/audit_dsp_headers.py --build-dir build/ci
 ```
 
 The header audit requires a compile database or Ninja; CI also runs it explicitly

@@ -11,9 +11,9 @@ The [verification map](../docs/validation/coverage.md) identifies individual tes
 and their scope. Select the relevant CTest entry or GoogleTest suite, for example:
 
 ```sh
-ctest --test-dir build-oos-core -N
-ctest --test-dir build-oos-core --output-on-failure -R '^BuildToolsTests$'
-./build-oos-core/Synth1XPatchTests --gtest_filter='HostLifecycle.*'
+ctest --test-dir build/core -N
+ctest --test-dir build/core --output-on-failure -R '^BuildToolsTests$'
+./build/core/Synth1XPatchTests --gtest_filter='HostLifecycle.*'
 ```
 
 Use `Synth1XPatchTests.exe` on Windows. These examples run subsets, not the complete
@@ -62,9 +62,9 @@ VST3 sources on Windows and Linux. Initialize the iPlug2 submodule, then run:
 
 ```sh
 python3 tools/prepare_native_sdks.py --output build/dependencies.json
-cmake -S tests/sdk/vst3 -B build-vst3-test -DCMAKE_BUILD_TYPE=Release
-cmake --build build-vst3-test --config Release --parallel 4
-ctest --test-dir build-vst3-test -C Release --output-on-failure
+cmake -S tests/sdk/vst3 -B build/vst3-test -DCMAKE_BUILD_TYPE=Release
+cmake --build build/vst3-test --config Release --parallel 4
+ctest --test-dir build/vst3-test -C Release --output-on-failure
 ```
 
 ## Built-plugin audio smoke

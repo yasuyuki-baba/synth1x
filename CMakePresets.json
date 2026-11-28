@@ -5,7 +5,7 @@
       "name": "core",
       "displayName": "Portable DSP and tests (no plugin SDK)",
       "generator": "Ninja",
-      "binaryDir": "${sourceDir}/build-oos-core",
+      "binaryDir": "${sourceDir}/build/${presetName}",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
         "SYNTH1X_BUILD_IPLUG2": "OFF",
@@ -18,7 +18,7 @@
       "displayName": "Windows VST3 / CLAP",
       "generator": "Visual Studio 17 2022",
       "architecture": "x64",
-      "binaryDir": "${sourceDir}/build-oos-win",
+      "binaryDir": "${sourceDir}/build/${presetName}",
       "cacheVariables": {
         "SYNTH1X_BUILD_IPLUG2": "ON",
         "SYNTH1X_BUILD_TESTS": "OFF",
@@ -36,7 +36,7 @@
       "displayName": "Windows MSVC x64 CI (Ninja)",
       "inherits": "windows",
       "generator": "Ninja",
-      "binaryDir": "${sourceDir}/build-oos-windows-ci",
+      "binaryDir": "${sourceDir}/build/${presetName}",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release"
       },
@@ -48,7 +48,7 @@
     {
       "name": "windows-app",
       "inherits": "windows",
-      "binaryDir": "${sourceDir}/build-oos-app",
+      "binaryDir": "${sourceDir}/build/${presetName}",
       "cacheVariables": {
         "SYNTH1X_IPLUG2_FORMATS": "APP"
       }
@@ -57,7 +57,7 @@
       "name": "macos",
       "displayName": "macOS VST3 / CLAP / AUv2 (Apple Silicon)",
       "generator": "Xcode",
-      "binaryDir": "${sourceDir}/build-oos-mac",
+      "binaryDir": "${sourceDir}/build/${presetName}",
       "cacheVariables": {
         "SYNTH1X_BUILD_IPLUG2": "ON",
         "SYNTH1X_BUILD_TESTS": "OFF",
@@ -78,7 +78,7 @@
       "displayName": "macOS Apple Silicon CI (Ninja)",
       "inherits": "macos",
       "generator": "Ninja",
-      "binaryDir": "${sourceDir}/build-oos-macos-ci",
+      "binaryDir": "${sourceDir}/build/${presetName}",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release"
       }
@@ -87,7 +87,7 @@
       "name": "macos-app",
       "displayName": "macOS standalone (Apple Silicon)",
       "inherits": "macos",
-      "binaryDir": "${sourceDir}/build-oos-mac-app",
+      "binaryDir": "${sourceDir}/build/${presetName}",
       "cacheVariables": {
         "SYNTH1X_IPLUG2_FORMATS": "APP"
       }
@@ -96,7 +96,7 @@
       "name": "linux",
       "displayName": "Linux VST3 / CLAP (experimental iPlug2 branch)",
       "generator": "Ninja",
-      "binaryDir": "${sourceDir}/build-oos-linux",
+      "binaryDir": "${sourceDir}/build/${presetName}",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
         "SYNTH1X_BUILD_IPLUG2": "ON",
@@ -116,7 +116,7 @@
       "name": "linux-app",
       "displayName": "Linux standalone (experimental iPlug2 branch)",
       "inherits": "linux",
-      "binaryDir": "${sourceDir}/build-oos-linux-app",
+      "binaryDir": "${sourceDir}/build/${presetName}",
       "cacheVariables": {
         "SYNTH1X_IPLUG2_FORMATS": "APP"
       }

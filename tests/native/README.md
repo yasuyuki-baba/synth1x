@@ -45,8 +45,8 @@ build, for example:
 
 ```sh
 cmake --preset linux -DSYNTH1X_BUILD_NATIVE_SMOKE=ON
-cmake --build build-oos-linux --target Synth1XAudioSmoke --parallel 4
-ctest --test-dir build-oos-linux -C Release -L native --output-on-failure --no-tests=error
+cmake --build build/linux --target Synth1XAudioSmoke --parallel 4
+ctest --test-dir build/linux -C Release -L native --output-on-failure --no-tests=error
 ```
 
 Use the `windows` / `macos` presets and their build directories on those systems.
