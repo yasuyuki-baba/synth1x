@@ -88,8 +88,19 @@ std::optional<EditorWindowBounds> editorWindowBounds(void* view,bool standalone)
     Window root=0,parent=0,*children=nullptr;unsigned count=0;
     if(!XQueryTree(display,editor,&root,&parent,&children,&count))return {};
     if(children)XFree(children);
+    if(!parent)return {};
+    Window clientWindow=parent;
+    if(!standalone) {
+        // iPlug2 sets window-manager protocols only on its own top-level window.
+        // They remain on the editor if the window manager reparents it.
+        Atom* protocols=nullptr;
+        int protocolCount=0;
+        if(parent==root || XGetWMProtocols(display,editor,&protocols,&protocolCount))
+            clientWindow=editor;
+        if(protocols)XFree(protocols);
+    }
     XWindowAttributes client{},child{};
-    if(!parent || !XGetWindowAttributes(display,parent,&client))return {};
+    if(!XGetWindowAttributes(display,clientWindow,&client))return {};
     bounds.width=client.width;bounds.height=client.height;
     if(!standalone)
         return bounds.width>0 && bounds.height>0 ? std::optional{bounds} : std::nullopt;
